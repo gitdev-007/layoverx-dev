@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOTELS_DATA, RESTAURANTS_DATA, TOURS_DATA, TRANSFERS_DATA } from '@/data/layover-data';
+import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
 import {
   Plane,
   Clock,
@@ -15,8 +15,12 @@ import {
   Hotel,
   Utensils,
   Compass,
-  Plus,
-  Trash2,
+  Sparkles,
+  Gamepad2,
+  User,
+  FileText,
+  Bookmark,
+  Share2,
 } from 'lucide-react';
 
 export default function PlanMyLayoverPage() {
@@ -25,11 +29,24 @@ export default function PlanMyLayoverPage() {
   const [departureTime, setDepartureTime] = useState('2026-07-28T18:00');
   const [travelers, setTravelers] = useState('2');
 
+  // Step selections
   const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv'>('sedan');
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>('h1');
   const [selectedDiningId, setSelectedDiningId] = useState<string | null>('r1');
-  const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
+  
+  // Step 4 Experience Tab State
+  const [expTab, setExpTab] = useState<'tours' | 'spa' | 'gaming'>('tours');
+  const [selectedTourId, setSelectedTourId] = useState<string | null>('t1');
+  const [selectedSpaId, setSelectedSpaId] = useState<string | null>(null);
+  const [selectedGamingId, setSelectedGamingId] = useState<string | null>(null);
 
+  // Step 5 Registration Inputs
+  const [leadPassengerName, setLeadPassengerName] = useState('John Doe');
+  const [passportNumber, setPassportNumber] = useState('');
+  const [flightIn, setFlightIn] = useState('AI 102 (JFK-BOM)');
+  const [emergencyContact, setEmergencyContact] = useState('');
+
+  // Cost calculations
   const cabPrice = selectedCab === 'sedan' ? 899 : 1499;
   const hotelObj = HOTELS_DATA.find((h) => h.id === selectedHotelId);
   const hotelPrice = hotelObj ? parseInt(hotelObj.price6h.replace(/[^0-9]/g, '')) || 3499 : 0;
@@ -40,12 +57,18 @@ export default function PlanMyLayoverPage() {
   const tourObj = TOURS_DATA.find((t) => t.id === selectedTourId);
   const tourPrice = tourObj ? parseInt(tourObj.price.replace(/[^0-9]/g, '')) || 3999 : 0;
 
-  const totalPrice = cabPrice + hotelPrice + diningPrice + tourPrice;
+  const spaObj = SPAS_DATA.find((s) => s.id === selectedSpaId);
+  const spaPrice = spaObj ? parseInt(spaObj.price.replace(/[^0-9]/g, '')) || 1999 : 0;
+
+  const gamingObj = GAMING_DATA.find((g) => g.id === selectedGamingId);
+  const gamingPrice = gamingObj ? parseInt(gamingObj.price.replace(/[^0-9]/g, '')) || 1499 : 0;
+
+  const totalPrice = cabPrice + hotelPrice + diningPrice + tourPrice + spaPrice + gamingPrice;
 
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
       
-      {/* SEARCH & CALCULATION HERO */}
+      {/* SEARCH INPUT & HERO */}
       <section className="bg-slate-900 text-white pt-20 pb-12 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           
@@ -59,7 +82,7 @@ export default function PlanMyLayoverPage() {
             AI Itinerary Builder & Estimator
           </h1>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
-            Input flight details to compute safe exit windows and build your custom Mumbai stopover package.
+            Configure transit details, pick verified hotels, dining, and tours, and generate real-time exit timings.
           </p>
 
           {/* Interactive Inputs Bar */}
@@ -121,13 +144,13 @@ export default function PlanMyLayoverPage() {
             </div>
           </form>
 
-          {/* Calculated Safe Window Banner */}
+          {/* Safe Exit Window Banner */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-sky-950/60 border border-sky-900/60 p-4 rounded-2xl text-sky-200 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <Clock size={16} className="text-sky-400" />
-              <span>Transit window: <strong className="text-white">8h 00m</strong></span>
+              <span>Calculated Transit window: <strong className="text-white">8h 00m</strong></span>
               <span className="text-sky-700">|</span>
-              <span>Buffer deduction: <strong className="text-white">3h 30m</strong> (Immigration + Security)</span>
+              <span>Buffer allowance: <strong className="text-white">3h 30m</strong> (Immigration + Security check)</span>
             </div>
             <div className="text-emerald-400 font-bold flex items-center gap-1.5 bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-800/40">
               <CheckCircle2 size={15} /> Safe Window for Exits: 4.5 Hours
@@ -137,40 +160,40 @@ export default function PlanMyLayoverPage() {
         </div>
       </section>
 
-      {/* SERVICE MARKETPLACE CAROUSEL */}
-      <section className="bg-white border-b border-slate-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          <h2 className="text-xl font-bold text-slate-900">Explore Service Categories</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            <Link href="/hotels" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-[#0369a1] hover:bg-sky-50 transition group">
-              <Hotel className="w-6 h-6 text-[#0369a1] mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">Transit Hotels</span>
+      {/* SERVICE MARKETPLACE CAROUSEL CHIPS */}
+      <section className="bg-white border-b border-slate-200 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+          <h2 className="text-lg font-bold text-slate-900">Explore Micro-Services</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            <Link href="/hotels" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-[#0369a1] hover:bg-sky-50 transition group">
+              <Hotel className="w-5 h-5 text-[#0369a1] mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Hotels</span>
             </Link>
-            <Link href="/restaurants" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-orange-500 hover:bg-orange-50 transition group">
-              <Utensils className="w-6 h-6 text-orange-600 mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">Transit Dining</span>
+            <Link href="/restaurants" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-orange-500 hover:bg-orange-50 transition group">
+              <Utensils className="w-5 h-5 text-orange-600 mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Dining</span>
             </Link>
-            <Link href="/spa-wellness" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-purple-500 hover:bg-purple-50 transition group">
-              <Clock className="w-6 h-6 text-purple-600 mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">Spa & Wellness</span>
+            <Link href="/spa-wellness" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-purple-500 hover:bg-purple-50 transition group">
+              <Sparkles className="w-5 h-5 text-purple-600 mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Spa</span>
             </Link>
-            <Link href="/gaming-entertainment" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-fuchsia-500 hover:bg-fuchsia-50 transition group">
-              <Plane className="w-6 h-6 text-fuchsia-600 mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">Gaming Lounges</span>
+            <Link href="/gaming-entertainment" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-fuchsia-500 hover:bg-fuchsia-50 transition group">
+              <Gamepad2 className="w-5 h-5 text-fuchsia-600 mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Gaming</span>
             </Link>
-            <Link href="/experiences" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-rose-500 hover:bg-rose-50 transition group">
-              <Compass className="w-6 h-6 text-rose-600 mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">City Tours</span>
+            <Link href="/experiences" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-rose-500 hover:bg-rose-50 transition group">
+              <Compass className="w-5 h-5 text-rose-600 mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Tours</span>
             </Link>
-            <Link href="/airport-transfers" className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center hover:border-slate-800 hover:bg-slate-100 transition group">
-              <Car className="w-6 h-6 text-slate-800 mx-auto mb-1 group-hover:scale-110 transition" />
-              <span className="text-xs font-bold text-slate-900 block">Airport Cabs</span>
+            <Link href="/airport-transfers" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center hover:border-slate-800 hover:bg-slate-100 transition group">
+              <Car className="w-5 h-5 text-slate-800 mx-auto mb-1 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-900 block">Cabs</span>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* BUILDER WORKSPACE */}
+      {/* MAIN PLANNER WORKSPACE */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -287,14 +310,208 @@ export default function PlanMyLayoverPage() {
                 </div>
               </div>
 
+              {/* Step 4: Add Experiences with Tab Switcher */}
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-sky-100 text-[#0369a1] font-bold flex items-center justify-center text-xs">4</span>
+                    <h2 className="text-lg font-bold text-slate-900">Add Experiences (Optional)</h2>
+                  </div>
+
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setExpTab('tours')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        expTab === 'tours' ? 'bg-white text-[#0369a1] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Tours
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpTab('spa')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        expTab === 'spa' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Spa & Wellness
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpTab('gaming')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        expTab === 'gaming' ? 'bg-white text-fuchsia-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Gaming
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content: Tours */}
+                {expTab === 'tours' && (
+                  <div className="space-y-3">
+                    {TOURS_DATA.map((t) => (
+                      <label
+                        key={t.id}
+                        onClick={() => setSelectedTourId(selectedTourId === t.id ? null : t.id)}
+                        className={`border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition ${
+                          selectedTourId === t.id ? 'border-rose-500 bg-rose-50/50' : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" checked={selectedTourId === t.id} readOnly className="text-rose-600 rounded" />
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
+                            <p className="text-xs text-slate-500">⭐ {t.rating} | ⏱️ {t.duration} ({t.safeWindow})</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-extrabold text-slate-900">{t.price}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tab Content: Spa */}
+                {expTab === 'spa' && (
+                  <div className="space-y-3">
+                    {SPAS_DATA.map((s) => (
+                      <label
+                        key={s.id}
+                        onClick={() => setSelectedSpaId(selectedSpaId === s.id ? null : s.id)}
+                        className={`border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition ${
+                          selectedSpaId === s.id ? 'border-purple-500 bg-purple-50/50' : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" checked={selectedSpaId === s.id} readOnly className="text-purple-600 rounded" />
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">{s.name}</h4>
+                            <p className="text-xs text-slate-500">⭐ {s.rating} | {s.treatment}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-extrabold text-[#0369a1]">{s.price}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tab Content: Gaming */}
+                {expTab === 'gaming' && (
+                  <div className="space-y-3">
+                    {GAMING_DATA.map((g) => (
+                      <label
+                        key={g.id}
+                        onClick={() => setSelectedGamingId(selectedGamingId === g.id ? null : g.id)}
+                        className={`border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition ${
+                          selectedGamingId === g.id ? 'border-fuchsia-500 bg-fuchsia-50/50' : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" checked={selectedGamingId === g.id} readOnly className="text-fuchsia-600 rounded" />
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">{g.name}</h4>
+                            <p className="text-xs text-slate-500">⭐ {g.rating} | {g.location}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-extrabold text-slate-900">{g.price}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 5: Passenger Registration */}
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-sky-100 text-[#0369a1] font-bold flex items-center justify-center text-xs">5</span>
+                    <h2 className="text-lg font-bold text-slate-900">Review & Passenger Registration</h2>
+                  </div>
+                  <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">Instant Sync</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Lead Passenger Name</label>
+                    <input
+                      type="text"
+                      value={leadPassengerName}
+                      onChange={(e) => setLeadPassengerName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-900 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Passport / ID Number</label>
+                    <input
+                      type="text"
+                      value={passportNumber}
+                      onChange={(e) => setPassportNumber(e.target.value)}
+                      placeholder="e.g. A29883910"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-900 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Incoming Flight Number</label>
+                    <input
+                      type="text"
+                      value={flightIn}
+                      onChange={(e) => setFlightIn(e.target.value)}
+                      placeholder="e.g. AI 102"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-900 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Emergency Contact</label>
+                    <input
+                      type="text"
+                      value={emergencyContact}
+                      onChange={(e) => setEmergencyContact(e.target.value)}
+                      placeholder="+1-xxx-xxx-xxxx"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-900 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs text-slate-700 space-y-1.5">
+                  <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <ShieldCheck size={16} className="text-emerald-600" /> LayoverX Delay Protection & Visa Guarantee Included
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-slate-600">
+                    <li>Free reschedule if your incoming flight is delayed.</li>
+                    <li>Full refund on activities if immigration queue exceeds 2 hours.</li>
+                    <li>Chauffeur pickup scheduled automatically for 30 minutes after actual landing time.</li>
+                  </ul>
+                </div>
+
+                <Link
+                  href="/my-itinerary"
+                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2"
+                >
+                  🚀 Proceed to Secure Checkout <ArrowRight size={16} />
+                </Link>
+              </div>
+
             </div>
 
-            {/* SUMMARY SIDEBAR */}
+            {/* RIGHT SIDEBAR SUMMARY */}
             <div className="lg:col-span-4 space-y-6">
+              
+              {/* Summary Card */}
               <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-lg sticky top-40 space-y-6">
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3">
-                  Trip Summary & Estimate
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                    Booking Summary
+                  </h3>
+                  <span className="bg-sky-50 text-[#0369a1] text-xs font-bold px-2.5 py-0.5 rounded-full border border-sky-100">
+                    {travelers} Guests
+                  </span>
+                </div>
 
                 <div className="space-y-3 text-xs sm:text-sm text-slate-700">
                   <div className="flex justify-between items-center">
@@ -315,6 +532,27 @@ export default function PlanMyLayoverPage() {
                       <strong>{diningObj.avgCost}</strong>
                     </div>
                   )}
+
+                  {tourObj && (
+                    <div className="flex justify-between items-center text-rose-800 font-medium">
+                      <span className="truncate max-w-[180px]">{tourObj.name}:</span>
+                      <strong>{tourObj.price}</strong>
+                    </div>
+                  )}
+
+                  {spaObj && (
+                    <div className="flex justify-between items-center text-purple-800 font-medium">
+                      <span className="truncate max-w-[180px]">{spaObj.name}:</span>
+                      <strong>{spaObj.price}</strong>
+                    </div>
+                  )}
+
+                  {gamingObj && (
+                    <div className="flex justify-between items-center text-fuchsia-800 font-medium">
+                      <span className="truncate max-w-[180px]">{gamingObj.name}:</span>
+                      <strong>{gamingObj.price}</strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-100 pt-4 flex justify-between items-baseline">
@@ -322,13 +560,16 @@ export default function PlanMyLayoverPage() {
                   <span className="text-2xl sm:text-3xl font-black text-[#0369a1]">₹{totalPrice.toLocaleString()}</span>
                 </div>
 
-                <Link
-                  href="/my-itinerary"
-                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md text-center flex items-center justify-center gap-2"
-                >
-                  Save & Checkout Itinerary <ArrowRight size={16} />
-                </Link>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button className="py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5">
+                    <Bookmark size={14} /> Save Draft
+                  </button>
+                  <button className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition flex items-center justify-center gap-1.5">
+                    <Share2 size={14} /> Share Plan
+                  </button>
+                </div>
               </div>
+
             </div>
 
           </div>
