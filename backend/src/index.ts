@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import layoverRouter from './routes/layover.js';
+import servicesRouter from './routes/services.js';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/v1/layover', layoverRouter);
+app.use('/api/v1/services', servicesRouter);
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {
