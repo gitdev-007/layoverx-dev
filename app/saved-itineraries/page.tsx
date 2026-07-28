@@ -1,39 +1,77 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Heart, Plane, ArrowRight } from 'lucide-react';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Saved Layover Plans | LayoverX',
-  description: 'View your saved stopover templates and itineraries.',
-  alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/saved-itineraries',
-  },
-};
+import React from 'react';
+import Link from 'next/link';
+import { Bookmark, Plus, ArrowRight } from 'lucide-react';
 
 export default function SavedItinerariesPage() {
   return (
-    <div className="min-h-screen pb-20 space-y-8 p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div>
-          <span className="text-xs font-bold text-sky-400 uppercase">Saved Plans</span>
-          <h1 className="text-2xl font-extrabold text-white">Saved Layover Itineraries</h1>
+    <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
+      
+      {/* SAVED PLANS HERO */}
+      <section className="relative bg-slate-900 text-white pt-24 pb-16 overflow-hidden border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Saved Itineraries</h1>
+              <p className="text-sm text-sky-200">Manage and reload your saved transit plans</p>
+            </div>
+            <Link
+              href="/plan-my-layover"
+              className="px-5 py-3 bg-[#0284C7] hover:bg-[#027ab1] text-white text-xs font-bold rounded-xl shadow-lg transition"
+            >
+              ＋ Plan New Stopover
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-slate-800/80 border border-slate-700/60 p-6 rounded-3xl space-y-3">
-          <span className="text-xs font-bold text-sky-400">Template 01</span>
-          <h3 className="text-lg font-bold text-white">6-Hour South Mumbai Express Sightseeing</h3>
-          <p className="text-xs text-slate-400">Gateway of India + Bandra Sea Link chauffeured tour.</p>
-          <Link
-            href="/my-itinerary"
-            className="inline-flex items-center gap-1 text-xs font-bold text-sky-400 hover:underline pt-2"
-          >
-            Load Plan <ArrowRight size={13} />
-          </Link>
+      {/* MAIN CONTENT */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* Left Sidebar Navigation */}
+            <aside className="md:col-span-1 space-y-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Navigation</h2>
+                <nav className="flex flex-col gap-1 text-sm font-semibold">
+                  <Link href="/my-profile" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
+                    👤 Profile Details
+                  </Link>
+                  <Link href="/my-trips" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
+                    ✈️ My Trips
+                  </Link>
+                  <Link href="/saved-itineraries" className="flex items-center gap-2 px-3 py-2.5 bg-sky-50 text-[#0284C7] rounded-xl font-bold transition">
+                    💾 Saved Plans
+                  </Link>
+                  <Link href="/account-settings" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
+                    ⚙️ Settings
+                  </Link>
+                </nav>
+              </div>
+            </aside>
+
+            {/* Center Saved Itineraries List */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 space-y-3 shadow-sm">
+                <p className="font-bold text-lg text-slate-900">No saved itineraries found</p>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Configure timings and select custom day rooms, spas, or tours in the planner to save plans.
+                </p>
+                <Link
+                  href="/plan-my-layover"
+                  className="mt-2 inline-block px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition shadow"
+                >
+                  Open AI Planner
+                </Link>
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
+      </section>
+
     </div>
   );
 }
