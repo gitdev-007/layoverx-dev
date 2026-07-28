@@ -15,11 +15,22 @@
     --text-secondary: #64748B;
   }
 
+  html {
+    font-size: 16px;
+  }
+
   body {
     background-color: #F8FAFC;
     color: #0F172A;
     font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
+  }
+
+  p {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.6;
   }
 }
 
@@ -28,7 +39,7 @@
   color: #ffffff;
 }
 
-/* Category Page Hero Gradients matching source site */
+/* Category Page Hero Gradients */
 .theme-hotels-hero {
   background: linear-gradient(to bottom right, #0f172a, #1e293b);
 }
