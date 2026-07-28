@@ -20,7 +20,7 @@ export async function sendNtfyAlert(bookingData: NtfyBookingAlert): Promise<void
     await fetch(ntfyUrl, {
       method: 'POST',
       headers: {
-        'Title': '🚨 NEW LAYOVERX CONCIERGE BOOKING!',
+        'Title': 'NEW LAYOVERX CONCIERGE BOOKING',
         'Priority': 'high',
         'Tags': 'rotating_light,airplane',
       },
