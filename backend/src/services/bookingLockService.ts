@@ -53,6 +53,40 @@ export interface ReleaseSlotResult {
   statusCode: number;
 }
 
+export interface CreateOrderInput {
+  slotId: string;
+  serviceId: string;
+  userId: string;
+  amount: number;
+}
+
+export interface CreateOrderResult {
+  success: boolean;
+  message?: string;
+  bookingId?: string;
+  order?: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    status: string;
+  };
+  statusCode: number;
+}
+
+export interface ConfirmBookingInput {
+  bookingId: string;
+  slotId: string;
+  userId: string;
+  paymentId: string;
+}
+
+export interface ConfirmBookingResult {
+  success: boolean;
+  message: string;
+  bookingId?: string;
+  statusCode: number;
+}
+
 export async function verifyServiceAndSlotExistence(
   serviceId?: string,
   slotId?: string
@@ -119,7 +153,6 @@ export async function verifyServiceAndSlotExistence(
 export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
   const { serviceId, slotId, userId } = input;
 
-  // 1. Verify existence of serviceId & slotId
   const verification = await verifyServiceAndSlotExistence(serviceId, slotId);
   if (!verification.valid) {
     return {
@@ -136,7 +169,6 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
 
   if (redis) {
     try {
-      // Attempt Upstash Redis set with nx (only if not exists) and ex (TTL in seconds)
       const res = await redis.set(lockKey, userId, { nx: true, ex: ttlSeconds });
 
       if (!res) {
@@ -197,7 +229,6 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
 export async function releaseSlot(input: ReleaseSlotInput): Promise<ReleaseSlotResult> {
   const { slotId, userId } = input;
 
-  // 1. Verify existence of slotId
   const verification = await verifyServiceAndSlotExistence(undefined, slotId);
   if (!verification.valid) {
     return {
@@ -208,7 +239,6 @@ export async function releaseSlot(input: ReleaseSlotInput): Promise<ReleaseSlotR
   }
 
   const lockKey = `lock:slot:${slotId}`;
-
   const redis = getRedisClient();
 
   if (redis) {
@@ -273,5 +303,115 @@ export async function releaseSlot(input: ReleaseSlotInput): Promise<ReleaseSlotR
     success: true,
     statusCode: 200,
     message: 'Slot released successfully.',
+  };
+}
+
+export async function createBookingOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+  const { slotId, serviceId, userId, amount } = input;
+  const lockKey = `lock:slot:${slotId}`;
+
+  // 1. Verify that Redis lock exists and belongs to this userId
+  let isLockedByUser = false;
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const lockHolder = await redis.get<string>(lockKey);
+      if (lockHolder === userId) {
+        isLockedByUser = true;
+      }
+    } catch (err) {
+      console.warn('⚠️ Redis check lock failed in createBookingOrder, falling back to in-memory check:', err);
+    }
+  }
+
+  if (!isLockedByUser) {
+    const memoryLock = inMemoryLocks.get(lockKey);
+    if (memoryLock && memoryLock.expiresAt > Date.now() && memoryLock.userId === userId) {
+      isLockedByUser = true;
+    }
+  }
+
+  if (!isLockedByUser) {
+    return {
+      success: false,
+      statusCode: 400,
+      message: 'Slot lock expired or not held by user',
+    };
+  }
+
+  // 2. Generate mock payment order
+  const orderId = `ord_${Date.now()}`;
+  const bookingId = `bk_${Date.now()}`;
+  const order = {
+    orderId,
+    amount,
+    currency: 'INR',
+    status: 'created',
+  };
+
+  // 3. Save initial booking entry into Supabase with payment_status = 'PENDING'
+  if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+    try {
+      await supabase.from('bookings').insert([
+        {
+          id: bookingId,
+          service_id: serviceId,
+          slot_id: slotId,
+          user_id: userId,
+          amount,
+          payment_status: 'PENDING',
+          order_id: orderId,
+        },
+      ]);
+    } catch (err) {
+      console.warn('⚠️ Supabase bookings insert warning (proceeding with order response):', err);
+    }
+  }
+
+  return {
+    success: true,
+    statusCode: 200,
+    bookingId,
+    order,
+  };
+}
+
+export async function confirmBooking(input: ConfirmBookingInput): Promise<ConfirmBookingResult> {
+  const { bookingId, slotId, userId, paymentId } = input;
+  const lockKey = `lock:slot:${slotId}`;
+
+  // 1. Update Supabase booking record: payment_status = 'CONFIRMED' & payment_id = paymentId
+  if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+    try {
+      await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'CONFIRMED',
+          payment_id: paymentId,
+        })
+        .eq('id', bookingId);
+    } catch (err) {
+      console.warn('⚠️ Supabase confirm booking update warning:', err);
+    }
+  }
+
+  // 2. Delete temporary Redis lock so slot is no longer temporarily held
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.del(lockKey);
+    } catch (err) {
+      console.warn('⚠️ Redis delete lock failed on confirm:', err);
+    }
+  }
+
+  inMemoryLocks.delete(lockKey);
+
+  return {
+    success: true,
+    statusCode: 200,
+    message: 'Booking confirmed successfully!',
+    bookingId,
   };
 }

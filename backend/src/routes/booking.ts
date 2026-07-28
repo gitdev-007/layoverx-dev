@@ -1,5 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { holdSlot, releaseSlot } from '../services/bookingLockService.js';
+import {
+  holdSlot,
+  releaseSlot,
+  createBookingOrder,
+  confirmBooking,
+} from '../services/bookingLockService.js';
 
 const router = Router();
 
@@ -87,6 +92,78 @@ router.post(['/release-slot', '/api/v1/booking/release-slot'], async (req: Reque
     res.status(500).json({
       status: 'error',
       message: error.message || 'Internal server error while releasing slot',
+    });
+  }
+});
+
+// POST /api/v1/booking/create-order
+router.post(['/create-order', '/api/v1/booking/create-order'], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { slotId, serviceId, userId, amount } = req.body || {};
+
+    if (!slotId || !serviceId || !userId || amount === undefined || amount === null) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Missing required body fields: slotId, serviceId, userId, amount',
+      });
+      return;
+    }
+
+    const result = await createBookingOrder({ slotId, serviceId, userId, amount: Number(amount) });
+
+    if (!result.success) {
+      res.status(result.statusCode).json({
+        status: 'error',
+        message: result.message,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      bookingId: result.bookingId,
+      order: result.order,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal server error while creating order',
+    });
+  }
+});
+
+// POST /api/v1/booking/confirm
+router.post(['/confirm', '/api/v1/booking/confirm'], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bookingId, slotId, userId, paymentId } = req.body || {};
+
+    if (!bookingId || !slotId || !userId || !paymentId) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Missing required body fields: bookingId, slotId, userId, paymentId',
+      });
+      return;
+    }
+
+    const result = await confirmBooking({ bookingId, slotId, userId, paymentId });
+
+    if (!result.success) {
+      res.status(result.statusCode).json({
+        status: 'error',
+        message: result.message,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+      bookingId: result.bookingId,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal server error while confirming booking',
     });
   }
 });
