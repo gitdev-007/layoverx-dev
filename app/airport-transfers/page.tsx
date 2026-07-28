@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CABS_DATA, FAQS_DATA } from '@/data/layover-data';
+import { TRANSFERS_DATA, FAQS_DATA } from '@/data/layover-data';
 import { Car, MapPin, ShieldCheck, ChevronDown, CheckCircle2, Star } from 'lucide-react';
 
 export default function AirportTransfersPage() {
@@ -161,7 +161,7 @@ export default function AirportTransfersPage() {
                 Select your vehicle category. Prices shown are <strong>fixed and inclusive of toll/parking fees</strong>.
               </div>
 
-              {CABS_DATA.map((c) => (
+              {TRANSFERS_DATA.map((c) => (
                 <article
                   key={c.id}
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
