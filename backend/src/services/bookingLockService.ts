@@ -341,31 +341,42 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
   }
 
   // 2. Generate mock payment order
-  const orderId = `ord_${Date.now()}`;
-  const bookingId = `bk_${Date.now()}`;
+  const paymentOrderId = `ord_${Date.now()}`;
   const order = {
-    orderId,
+    orderId: paymentOrderId,
     amount,
     currency: 'INR',
     status: 'created',
   };
 
-  // 3. Save initial booking entry into Supabase with payment_status = 'PENDING'
+  let bookingId = `bk_${Date.now()}`;
+
+  // 3. Save initial booking entry into Supabase letting database auto-generate UUID primary key
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      await supabase.from('bookings').insert([
-        {
-          id: bookingId,
-          service_id: serviceId,
-          slot_id: slotId,
-          user_id: userId,
-          amount,
-          payment_status: 'PENDING',
-          order_id: orderId,
-        },
-      ]);
-    } catch (err) {
-      console.warn('⚠️ Supabase bookings insert warning (proceeding with order response):', err);
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            user_id: userId,
+            service_id: serviceId,
+            slot_id: slotId,
+            amount: amount,
+            currency: 'INR',
+            payment_status: 'PENDING',
+            payment_order_id: paymentOrderId,
+          },
+        ])
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('❌ Supabase bookings insert error:', error.message, error.details || '', error);
+      } else if (data && data.id) {
+        bookingId = data.id;
+      }
+    } catch (err: any) {
+      console.error('❌ Exception inserting into Supabase bookings table:', err?.message || err);
     }
   }
 
@@ -384,15 +395,19 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
   // 1. Update Supabase booking record: payment_status = 'CONFIRMED' & payment_id = paymentId
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      await supabase
+      const { error } = await supabase
         .from('bookings')
         .update({
           payment_status: 'CONFIRMED',
           payment_id: paymentId,
         })
         .eq('id', bookingId);
-    } catch (err) {
-      console.warn('⚠️ Supabase confirm booking update warning:', err);
+
+      if (error) {
+        console.error('❌ Supabase confirm booking update error:', error.message, error.details || '', error);
+      }
+    } catch (err: any) {
+      console.error('❌ Exception updating Supabase booking confirmation:', err?.message || err);
     }
   }
 
