@@ -458,13 +458,17 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
     };
   }
 
-  // 2. Dispatch Ntfy.sh concierge push notification asynchronously
-  sendNtfyAlert({
-    bookingId: updatedRecord?.id || bookingId,
-    slotId,
-    userId,
-    paymentId,
-  }).catch((err) => console.error('❌ Asynchronous Ntfy alert failed:', err));
+  // 2. Dispatch Ntfy.sh concierge push notification with explicit logging
+  try {
+    await sendNtfyAlert({
+      bookingId: updatedRecord?.id || bookingId,
+      slotId,
+      userId,
+      paymentId,
+    });
+  } catch (err: any) {
+    console.error('[NTFY ERROR] Failed during confirmBooking dispatch:', err?.message || err);
+  }
 
   // 3. REDIS CLEANUP: Delete temporary Redis lock ONLY IF database update succeeded
   const redis = getRedisClient();

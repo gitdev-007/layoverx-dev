@@ -6,39 +6,29 @@ export interface NtfyBookingAlert {
 }
 
 export async function sendNtfyAlert(bookingData: NtfyBookingAlert): Promise<void> {
+  console.log(`[NTFY] Triggering alert for booking: ${bookingData.bookingId}`);
   const ntfyUrl = process.env.NTFY_TOPIC_URL;
 
   if (!ntfyUrl) {
-    console.warn('⚠️ NTFY_TOPIC_URL is missing in process.env, skipping Ntfy alert.');
+    console.error('[NTFY ERROR] NTFY_TOPIC_URL is missing in process.env!');
     return;
   }
 
-  const messageText = `Booking ID: ${bookingData.bookingId}
-Slot ID: ${bookingData.slotId}
-User ID: ${bookingData.userId}
-Payment ID: ${bookingData.paymentId}
-Status: CONFIRMED
-
-ACTION REQUIRED: Reserve this slot on the vendor platform immediately!`;
+  const messageText = `Booking ID: ${bookingData.bookingId}\nSlot ID: ${bookingData.slotId}\nUser ID: ${bookingData.userId}\nPayment ID: ${bookingData.paymentId}\nStatus: CONFIRMED\n\nACTION REQUIRED: Reserve this slot on the vendor platform immediately!`;
 
   try {
-    const res = await fetch(ntfyUrl, {
+    await fetch(ntfyUrl, {
       method: 'POST',
       headers: {
         'Title': '🚨 NEW LAYOVERX CONCIERGE BOOKING!',
         'Priority': 'high',
         'Tags': 'rotating_light,airplane',
-        'Content-Type': 'text/plain',
       },
       body: messageText,
     });
 
-    if (res.ok) {
-      console.log(`🔔 Ntfy concierge push notification dispatched successfully for booking: ${bookingData.bookingId}`);
-    } else {
-      console.warn(`⚠️ Ntfy push notification responded with HTTP ${res.status}`);
-    }
-  } catch (err) {
-    console.error('❌ Failed to dispatch Ntfy push notification:', err);
+    console.log('[NTFY SUCCESS] Alert successfully sent to Ntfy!');
+  } catch (err: any) {
+    console.error(`[NTFY ERROR] Failed to send alert: ${err?.message || err}`);
   }
 }
