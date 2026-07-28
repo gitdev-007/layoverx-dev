@@ -3,10 +3,10 @@ import { holdSlot, releaseSlot } from '../services/bookingLockService.js';
 
 const router = Router();
 
-// POST /api/v1/booking/hold-slot
-router.post('/hold-slot', async (req: Request, res: Response): Promise<void> => {
+// POST /api/v1/booking/hold-slot (supports both mounted & root pathing)
+router.post(['/hold-slot', '/api/v1/booking/hold-slot'], async (req: Request, res: Response): Promise<void> => {
   try {
-    const { serviceId, slotId, userId } = req.body;
+    const { serviceId, slotId, userId } = req.body || {};
 
     if (!serviceId || !slotId || !userId) {
       res.status(400).json({
@@ -40,10 +40,10 @@ router.post('/hold-slot', async (req: Request, res: Response): Promise<void> => 
   }
 });
 
-// POST /api/v1/booking/release-slot
-router.post('/release-slot', async (req: Request, res: Response): Promise<void> => {
+// POST /api/v1/booking/release-slot (supports both mounted & root pathing)
+router.post(['/release-slot', '/api/v1/booking/release-slot'], async (req: Request, res: Response): Promise<void> => {
   try {
-    const { slotId, userId } = req.body;
+    const { slotId, userId } = req.body || {};
 
     if (!slotId || !userId) {
       res.status(400).json({
