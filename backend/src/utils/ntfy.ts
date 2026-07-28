@@ -17,7 +17,7 @@ export async function sendNtfyAlert(bookingData: NtfyBookingAlert): Promise<void
   const messageText = `Booking ID: ${bookingData.bookingId}\nSlot ID: ${bookingData.slotId}\nUser ID: ${bookingData.userId}\nPayment ID: ${bookingData.paymentId}\nStatus: CONFIRMED\n\nACTION REQUIRED: Reserve this slot on the vendor platform immediately!`;
 
   try {
-    await fetch(ntfyUrl, {
+    const res = await fetch(ntfyUrl, {
       method: 'POST',
       headers: {
         'Title': 'NEW LAYOVERX CONCIERGE BOOKING',
@@ -27,7 +27,13 @@ export async function sendNtfyAlert(bookingData: NtfyBookingAlert): Promise<void
       body: messageText,
     });
 
-    console.log('[NTFY SUCCESS] Alert successfully sent to Ntfy!');
+    const responseText = await res.text();
+
+    if (!res.ok) {
+      console.error(`[NTFY FAILED] HTTP ${res.status}: ${responseText}`);
+    } else {
+      console.log(`[NTFY SUCCESS] Delivered! Ntfy Response: ${responseText}`);
+    }
   } catch (err: any) {
     console.error(`[NTFY ERROR] Failed to send alert: ${err?.message || err}`);
   }
