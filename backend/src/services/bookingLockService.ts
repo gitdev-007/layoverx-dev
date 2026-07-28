@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { getRedisClient } from '../utils/redis.js';
-import { sendNtfyAlert } from '../utils/ntfy.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -458,19 +457,7 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
     };
   }
 
-  // 2. Dispatch Ntfy.sh concierge push notification with explicit logging
-  try {
-    await sendNtfyAlert({
-      bookingId: updatedRecord?.id || bookingId,
-      slotId,
-      userId,
-      paymentId,
-    });
-  } catch (err: any) {
-    console.error('[NTFY ERROR] Failed during confirmBooking dispatch:', err?.message || err);
-  }
-
-  // 3. REDIS CLEANUP: Delete temporary Redis lock ONLY IF database update succeeded
+  // 2. REDIS CLEANUP: Delete temporary Redis lock ONLY IF database update succeeded
   const redis = getRedisClient();
   if (redis) {
     try {
