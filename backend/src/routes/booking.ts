@@ -158,7 +158,7 @@ router.post(['/confirm', '/api/v1/booking/confirm'], async (req: Request, res: R
     res.status(200).json({
       status: 'success',
       message: result.message,
-      bookingId: result.bookingId,
+      data: result.data,
     });
   } catch (error: any) {
     res.status(500).json({

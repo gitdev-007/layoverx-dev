@@ -84,6 +84,7 @@ export interface ConfirmBookingResult {
   success: boolean;
   message: string;
   bookingId?: string;
+  data?: any;
   statusCode: number;
 }
 
@@ -321,7 +322,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
         isLockedByUser = true;
       }
     } catch (err) {
-      console.warn('⚠️ Redis check lock failed in createBookingOrder, falling back to in-memory check:', err);
+      console.warn('⚠️ Redis check lock failed in createBookingOrder, checking in-memory lock:', err);
     }
   }
 
@@ -351,7 +352,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
 
   let bookingId = `bk_${Date.now()}`;
 
-  // 3. Save initial booking entry into Supabase letting database auto-generate UUID primary key
+  // 3. Save initial booking entry into Supabase with payment_status = 'PENDING'
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
       const { data, error } = await supabase
@@ -372,11 +373,23 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
 
       if (error) {
         console.error('❌ Supabase bookings insert error:', error.message, error.details || '', error);
-      } else if (data && data.id) {
+        return {
+          success: false,
+          statusCode: 500,
+          message: `Database error on order creation: ${error.message || JSON.stringify(error)}`,
+        };
+      }
+
+      if (data && data.id) {
         bookingId = data.id;
       }
     } catch (err: any) {
       console.error('❌ Exception inserting into Supabase bookings table:', err?.message || err);
+      return {
+        success: false,
+        statusCode: 500,
+        message: `Database connection error: ${err?.message || String(err)}`,
+      };
     }
   }
 
@@ -392,26 +405,59 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
   const { bookingId, slotId, userId, paymentId } = input;
   const lockKey = `lock:slot:${slotId}`;
 
-  // 1. Update Supabase booking record: payment_status = 'CONFIRMED' & payment_id = paymentId
+  let updatedRecord: any = null;
+
+  // 1. Perform atomic UPDATE query on Supabase 'bookings' table
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
         .update({
           payment_status: 'CONFIRMED',
           payment_id: paymentId,
         })
-        .eq('id', bookingId);
+        .or(`id.eq.${bookingId},payment_order_id.eq.${bookingId}`)
+        .select();
 
       if (error) {
         console.error('❌ Supabase confirm booking update error:', error.message, error.details || '', error);
+        return {
+          success: false,
+          statusCode: 500,
+          message: `Database error on confirm: ${error.message || JSON.stringify(error)}`,
+        };
       }
+
+      if (!data || data.length === 0) {
+        return {
+          success: false,
+          statusCode: 404,
+          message: 'Booking record not found or update failed in database.',
+        };
+      }
+
+      updatedRecord = data[0];
     } catch (err: any) {
       console.error('❌ Exception updating Supabase booking confirmation:', err?.message || err);
+      return {
+        success: false,
+        statusCode: 500,
+        message: `Database connection error: ${err?.message || String(err)}`,
+      };
     }
+  } else {
+    // Mock / Test fallback mode when DB is placeholder
+    updatedRecord = {
+      id: bookingId,
+      slot_id: slotId,
+      user_id: userId,
+      payment_status: 'CONFIRMED',
+      payment_id: paymentId,
+      updated_at: new Date().toISOString(),
+    };
   }
 
-  // 2. Delete temporary Redis lock so slot is no longer temporarily held
+  // 2. REDIS CLEANUP: Delete temporary Redis lock ONLY IF database update succeeded
   const redis = getRedisClient();
   if (redis) {
     try {
@@ -427,6 +473,7 @@ export async function confirmBooking(input: ConfirmBookingInput): Promise<Confir
     success: true,
     statusCode: 200,
     message: 'Booking confirmed successfully!',
-    bookingId,
+    bookingId: updatedRecord?.id || bookingId,
+    data: updatedRecord,
   };
 }
