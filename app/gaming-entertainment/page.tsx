@@ -152,7 +152,7 @@ export default function GamingEntertainmentPage() {
                   <div className="relative w-full md:w-80 h-52 md:h-auto flex-shrink-0">
                     <Image src={g.image} alt={g.name} fill className="object-cover" />
                     <span className="absolute top-4 left-4 bg-fuchsia-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-                      🎮 {g.category.toUpperCase()}
+                      🎮 {(g.category || 'gaming').toUpperCase()}
                     </span>
                   </div>
 

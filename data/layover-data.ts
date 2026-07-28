@@ -52,6 +52,7 @@ export interface Spa {
 export interface GamingLounge {
   id: string;
   name: string;
+  category?: string;
   location: string;
   distance: string;
   rating: number;
@@ -312,6 +313,7 @@ export const GAMING_DATA: GamingLounge[] = [
   {
     id: 'g1',
     name: 'Adani Executive Lounge & Esports Arena',
+    category: 'gaming',
     location: 'Terminal 2 Departures',
     distance: '0 km (Inside T2)',
     rating: 4.7,
@@ -325,6 +327,7 @@ export const GAMING_DATA: GamingLounge[] = [
   {
     id: 'g2',
     name: 'Smaaash VR & Arcade Zone',
+    category: 'gaming',
     location: 'Phoenix Marketcity (12 Mins from T2)',
     distance: '4.5 km from CSMIA',
     rating: 4.8,
