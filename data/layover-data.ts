@@ -36,6 +36,7 @@ export interface Restaurant {
 export interface Spa {
   id: string;
   name: string;
+  category?: string;
   location: string;
   distance: string;
   rating: number;
@@ -265,6 +266,7 @@ export const SPAS_DATA: Spa[] = [
   {
     id: 's1',
     name: 'O2 Spa — CSMIA Terminal 2',
+    category: 'express',
     location: 'Inside T2 Security (Gate 68)',
     distance: '0 km (Inside T2)',
     rating: 4.8,
@@ -280,6 +282,7 @@ export const SPAS_DATA: Spa[] = [
   {
     id: 's2',
     name: 'Quan Spa — JW Marriott Sahar',
+    category: 'full-day',
     location: 'Sahar, 3 Mins from Airport T2',
     distance: '1.2 km from T2',
     rating: 4.9,
@@ -295,6 +298,7 @@ export const SPAS_DATA: Spa[] = [
   {
     id: 's3',
     name: 'Jiva Spa — Taj Santacruz',
+    category: 'massage',
     location: 'Near Domestic Terminal 1',
     distance: '0.5 km from T1',
     rating: 4.8,
