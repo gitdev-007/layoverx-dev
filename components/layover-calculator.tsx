@@ -10,7 +10,6 @@ export const LayoverCalculator: React.FC = () => {
   const [departure, setDeparture] = useState('2026-07-28T16:00');
   const [guests, setGuests] = useState('1');
 
-  // Calculation Logic
   const getCalculatedTime = () => {
     if (!arrival || !departure) return null;
     const arrDate = new Date(arrival);
@@ -46,13 +45,13 @@ export const LayoverCalculator: React.FC = () => {
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
         <div>
           <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-sky-600" /> Layover Safety & Usable Time Calculator
+            <Clock className="w-5 h-5 text-[#0369a1]" /> Layover Safety & Usable Time Calculator
           </h3>
           <p className="text-xs text-slate-500 mt-1">
             Includes mandatory 2.5-hour airport security, immigration, and transit buffer.
           </p>
         </div>
-        <span className="hidden sm:inline-flex bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1 rounded-full border border-sky-200">
+        <span className="hidden sm:inline-flex bg-sky-50 text-[#0369a1] text-xs font-bold px-3 py-1 rounded-full border border-sky-100">
           AeroAPI Buffer Active
         </span>
       </div>
@@ -60,12 +59,12 @@ export const LayoverCalculator: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
-            <MapPin size={13} className="text-sky-600" /> Terminal
+            <MapPin size={13} className="text-[#0369a1]" /> Terminal
           </label>
           <select
             value={terminal}
             onChange={(e) => setTerminal(e.target.value)}
-            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
           >
             <option value="CSMIA Terminal 2">CSMIA Terminal 2 (International)</option>
             <option value="CSMIA Terminal 1">CSMIA Terminal 1 (Domestic)</option>
@@ -74,36 +73,36 @@ export const LayoverCalculator: React.FC = () => {
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
-            <Clock size={13} className="text-sky-600" /> Arrival Time
+            <Clock size={13} className="text-[#0369a1]" /> Arrival Time
           </label>
           <input
             type="datetime-local"
             value={arrival}
             onChange={(e) => setArrival(e.target.value)}
-            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
-            <Clock size={13} className="text-sky-600" /> Departure Time
+            <Clock size={13} className="text-[#0369a1]" /> Departure Time
           </label>
           <input
             type="datetime-local"
             value={departure}
             onChange={(e) => setDeparture(e.target.value)}
-            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
-            <Users size={13} className="text-sky-600" /> Guests
+            <Users size={13} className="text-[#0369a1]" /> Guests
           </label>
           <select
             value={guests}
             onChange={(e) => setGuests(e.target.value)}
-            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
           >
             <option value="1">1 Passenger</option>
             <option value="2">2 Passengers</option>
@@ -114,15 +113,15 @@ export const LayoverCalculator: React.FC = () => {
       </div>
 
       {calc && (
-        <div className="mb-6 p-4 rounded-2xl border transition-all bg-sky-50/60 border-sky-200 text-slate-900">
+        <div className="mb-6 p-4 rounded-2xl border transition-all bg-sky-50 border-sky-100 text-slate-900">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 Calculated Layover
               </span>
-              <div className="text-lg font-extrabold text-slate-900 mt-0.5">
-                Calculated Layover: <span className="text-sky-700">{calc.totalFormatted}</span>{' '}
-                <span className="text-sm font-bold text-slate-700">({calc.usableH}h usable time)</span>
+              <div className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">
+                Calculated Layover: <span className="text-[#0369a1]">{calc.totalFormatted}</span>{' '}
+                <span className="text-xs sm:text-sm font-bold text-slate-700">({calc.usableH}h usable time)</span>
               </div>
             </div>
 
@@ -151,7 +150,7 @@ export const LayoverCalculator: React.FC = () => {
 
         <Link
           href="/plan-my-layover"
-          className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-6 py-3 bg-[#0369a1] hover:bg-[#075985] text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2"
         >
           Explore Verified Layover Experiences <ArrowRight size={16} />
         </Link>

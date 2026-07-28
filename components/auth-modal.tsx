@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth, AuthMode } from '@/context/auth-context';
-import { X, Mail, Lock, User, Plane, ShieldCheck } from 'lucide-react';
+import { X, Mail, Lock, User, Plane } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AuthModal: React.FC = () => {
@@ -38,7 +38,7 @@ export const AuthModal: React.FC = () => {
           className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
         >
           {/* Top Header Banner */}
-          <div className="bg-slate-900 px-6 py-6 text-white relative">
+          <div className="bg-[#0F172A] px-6 py-6 text-white relative">
             <button
               onClick={closeAuthModal}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition"
@@ -46,7 +46,7 @@ export const AuthModal: React.FC = () => {
               <X size={20} />
             </button>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 bg-sky-500 rounded-lg flex items-center justify-center text-white">
+              <div className="w-7 h-7 bg-[#0369a1] rounded-lg flex items-center justify-center text-white">
                 <Plane size={16} />
               </div>
               <span className="font-extrabold tracking-tight text-white text-lg">LayoverX Pass</span>
@@ -80,7 +80,7 @@ export const AuthModal: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Doe"
-                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
                       />
                     </div>
                   </div>
@@ -96,7 +96,7 @@ export const AuthModal: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="traveler@layoverx.com"
-                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
                     />
                   </div>
                 </div>
@@ -109,7 +109,7 @@ export const AuthModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openAuthModal('reset-password')}
-                          className="text-xs font-bold text-sky-600 hover:underline"
+                          className="text-xs font-bold text-[#0369a1] hover:underline"
                         >
                           Forgot?
                         </button>
@@ -123,7 +123,7 @@ export const AuthModal: React.FC = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0369a1]"
                       />
                     </div>
                   </div>
@@ -131,7 +131,7 @@ export const AuthModal: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-sky-600/20"
+                  className="w-full py-3 bg-[#0369a1] hover:bg-[#075985] text-white font-bold rounded-xl text-sm transition-all shadow-md"
                 >
                   {authModalMode === 'login' && 'Sign In to Account'}
                   {authModalMode === 'signup' && 'Create Account'}
@@ -147,7 +147,7 @@ export const AuthModal: React.FC = () => {
                   Don't have an account?{' '}
                   <button
                     onClick={() => openAuthModal('signup')}
-                    className="font-bold text-sky-600 hover:underline"
+                    className="font-bold text-[#0369a1] hover:underline"
                   >
                     Sign Up Free
                   </button>
@@ -158,7 +158,7 @@ export const AuthModal: React.FC = () => {
                   Already have an account?{' '}
                   <button
                     onClick={() => openAuthModal('login')}
-                    className="font-bold text-sky-600 hover:underline"
+                    className="font-bold text-[#0369a1] hover:underline"
                   >
                     Log In
                   </button>
@@ -169,7 +169,7 @@ export const AuthModal: React.FC = () => {
                   Remembered your password?{' '}
                   <button
                     onClick={() => openAuthModal('login')}
-                    className="font-bold text-sky-600 hover:underline"
+                    className="font-bold text-[#0369a1] hover:underline"
                   >
                     Back to Log In
                   </button>

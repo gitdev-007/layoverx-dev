@@ -32,12 +32,12 @@ export default function HowItWorksPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-20 space-y-12">
+    <div className="min-h-screen pb-20 space-y-12 bg-slate-50">
       {/* Page Hero */}
-      <section className="bg-slate-900 border-b border-slate-800 py-16">
+      <section className="bg-slate-900 text-white py-16 mb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-bold">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-bold">
               <ShieldCheck size={14} /> How LayoverX Works
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white">
@@ -56,11 +56,11 @@ export default function HowItWorksPage() {
           {steps.map((s, idx) => (
             <div
               key={idx}
-              className="bg-slate-800/80 border border-slate-700/60 p-8 rounded-3xl text-center space-y-3 shadow-xl hover:border-sky-500/40 transition"
+              className="bg-white border border-slate-200 p-8 rounded-3xl text-center space-y-3 shadow-sm hover:shadow-xl transition"
             >
-              <span className="text-4xl font-extrabold text-sky-400 block">{s.num}</span>
-              <h3 className="text-xl font-bold text-white">{s.title}</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">{s.desc}</p>
+              <span className="text-4xl font-extrabold text-[#0369a1] block mb-2">{s.num}</span>
+              <h3 className="text-xl font-bold text-[#0F172A]">{s.title}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -68,17 +68,17 @@ export default function HowItWorksPage() {
 
       {/* Transit Visa & Exit FAQs */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-800/80 border border-slate-700/60 rounded-3xl p-8 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
-            <HelpCircle className="w-6 h-6 text-sky-400" />
-            <h2 className="text-2xl font-extrabold text-white">Airport Exit & Visa FAQ</h2>
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <HelpCircle className="w-6 h-6 text-[#0369a1]" />
+            <h2 className="text-2xl font-extrabold text-[#0F172A]">Airport Exit & Visa FAQ</h2>
           </div>
 
-          <div className="space-y-4 divide-y divide-slate-700/60">
+          <div className="space-y-4 divide-y divide-slate-100">
             {FAQS_DATA.map((faq, idx) => (
               <div key={idx} className={`${idx !== 0 ? 'pt-4' : ''}`}>
-                <h3 className="text-sm font-bold text-white mb-1.5">{faq.question}</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">{faq.answer}</p>
+                <h3 className="text-sm font-bold text-[#0F172A] mb-1.5">{faq.question}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>

@@ -3,18 +3,61 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary: #0369a1;
+    --primary-dark: #075985;
+    --primary-light: #7dd3fc;
+    --secondary: #0F172A;
+    --surface: #F8FAFC;
+    --surface-elevated: #FFFFFF;
+    --border: #e2e8f0;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+  }
+
   body {
-    @apply bg-slate-900 text-slate-100 font-sans antialiased;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 .theme-hero {
-  background: radial-gradient(circle at 50% 20%, rgba(14, 165, 233, 0.15), transparent 70%),
-    linear-gradient(to bottom, #0f172a, #1e293b);
+  background: linear-gradient(to bottom right, #0f172a, #1e293b);
+  color: #ffffff;
 }
 
-.glass-card {
-  @apply bg-slate-800/80 backdrop-blur-md border border-slate-700/60 shadow-xl;
+/* Category Page Hero Gradients matching source site */
+.theme-hotels-hero {
+  background: linear-gradient(to bottom right, #0f172a, #1e293b);
+}
+.theme-restaurants-hero {
+  background: linear-gradient(to bottom right, #7c2d12, #450a0a);
+}
+.theme-spa-hero {
+  background: linear-gradient(to bottom right, #2e1065, #1e1b4b);
+}
+.theme-gaming-hero {
+  background: linear-gradient(to bottom right, #4a044e, #1e1b4b);
+}
+.theme-tours-hero {
+  background: linear-gradient(to bottom right, #881337, #4c0519);
+}
+.theme-transfers-hero {
+  background: linear-gradient(to bottom right, #0f172a, #334155);
+}
+
+.card-light {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-light:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
 }
 
 /* Custom scrollbars */
@@ -22,12 +65,12 @@
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e9;
+  background: #0369a1;
 }

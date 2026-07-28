@@ -14,9 +14,9 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://layoverx-dev.vercel.app'),
-  title: 'LayoverX — Mumbai CSMIA Airport Transit Experiences & Micro-Stays',
+  title: 'Mumbai Travel & Layover Experience Platform | LayoverX',
   description:
-    'Transform your Mumbai CSMIA airport stopover with flexible hourly transit hotel pods, airport lounge passes, authentic dining, express spas, and guaranteed city tours.',
+    'Discover luxury transit hotels, authentic restaurants, spas, local city tours, and airport transfers near CSM International Airport Mumbai. Plan your perfect stopover.',
   keywords: [
     'Mumbai Airport Transit Hotel',
     'CSMIA Hourly Hotels',
@@ -53,7 +53,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${jakarta.variable} scroll-smooth`}>
-      <body className="font-sans bg-slate-900 text-slate-100 antialiased selection:bg-sky-500 selection:text-white min-h-screen flex flex-col">
+      <body className="font-sans bg-[#F8FAFC] text-[#0F172A] antialiased selection:bg-[#0369a1] selection:text-white min-h-screen flex flex-col pt-16">
         <AuthProvider>
           <Navbar />
           <main className="flex-grow">{children}</main>
