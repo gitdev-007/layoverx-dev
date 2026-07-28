@@ -66,6 +66,7 @@ export interface GamingLounge {
 export interface Tour {
   id: string;
   name: string;
+  category?: string;
   duration: string;
   safeWindow: string;
   rating: number;
@@ -340,6 +341,7 @@ export const TOURS_DATA: Tour[] = [
   {
     id: 't1',
     name: 'Mumbai Highlights Express Private Tour',
+    category: 'sightseeing',
     duration: '5 Hours',
     safeWindow: '6+ Hr Layover Required',
     rating: 4.9,
@@ -353,6 +355,7 @@ export const TOURS_DATA: Tour[] = [
   {
     id: 't2',
     name: 'Bandra Heritage & Street Food Crawl',
+    category: 'food',
     duration: '4 Hours',
     safeWindow: '5+ Hr Layover Required',
     rating: 4.8,
@@ -366,6 +369,7 @@ export const TOURS_DATA: Tour[] = [
   {
     id: 't3',
     name: 'South Mumbai Heritage & Elephanta Caves',
+    category: 'culture',
     duration: '8 Hours',
     safeWindow: '9+ Hr Layover Required',
     rating: 4.9,
