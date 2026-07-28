@@ -32,10 +32,41 @@ app.use('/api/v1/layover', layoverRouter);
 app.use('/api/v1/services', servicesRouter);
 app.use('/api/v1/booking', bookingRouter);
 
+// Startup helper to log all registered Express routes
+function printRoutes(app: Express) {
+  console.log('\n📌 Registered Express Routes:');
+  
+  const logRoutes = (stack: any[], prefix = '') => {
+    stack.forEach((layer) => {
+      if (layer.route) {
+        const methods = Object.keys(layer.route.methods)
+          .map((m) => m.toUpperCase())
+          .join(', ');
+        const path = Array.isArray(layer.route.path) ? layer.route.path.join(' | ') : layer.route.path;
+        console.log(`  Registered: ${methods} ${prefix}${path}`);
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        let routePrefix = prefix;
+        if (layer.regexp && layer.regexp.source) {
+          const match = layer.regexp.source.match(/^\^\\?\/([^\\]*)/);
+          if (match && match[1]) {
+            routePrefix += '/' + match[1].replace(/\\\//g, '/');
+          }
+        }
+        logRoutes(layer.handle.stack, routePrefix);
+      }
+    });
+  };
+
+  if (app._router && app._router.stack) {
+    logRoutes(app._router.stack);
+  }
+}
+
 // Start server
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`🚀 LayoverX Backend running on port ${PORT}`);
+    printRoutes(app);
   });
 }
 
