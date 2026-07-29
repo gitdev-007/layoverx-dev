@@ -162,7 +162,13 @@ export default function SpaWellnessPage() {
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
                 >
                   <div className="relative w-full md:w-80 h-52 md:h-auto flex-shrink-0">
-                    <Image src={s.image} alt={s.name} fill className="object-cover" />
+                    <Image 
+                      src={s.image} 
+                      alt={s.name} 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, 320px"
+                      className="object-cover" 
+                    />
                     <span className="absolute top-4 left-4 bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
                       💆 {(s.category || 'massage').toUpperCase()}
                     </span>

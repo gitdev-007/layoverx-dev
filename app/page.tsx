@@ -150,6 +150,7 @@ export default function HomePage() {
                       src={cat.image}
                       alt={cat.title}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
@@ -216,7 +217,13 @@ export default function HomePage() {
               >
                 <div>
                   <div className="relative h-48 w-full">
-                    <Image src={h.image} alt={h.name} fill className="object-cover" />
+                    <Image 
+                      src={h.image} 
+                      alt={h.name} 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover" 
+                    />
                     <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-bold text-slate-900 flex items-center gap-1 shadow-md border border-slate-200">
                       <Star size={13} className="text-amber-500 fill-amber-500" /> {h.rating} ({h.reviews})
                     </div>

@@ -230,6 +230,27 @@ export default function ConfirmationPage() {
               </button>
             </form>
 
+            {/* Skeleton Loading Card */}
+            {trackingLoading && (
+              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 animate-pulse">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-900">
+                  <div className="h-3 w-20 bg-slate-800 rounded"></div>
+                  <div className="h-3 w-16 bg-slate-800 rounded"></div>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-900">
+                  <div className="h-3 w-12 bg-slate-800 rounded"></div>
+                  <div className="h-3 w-10 bg-slate-800 rounded"></div>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-900">
+                  <div className="h-3 w-24 bg-slate-800 rounded"></div>
+                  <div className="h-3 w-12 bg-slate-800 rounded"></div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="h-3 w-24 bg-slate-800 rounded mx-auto"></div>
+                </div>
+              </div>
+            )}
+
             {/* Error Overlay */}
             {trackingError && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-center gap-2">
