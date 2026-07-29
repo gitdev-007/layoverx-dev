@@ -168,10 +168,17 @@ export default function ConfirmationPage() {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col gap-2">
+              <button 
+                onClick={() => window.print()}
+                type="button"
+                className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 print:hidden"
+              >
+                🖨️ Export / Print Pass
+              </button>
               <Link 
                 href="/" 
-                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700"
+                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700 print:hidden"
               >
                 <Home size={14} /> Back to Homepage
               </Link>
