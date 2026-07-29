@@ -248,7 +248,11 @@ export default function PlanMyLayoverPage() {
       router.push('/my-itinerary');
     } catch (err: any) {
       console.warn('[Checkout Hold Error]', err);
-      setValidationError(err.message || '⚠️ This slot is currently held or booked by another traveler. Please choose another time slot.');
+      let errMsg = err.message || 'This slot is currently held or booked by another traveler. Please select another time slot.';
+      if (errMsg.startsWith('⚠️ ')) {
+        errMsg = errMsg.replace('⚠️ ', '');
+      }
+      setValidationError(errMsg);
     } finally {
       setIsHolding(false);
     }
@@ -601,7 +605,7 @@ export default function PlanMyLayoverPage() {
 
                 <div className="space-y-4">
                   {hotelsList.slice(0, 2).map((h) => (
-                    <label
+                    <div
                       key={h.id}
                       onClick={() => setSelectedHotelId(selectedHotelId === h.id ? null : h.id)}
                       className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
@@ -609,7 +613,7 @@ export default function PlanMyLayoverPage() {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <input type="checkbox" checked={selectedHotelId === h.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4" />
+                        <input type="checkbox" checked={selectedHotelId === h.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
                         <div>
                           <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
                             {h.name}
@@ -623,7 +627,7 @@ export default function PlanMyLayoverPage() {
                       <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
                         <strong className="text-sky-700 text-sm block">{h.price6h} <span className="text-gray-700 text-xs font-normal">/6h</span></strong>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -640,7 +644,7 @@ export default function PlanMyLayoverPage() {
 
                 <div className="space-y-4">
                   {diningList.slice(0, 2).map((r) => (
-                    <label
+                    <div
                       key={r.id}
                       onClick={() => setSelectedDiningId(selectedDiningId === r.id ? null : r.id)}
                       className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
@@ -648,7 +652,7 @@ export default function PlanMyLayoverPage() {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <input type="checkbox" checked={selectedDiningId === r.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4" />
+                        <input type="checkbox" checked={selectedDiningId === r.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
                         <div>
                           <h3 className="font-bold text-gray-800 text-sm">{r.name}</h3>
                           <p className="text-gray-700 text-xs mt-0.5">⭐ {r.rating} | {r.location}. {r.description}</p>
@@ -657,7 +661,7 @@ export default function PlanMyLayoverPage() {
                       <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
                         <strong className="text-sky-700 text-sm block">{r.avgCost} <span className="text-gray-700 text-xs font-normal">for 2</span></strong>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -705,7 +709,7 @@ export default function PlanMyLayoverPage() {
                 {expTab === 'tours' && (
                   <div className="space-y-4">
                     {toursList.slice(0, 2).map((t) => (
-                      <label
+                      <div
                         key={t.id}
                         onClick={() => setSelectedTourId(selectedTourId === t.id ? null : t.id)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
@@ -713,7 +717,7 @@ export default function PlanMyLayoverPage() {
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedTourId === t.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4" />
+                          <input type="checkbox" checked={selectedTourId === t.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
                           <div>
                             <h3 className="font-bold text-gray-800 text-sm">{t.name}</h3>
                             <p className="text-gray-700 text-xs mt-0.5">⭐ {t.rating} | ⏱️ {t.duration} duration. {t.highlights.join(', ')}</p>
@@ -722,7 +726,7 @@ export default function PlanMyLayoverPage() {
                         <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
                           <strong className="text-sky-700 text-sm block">{t.price} <span className="text-gray-700 text-xs font-normal">/ traveler</span></strong>
                         </div>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -731,7 +735,7 @@ export default function PlanMyLayoverPage() {
                 {expTab === 'spa' && (
                   <div className="space-y-4">
                     {spasList.slice(0, 2).map((s) => (
-                      <label
+                      <div
                         key={s.id}
                         onClick={() => setSelectedSpaId(selectedSpaId === s.id ? null : s.id)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
@@ -739,7 +743,7 @@ export default function PlanMyLayoverPage() {
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedSpaId === s.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4" />
+                          <input type="checkbox" checked={selectedSpaId === s.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
                           <div>
                             <h3 className="font-bold text-gray-800 text-sm">{s.name}</h3>
                             <p className="text-gray-700 text-xs mt-0.5">⭐ {s.rating} | {s.treatment}. ({s.duration})</p>
@@ -748,7 +752,7 @@ export default function PlanMyLayoverPage() {
                         <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
                           <strong className="text-sky-700 text-sm block">{s.price} <span className="text-gray-700 text-xs font-normal">/ session</span></strong>
                         </div>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -757,7 +761,7 @@ export default function PlanMyLayoverPage() {
                 {expTab === 'gaming' && (
                   <div className="space-y-4">
                     {gamingList.slice(0, 2).map((g) => (
-                      <label
+                      <div
                         key={g.id}
                         onClick={() => setSelectedGamingId(selectedGamingId === g.id ? null : g.id)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
@@ -765,7 +769,7 @@ export default function PlanMyLayoverPage() {
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedGamingId === g.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4" />
+                          <input type="checkbox" checked={selectedGamingId === g.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
                           <div>
                             <h3 className="font-bold text-gray-800 text-sm">{g.name}</h3>
                             <p className="text-gray-700 text-xs mt-0.5">⭐ {g.rating} | {g.description}</p>
@@ -774,7 +778,7 @@ export default function PlanMyLayoverPage() {
                         <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
                           <strong className="text-sky-700 text-sm block">{g.price} <span className="text-gray-700 text-xs font-normal">/ person</span></strong>
                         </div>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 )}
