@@ -78,72 +78,82 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
   let slotProtectionApplied = false;
 
   // 3. Automated Delay Protection & Slot Shift
-  if (bookingId && SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-    try {
-      // Find current booking info
-      const { data: booking, error: fetchError } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', bookingId)
-        .maybeSingle();
+  if (bookingId) {
+    if (status === 'DELAYED') {
+      if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+        try {
+          // Find current booking info
+          const { data: booking, error: fetchError } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', bookingId)
+            .maybeSingle();
 
-      if (fetchError) {
-        console.error('❌ Supabase fetch error in flight track:', fetchError.message);
-      } else if (booking) {
-        // Prepare updates
-        const updates: any = {
-          flight_number: flightNumber,
-          flight_status: status,
-          delay_minutes: delayMinutes,
-        };
+          if (fetchError) {
+            console.error('❌ Supabase fetch error in flight track:', fetchError.message);
+          } else if (booking) {
+            // Allow slot protection for bookings with payment_status = 'HELD' OR payment_status = 'CONFIRMED'
+            const isEligible = booking.payment_status === 'HELD' || booking.payment_status === 'CONFIRMED';
+            if (isEligible) {
+              // Prepare updates
+              const updates: any = {
+                flight_number: flightNumber,
+                flight_status: status,
+                delay_minutes: delayMinutes,
+              };
 
-        // If there's an active hold_expires_at, extend it. Check if column exists, else proceed.
-        if (booking.hold_expires_at) {
-          const currentExpiry = new Date(booking.hold_expires_at).getTime();
-          const extendedExpiry = new Date(currentExpiry + delayMinutes * 60 * 1000).toISOString();
-          updates.hold_expires_at = extendedExpiry;
-        }
-
-        // Apply updates
-        const { error: updateError } = await supabase
-          .from('bookings')
-          .update(updates)
-          .eq('id', bookingId);
-
-        if (updateError) {
-          console.error('❌ Supabase update error in flight track:', updateError.message);
-        } else {
-          slotProtectionApplied = true;
-
-          if (status === 'DELAYED') {
-            // Trigger Discord alert for delay protection
-            const discordMessage = `⚠️ **FLIGHT DELAY DETECTED!** Flight **${flightNumber}** delayed by **${delayMinutes}** mins. Booking **${bookingId}** slot window automatically shifted.`;
-            
-            // Re-use Discord webhook helper but with custom Ops message
-            const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-            if (webhookUrl && !webhookUrl.includes('your_webhook_id')) {
-              try {
-                await fetch(webhookUrl, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    content: discordMessage,
-                  }),
-                });
-                console.log('[FLIGHT SERVICE] Discord alert sent successfully.');
-              } catch (discordErr) {
-                console.error('[FLIGHT SERVICE] Failed to send Discord alert:', discordErr);
+              // If there's an active hold_expires_at, extend it. Check if column exists, else proceed.
+              if (booking.hold_expires_at) {
+                const currentExpiry = new Date(booking.hold_expires_at).getTime();
+                const extendedExpiry = new Date(currentExpiry + delayMinutes * 60 * 1000).toISOString();
+                updates.hold_expires_at = extendedExpiry;
               }
-            } else {
-              console.warn('[FLIGHT SERVICE] DISCORD_WEBHOOK_URL missing, skipping alert.');
+
+              // Apply updates
+              const { error: updateError } = await supabase
+                .from('bookings')
+                .update(updates)
+                .eq('id', bookingId);
+
+              if (updateError) {
+                console.error('❌ Supabase update error in flight track:', updateError.message);
+              } else {
+                slotProtectionApplied = true;
+              }
             }
           }
+        } catch (err: any) {
+          console.error('❌ Exception in flight delay protection flow:', err?.message || err);
+        }
+      } else {
+        // Fallback for local testing / mock mode
+        slotProtectionApplied = true;
+      }
+
+      // If slot protection was applied, dispatch Discord alert to ops channel
+      if (slotProtectionApplied) {
+        const discordMessage = `⚠️ FLIGHT DELAY DETECTED! Flight ${flightNumber} delayed by ${delayMinutes} mins. Booking ${bookingId} slot window automatically shifted.`;
+        
+        const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+        if (webhookUrl && !webhookUrl.includes('your_webhook_id')) {
+          try {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                content: discordMessage,
+              }),
+            });
+            console.log('[FLIGHT SERVICE] Discord alert sent successfully.');
+          } catch (discordErr) {
+            console.error('[FLIGHT SERVICE] Failed to send Discord alert:', discordErr);
+          }
+        } else {
+          console.warn('[FLIGHT SERVICE] DISCORD_WEBHOOK_URL missing, skipping alert.');
         }
       }
-    } catch (err: any) {
-      console.error('❌ Exception in flight delay protection flow:', err?.message || err);
     }
   }
 
