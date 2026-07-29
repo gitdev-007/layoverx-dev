@@ -39,6 +39,7 @@ router.post(['/hold-slot', '/api/v1/booking/hold-slot'], async (req: Request, re
       serviceId: result.serviceId,
       paymentStatus: 'HELD',
       expiresAt: new Date(Date.now() + (result.holdExpiresInSeconds || 600) * 1000).toISOString(),
+      redemptionToken: result.redemptionToken,
     });
   } catch (error: any) {
     if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
@@ -175,25 +176,84 @@ router.post(['/confirm', '/api/v1/booking/confirm'], async (req: Request, res: R
   }
 });
 
-router.get('/schema-debug', async (req: Request, res: Response) => {
+router.get(['/verify/:token', '/api/v1/booking/verify/:token'], async (req: Request, res: Response): Promise<void> => {
   try {
+    const { token } = req.params;
+    if (!token) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Token parameter is required',
+      });
+      return;
+    }
+
     const SUPABASE_URL = process.env.SUPABASE_URL || '';
     const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-    const { createClient } = await import('@supabase/supabase-js');
-    const db = createClient(
-      SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
-      SUPABASE_ANON_KEY || 'placeholder'
-    );
-    const { data, error } = await db.from('bookings').select('*').limit(1);
-    if (error) {
-      res.status(500).json({ error: error.message });
-    } else if (data && data.length > 0) {
-      res.status(200).json({ columns: Object.keys(data[0]) });
-    } else {
-      res.status(200).json({ message: 'No records found' });
+
+    // Mock mode check
+    if (!SUPABASE_URL.startsWith('http') || SUPABASE_URL.includes('sample-project')) {
+      let mockStatus = 'VALID';
+      if (token === 'LX-EXPIRED') mockStatus = 'EXPIRED';
+      else if (token === 'LX-REDEEMED') mockStatus = 'REDEEMED';
+
+      res.status(200).json({
+        status: 'success',
+        token,
+        voucherStatus: mockStatus,
+      });
+      return;
     }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const { data: booking, error } = await db
+      .from('bookings')
+      .select('payment_status, created_at')
+      .eq('vendor_ref_code', token)
+      .maybeSingle();
+
+    if (error) {
+      res.status(500).json({
+        status: 'error',
+        message: `Database verification query failed: ${error.message}`,
+      });
+      return;
+    }
+
+    if (!booking) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Voucher redemption token not found',
+      });
+      return;
+    }
+
+    let voucherStatus: 'VALID' | 'REDEEMED' | 'EXPIRED' = 'VALID';
+    const status = booking.payment_status;
+
+    if (status === 'CONFIRMED') {
+      voucherStatus = 'VALID';
+    } else if (status === 'REDEEMED') {
+      voucherStatus = 'REDEEMED';
+    } else if (status === 'EXPIRED' || status === 'CANCELLED' || status === 'CANCELLED_FLIGHT_DELAY') {
+      voucherStatus = 'EXPIRED';
+    } else if (status === 'HELD' || status === 'PENDING') {
+      const createdTime = new Date(booking.created_at).getTime();
+      const isExpired = Date.now() - createdTime > 10 * 60 * 1000;
+      voucherStatus = isExpired ? 'EXPIRED' : 'VALID';
+    }
+
+    res.status(200).json({
+      status: 'success',
+      token,
+      voucherStatus,
+    });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      status: 'error',
+      message: err.message || 'Internal server error while verifying voucher',
+    });
   }
 });
 

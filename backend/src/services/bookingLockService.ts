@@ -21,6 +21,15 @@ function toValidUUID(str: string): string {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}`;
 }
 
+export function generateRedemptionToken(): string {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let token = 'LX-';
+  for (let i = 0; i < 4; i++) {
+    token += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return token;
+}
+
 const KNOWN_SAMPLE_SERVICE_IDS = new Set([
   'srv-pod-01',
   'srv-hotel-02',
@@ -56,6 +65,7 @@ export interface HoldSlotResult {
   bookingId?: string;
   slotId?: string;
   serviceId?: string;
+  redemptionToken?: string;
 }
 
 export interface ReleaseSlotInput {
@@ -296,6 +306,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
 
   // 3. Record the lock in Supabase 'bookings' table with payment_status = 'HELD' for 10 minutes
   let bookingId = `bk_${Date.now()}`;
+  const redemptionToken = generateRedemptionToken();
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
       const { data, error } = await supabase
@@ -308,6 +319,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
             amount: 0,
             currency: 'INR',
             payment_status: 'HELD',
+            vendor_ref_code: redemptionToken,
           },
         ])
         .select('id')
@@ -344,6 +356,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
     serviceId,
     holdExpiresInSeconds: ttlSeconds,
     lockKey,
+    redemptionToken,
   };
 }
 
@@ -543,6 +556,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
           .single();
       } else {
         // Fallback insert if DB record wasn't found but lock was in Redis/Memory
+        const fallbackToken = generateRedemptionToken();
         result = await supabase
           .from('bookings')
           .insert([
@@ -554,6 +568,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
               currency: razorpayCurrency,
               payment_status: 'PENDING',
               payment_order_id: razorpayOrderId,
+              vendor_ref_code: fallbackToken,
             },
           ])
           .select('id')

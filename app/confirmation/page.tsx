@@ -18,10 +18,12 @@ import { trackFlight } from '@/lib/api';
 interface BookingData {
   bookingId: string;
   leadPassengerName: string;
+  passportNumber: string;
   flightIn: string;
   arrivalTime: string;
   departureTime: string;
   totalPrice: number;
+  redemptionToken: string;
 }
 
 export default function ConfirmationPage() {
@@ -169,10 +171,12 @@ export default function ConfirmationPage() {
         setBooking({
           bookingId: draft.bookingId || `bk_${Math.floor(100000 + Math.random() * 900000)}`,
           leadPassengerName: draft.leadPassengerName || 'Guest Traveler',
+          passportNumber: draft.passportNumber || 'L892401',
           flightIn: draft.flightIn || 'EK-504',
           arrivalTime: draft.arrivalTime || new Date().toISOString(),
           departureTime: draft.departureTime || new Date().toISOString(),
           totalPrice: draft.totalPrice || 4798,
+          redemptionToken: draft.redemptionToken || draft.vendorRefCode || draft.vendor_ref_code || 'LX-7842',
         });
         setFlightNumber(draft.flightIn || 'EK-504');
         setFlightDate(new Date(draft.arrivalTime || Date.now()).toISOString().split('T')[0]);
@@ -288,6 +292,46 @@ export default function ConfirmationPage() {
               </div>
             </div>
 
+            {/* Passenger QR Access Pass & Voucher */}
+            <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4 text-center">
+              <div className="text-xs font-bold uppercase tracking-widest text-sky-400">CSMIA T2 Transit Voucher</div>
+              
+              <div className="flex justify-center p-2 bg-white rounded-xl max-w-[170px] mx-auto">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(booking.bookingId + '|' + booking.redemptionToken)}`} 
+                  alt="Dynamic Redemption QR Code" 
+                  className="w-full aspect-square animate-pulse"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Redemption Token</div>
+                <div className="text-lg font-mono font-black text-white bg-slate-900 border border-slate-800 py-1 px-3 rounded-lg inline-block">
+                  {booking.redemptionToken}
+                </div>
+              </div>
+
+              <div className="text-left text-xs space-y-2 border-t border-slate-900 pt-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Lead Passenger:</span>
+                  <span className="font-semibold text-white">{booking.leadPassengerName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Passport / ID:</span>
+                  <span className="font-semibold text-white font-mono">{booking.passportNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Redemption Window:</span>
+                  <span className="font-semibold text-white">
+                    {new Date(booking.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(booking.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <div className="border-t border-slate-900 pt-2 text-[11px] text-slate-300 font-medium text-center">
+                  📍 **Meeting Spot:** CSMIA Terminal 2 Arrivals Desk - Exit Gate 2
+                </div>
+              </div>
+            </div>
+
             {/* Total Stay Elapsed Progress Indicator */}
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
               <div className="flex justify-between items-center text-slate-300">
@@ -350,7 +394,7 @@ export default function ConfirmationPage() {
                 type="button"
                 className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 print:hidden"
               >
-                🖨️ Export / Print Pass
+                🎟️ Download Pass / Print Voucher
               </button>
               <button 
                 onClick={handleDownloadTicketSlip}

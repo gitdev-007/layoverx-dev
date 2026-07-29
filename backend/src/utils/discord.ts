@@ -3,7 +3,13 @@ export interface DiscordBookingAlert {
   slotId: string;
   userId: string;
   paymentId: string;
-  serviceName?: string;
+  leadPassengerName?: string;
+  passportId?: string;
+  flightNumber?: string;
+  flightDate?: string;
+  serviceNames?: string;
+  redemptionToken?: string;
+  calculatedPickupTime?: string;
 }
 
 export async function sendDiscordAlert(bookingData: DiscordBookingAlert): Promise<void> {
@@ -14,21 +20,26 @@ export async function sendDiscordAlert(bookingData: DiscordBookingAlert): Promis
     return;
   }
 
-  const serviceName = bookingData.serviceName || 'Niranta Airport Transit Hotel';
+  const leadName = bookingData.leadPassengerName || 'Alex Traveler';
+  const passport = bookingData.passportId || 'L892401';
+  const flightNum = bookingData.flightNumber || 'EK-504';
+  const flightDt = bookingData.flightDate || new Date().toISOString().split('T')[0];
+  const services = bookingData.serviceNames || 'Niranta Airport Transit Hotel';
+  const token = bookingData.redemptionToken || 'LX-7842';
+  const pickupTime = bookingData.calculatedPickupTime || '15:00';
+
   const payload = {
-    content: `🟢 NEW BOOKING CONFIRMED!\nBooking ID: ${bookingData.bookingId}\nService: ${serviceName}\nPayment Status: CONFIRMED`,
+    content: `--------------------------------------------------\n✈️ CSMIA T2 GROUND OPS DISPATCH ALERT\n--------------------------------------------------\n• Passenger Name: ${leadName}\n• Passport / ID: ${passport}\n• Incoming Flight: ${flightNum} (${flightDt})\n• Services Booked: ${services}\n• Redemption Token: ${token}\n• Chauffeur Pickup Window: ${pickupTime} (Landing + 30m Buffer)\n• Designated Spot: CSMIA T2 Exit Gate 2 Concierge\n--------------------------------------------------`,
     embeds: [
       {
-        title: 'Booking Details',
+        title: 'Operations Summary Details',
         color: 5814783,
         fields: [
           { name: 'Booking ID', value: String(bookingData.bookingId), inline: true },
           { name: 'Slot ID', value: String(bookingData.slotId), inline: true },
           { name: 'User ID', value: String(bookingData.userId), inline: true },
           { name: 'Payment ID', value: String(bookingData.paymentId), inline: true },
-          { name: 'Status', value: 'CONFIRMED', inline: true },
         ],
-        description: '⚡ **ACTION REQUIRED:** Open vendor platform and manually reserve this slot now!',
       },
     ],
   };

@@ -84,12 +84,23 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
         const slotId = updatedBooking?.slot_id || paymentEntity?.notes?.slotId || 'slot_webhook';
         const userId = updatedBooking?.user_id || paymentEntity?.notes?.userId || 'usr_webhook';
 
+        const notes = paymentEntity?.notes || {};
+        const redemptionToken = updatedBooking?.vendor_ref_code || notes.redemptionToken || 'LX-7842';
+        const calculatedPickupTime = calculatePickupTime(notes.arrivalTime || updatedBooking?.arrival_time);
+
         // b. Trigger the Discord notification ping to your ops channel
         sendDiscordAlert({
           bookingId,
           slotId,
           userId,
           paymentId: razorpayPaymentId,
+          leadPassengerName: notes.leadPassengerName,
+          passportId: notes.passportId,
+          flightNumber: notes.flightNumber,
+          flightDate: notes.flightDate,
+          serviceNames: notes.serviceNames || 'Niranta Airport Transit Hotel',
+          redemptionToken,
+          calculatedPickupTime,
         }).catch((err) => console.error('❌ Webhook Discord alert error:', err));
       }
     }
@@ -106,5 +117,28 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
     });
   }
 });
+
+function calculatePickupTime(arrivalTimeStr?: string): string {
+  if (!arrivalTimeStr) return '15:00';
+  if (arrivalTimeStr.includes(':')) {
+    const parts = arrivalTimeStr.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      const totalMinutes = hours * 60 + minutes + 30;
+      const newHours = Math.floor(totalMinutes / 60) % 24;
+      const newMinutes = totalMinutes % 60;
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+    }
+  }
+  try {
+    const date = new Date(arrivalTimeStr);
+    if (!isNaN(date.getTime())) {
+      const shifted = new Date(date.getTime() + 30 * 60 * 1000);
+      return shifted.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+  } catch (e) {}
+  return '15:00';
+}
 
 export default router;
