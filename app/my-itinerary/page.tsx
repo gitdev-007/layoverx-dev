@@ -342,9 +342,12 @@ export default function MyItineraryPage() {
                   </span>
                 </div>
 
-                <button className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                <Link 
+                  href="/confirmation"
+                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 text-center"
+                >
                   Proceed to Checkout &rarr;
-                </button>
+                </Link>
               </div>
 
             </div>

@@ -1,0 +1,279 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { 
+  CheckCircle2, 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Plane, 
+  ShieldCheck, 
+  AlertCircle,
+  RefreshCw,
+  Home
+} from 'lucide-react';
+
+interface BookingData {
+  bookingId: string;
+  leadPassengerName: string;
+  flightIn: string;
+  arrivalTime: string;
+  departureTime: string;
+  totalPrice: number;
+}
+
+export default function ConfirmationPage() {
+  const [booking, setBooking] = useState<BookingData | null>(null);
+  const [flightNumber, setFlightNumber] = useState('');
+  const [flightDate, setFlightDate] = useState('');
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingResult, setTrackingResult] = useState<any>(null);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Retrieve dynamic draft details from localStorage
+    const saved = localStorage.getItem('layoverx_draft');
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        setBooking({
+          bookingId: `bk_${Math.floor(100000 + Math.random() * 900000)}`,
+          leadPassengerName: draft.leadPassengerName || 'Guest Traveler',
+          flightIn: draft.flightIn || 'EK-504',
+          arrivalTime: draft.arrivalTime || new Date().toISOString(),
+          departureTime: draft.departureTime || new Date().toISOString(),
+          totalPrice: draft.totalPrice || 4798,
+        });
+        setFlightNumber(draft.flightIn || 'EK-504');
+        setFlightDate(new Date(draft.arrivalTime || Date.now()).toISOString().split('T')[0]);
+      } catch (e) {
+        console.warn('Failed to load draft details on confirmation page:', e);
+      }
+    }
+  }, []);
+
+  const handleTrackFlight = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!flightNumber.trim() || !flightDate.trim()) {
+      setTrackingError('Flight number and date are required.');
+      return;
+    }
+
+    setTrackingLoading(true);
+    setTrackingError(null);
+    setTrackingResult(null);
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBase}/api/v1/flight/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          flightNumber: flightNumber.trim(),
+          flightDate: flightDate.trim(),
+          bookingId: booking?.bookingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.status === 'error') {
+        setTrackingError(data.message || 'Failed to track flight status.');
+      } else {
+        setTrackingResult(data.flight);
+      }
+    } catch (err: any) {
+      setTrackingError('Unable to connect to flight tracking server.');
+      console.error('[FLIGHT TRACK CLIENT ERROR]', err);
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center space-y-4">
+        <AlertCircle className="w-12 h-12 text-sky-400 animate-pulse" />
+        <p className="text-sm font-semibold">Loading confirmation details...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pb-20 bg-slate-950 text-slate-100">
+      
+      {/* HEADER HERO */}
+      <section className="theme-hero py-16 text-center border-b border-slate-800">
+        <div className="max-w-4xl mx-auto px-4 space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-2">
+            <CheckCircle2 size={40} className="stroke-[2]" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            Stopover Booking Confirmed!
+          </h1>
+          <p className="text-slate-300 text-sm max-w-xl mx-auto">
+            Your booking credentials have been synchronized successfully. Check-in guidelines have been dispatched to your registered email.
+          </p>
+        </div>
+      </section>
+
+      {/* WORKSPACE DETAIL CARDS */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          
+          {/* LEFT COLUMN: Booking Metadata */}
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-3">
+              Reservation Summary
+            </h2>
+
+            <div className="space-y-4 text-xs">
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Booking ID:</span>
+                <strong className="text-white text-sm font-mono">{booking.bookingId}</strong>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Lead Passenger:</span>
+                <strong className="text-white text-sm">{booking.leadPassengerName}</strong>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Arrival Flight:</span>
+                <strong className="text-white text-sm flex items-center gap-1">
+                  <Plane size={12} className="text-sky-400" /> {booking.flightIn}
+                </strong>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Arrival Time:</span>
+                <strong className="text-white text-sm">
+                  {new Date(booking.arrivalTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                </strong>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Departure Time:</span>
+                <strong className="text-white text-sm">
+                  {new Date(booking.departureTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                </strong>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Total Price Paid:</span>
+                <strong className="text-sky-400 text-sm font-extrabold">₹{booking.totalPrice.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Link 
+                href="/" 
+                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700"
+              >
+                <Home size={14} /> Back to Homepage
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Real-time Flight Tracker Widget */}
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+            <div>
+              <h2 className="text-lg font-bold text-white">Live Flight Tracker</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Check incoming flight delays and verify active slot protection.
+              </p>
+            </div>
+
+            <form onSubmit={handleTrackFlight} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 tracking-wider">
+                  Flight Number
+                </label>
+                <input 
+                  type="text" 
+                  value={flightNumber}
+                  onChange={(e) => setFlightNumber(e.target.value)}
+                  placeholder="e.g. EK-504"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 tracking-wider">
+                  Flight Date
+                </label>
+                <input 
+                  type="date" 
+                  value={flightDate}
+                  onChange={(e) => setFlightDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={trackingLoading}
+                className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {trackingLoading ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" /> Querying API...
+                  </>
+                ) : (
+                  <>
+                    <Plane size={14} /> Track & Protect
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Error Overlay */}
+            {trackingError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-center gap-2">
+                <AlertCircle size={14} /> {trackingError}
+              </div>
+            )}
+
+            {/* Result Details */}
+            {trackingResult && (
+              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 text-xs">
+                <div className="flex justify-between border-b border-slate-800 pb-2">
+                  <span className="text-slate-400">Flight Status:</span>
+                  <span className={`font-bold ${trackingResult.status === 'DELAYED' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {trackingResult.status}
+                  </span>
+                </div>
+
+                <div className="flex justify-between border-b border-slate-800 pb-2">
+                  <span className="text-slate-400">Delay:</span>
+                  <span className="font-bold text-white">{trackingResult.delayMinutes} mins</span>
+                </div>
+
+                <div className="flex justify-between border-b border-slate-800 pb-2">
+                  <span className="text-slate-400">Original ETA:</span>
+                  <span className="font-bold text-white">{trackingResult.originalETA}</span>
+                </div>
+
+                <div className="flex justify-between border-b border-slate-800 pb-2">
+                  <span className="text-slate-400">Updated ETA:</span>
+                  <span className="font-bold text-white">{trackingResult.updatedETA}</span>
+                </div>
+
+                {trackingResult.slotProtectionApplied && (
+                  <div className="pt-2 text-emerald-400 font-bold flex items-center gap-1.5 justify-center">
+                    <ShieldCheck size={16} /> Auto Delay Protection Applied!
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </section>
+      
+    </div>
+  );
+}
