@@ -503,10 +503,15 @@ export default function ConfirmationPage() {
             {/* Result Details */}
             {trackingResult && (
               <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 text-xs">
+                {trackingResult.status === 'DELAYED' && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-xl text-center">
+                    ⚠️ Flight delay detected. Your layover slot window has been automatically shifted!
+                  </div>
+                )}
                 <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Flight Status:</span>
                   <span className={`font-bold ${trackingResult.status === 'DELAYED' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {trackingResult.status}
+                    {trackingResult.status === 'DELAYED' ? `🟡 DELAYED +${trackingResult.delayMinutes} MINS` : '🟢 ON TIME'}
                   </span>
                 </div>
 
@@ -549,7 +554,9 @@ export default function ConfirmationPage() {
               </div>
               <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <span className="text-slate-400">🏨 Transit Hotel Stay:</span>
-                <span className="font-bold text-white">3.0 Hours</span>
+                <span className="font-bold text-white">
+                  {trackingResult?.status === 'DELAYED' ? '3.0 Hours (Shifted +90m)' : '3.0 Hours'}
+                </span>
               </div>
               <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <span className="text-slate-400">🍽️ Peshawri Fine Dining:</span>
@@ -557,7 +564,9 @@ export default function ConfirmationPage() {
               </div>
               <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <span className="text-slate-400">🛡️ Terminal Buffer Allowance:</span>
-                <span className="font-bold text-sky-400">3.5 Hours</span>
+                <span className="font-bold text-sky-400">
+                  {trackingResult?.status === 'DELAYED' ? '5.0 Hours (+90m Shift Applied)' : '3.5 Hours'}
+                </span>
               </div>
             </div>
           </div>
