@@ -42,6 +42,9 @@ export interface HoldSlotResult {
   holdExpiresInSeconds?: number;
   lockKey?: string;
   statusCode: number;
+  bookingId?: string;
+  slotId?: string;
+  serviceId?: string;
 }
 
 export interface ReleaseSlotInput {
@@ -98,8 +101,6 @@ export async function verifyServiceAndSlotExistence(
   serviceId?: string,
   slotId?: string
 ): Promise<{ valid: boolean; statusCode: number; message: string }> {
-  const isProduction = process.env.NODE_ENV === 'production';
-
   // Always reject semantically invalid / placeholder IDs in every environment
   const invalidKeywords = [
     'non-existent',
@@ -133,57 +134,17 @@ export async function verifyServiceAndSlotExistence(
           .eq('id', serviceId)
           .maybeSingle();
 
-        if (svcError) {
-          // DB-level type / FK errors are always rejected
-          if (svcError.code === '23503' || svcError.code === '22P02' || svcError.code === 'PGRST116') {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          // Other DB errors: block in production, warn and continue in dev/test
-          if (isProduction) {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          console.warn(`[DEV] Service lookup DB error for "${serviceId}" — proceeding in non-production:`, svcError.message);
-        } else if (!svcData) {
-          // Record not found in Supabase
-          if (isProduction) {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          // Non-production: warn and bypass so dev/test flows are not blocked
-          console.warn(`[DEV] serviceId "${serviceId}" not found in Supabase — bypassing 404 in non-production environment.`);
+        if (svcError || !svcData) {
+          return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
         }
       }
 
+      // Slot check: DO NOT throw a 404 error if not found in slots table
       if (slotId) {
-        const { data: slotData, error: slotError } = await supabase
-          .from('slots')
-          .select('id')
-          .eq('id', slotId)
-          .maybeSingle();
-
-        if (slotError) {
-          if (slotError.code === '23503' || slotError.code === '22P02' || slotError.code === 'PGRST116') {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          if (isProduction) {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          console.warn(`[DEV] Slot lookup DB error for "${slotId}" — proceeding in non-production:`, slotError.message);
-        } else if (!slotData) {
-          if (isProduction) {
-            return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-          }
-          console.warn(`[DEV] slotId "${slotId}" not found in Supabase — bypassing 404 in non-production environment.`);
-        }
+        console.log(`[INFO] slotId "${slotId}" check: skip throwing 404 if missing from slots table.`);
       }
     } catch (err: any) {
-      // FK / UUID type errors are always rejected
-      if (err?.code === '23503' || err?.code === '22P02') {
-        return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
-      }
-      if (isProduction) {
-        return { valid: false, statusCode: 500, message: 'Internal error during ID verification.' };
-      }
-      console.warn('[DEV] Exception during ID verification — bypassing in non-production:', err?.message || err);
+      return { valid: false, statusCode: 404, message: 'The specified service or slot ID was not found.' };
     }
   }
 
@@ -205,62 +166,123 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
   const lockKey = `lock:slot:${slotId}`;
   const ttlSeconds = 600; // 10 minutes
 
-  const redis = getRedisClient();
-
-  if (redis) {
+  // 1. Maintain double-booking protection (check unexpired HELD or CONFIRMED bookings in database)
+  if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      const res = await redis.set(lockKey, userId, { nx: true, ex: ttlSeconds });
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: existingBookings, error: dbError } = await supabase
+        .from('bookings')
+        .select('id, user_id, payment_status, created_at')
+        .eq('slot_id', slotId);
 
-      if (!res) {
-        return {
-          success: false,
-          statusCode: 409,
-          message:
-            'This hourly slot is temporarily on hold by another user. Please try again in a few minutes or choose another slot.',
-        };
+      if (dbError) {
+        console.error('❌ Supabase double booking check error:', dbError.message);
+      } else if (existingBookings && existingBookings.length > 0) {
+        const hasActiveLock = existingBookings.some((b: any) => {
+          if (b.payment_status === 'CONFIRMED') {
+            return true;
+          }
+          if (b.payment_status === 'HELD' || b.payment_status === 'PENDING') {
+            const createdAtTime = new Date(b.created_at).getTime();
+            return Date.now() - createdAtTime < 10 * 60 * 1000;
+          }
+          return false;
+        });
+
+        if (hasActiveLock) {
+          return {
+            success: false,
+            statusCode: 400,
+            message: 'Slot is currently held or booked by another user',
+          };
+        }
       }
-
-      return {
-        success: true,
-        statusCode: 200,
-        message: 'Slot locked successfully for 10 minutes.',
-        holdExpiresInSeconds: ttlSeconds,
-        lockKey,
-      };
     } catch (err: any) {
-      if (err?.code === '23503' || err?.code === '22P02') {
-        return {
-          success: false,
-          statusCode: 404,
-          message: 'The specified service or slot ID was not found.',
-        };
-      }
-      console.warn('⚠️ Redis holdSlot failed, using in-memory lock fallback:', err);
+      console.error('❌ Exception in double-booking check:', err);
     }
   }
 
-  // In-Memory Fallback
-  const now = Date.now();
-  const existing = inMemoryLocks.get(lockKey);
+  // 2. Also check Redis for lock to maintain double-booking protection on memory/cache layer
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const lockHolder = await redis.get<string>(lockKey);
+      if (lockHolder && lockHolder !== userId) {
+        return {
+          success: false,
+          statusCode: 400,
+          message: 'Slot is currently held or booked by another user',
+        };
+      }
+      await redis.set(lockKey, userId, { nx: true, ex: ttlSeconds });
+    } catch (err: any) {
+      console.warn('⚠️ Redis holdSlot lock set failed:', err);
+    }
+  }
 
-  if (existing && existing.expiresAt > now && existing.userId !== userId) {
+  // In-Memory Fallback Lock Check
+  const memoryLock = inMemoryLocks.get(lockKey);
+  if (memoryLock && memoryLock.expiresAt > Date.now() && memoryLock.userId !== userId) {
     return {
       success: false,
-      statusCode: 409,
-      message:
-        'This hourly slot is temporarily on hold by another user. Please try again in a few minutes or choose another slot.',
+      statusCode: 400,
+      message: 'Slot is currently held or booked by another user',
     };
   }
 
   inMemoryLocks.set(lockKey, {
     userId,
-    expiresAt: now + ttlSeconds * 1000,
+    expiresAt: Date.now() + ttlSeconds * 1000,
   });
+
+  // 3. Record the lock in Supabase 'bookings' table with payment_status = 'HELD' for 10 minutes
+  let bookingId = `bk_${Date.now()}`;
+  if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            user_id: userId,
+            service_id: serviceId,
+            slot_id: slotId,
+            amount: 0,
+            currency: 'INR',
+            payment_status: 'HELD',
+          },
+        ])
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('❌ Supabase insert HELD booking error:', error.message);
+        return {
+          success: false,
+          statusCode: 500,
+          message: `Database error on hold creation: ${error.message}`,
+        };
+      }
+
+      if (data && data.id) {
+        bookingId = data.id;
+      }
+    } catch (err: any) {
+      console.error('❌ Exception inserting HELD booking:', err);
+      return {
+        success: false,
+        statusCode: 500,
+        message: `Database connection error: ${err?.message || String(err)}`,
+      };
+    }
+  }
 
   return {
     success: true,
     statusCode: 200,
-    message: 'Slot locked successfully for 10 minutes.',
+    message: 'Slot held successfully for 10 minutes',
+    bookingId,
+    slotId,
+    serviceId,
     holdExpiresInSeconds: ttlSeconds,
     lockKey,
   };
@@ -350,7 +372,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
   const { slotId, serviceId, userId, amount } = input;
   const lockKey = `lock:slot:${slotId}`;
 
-  // 1. Verify that Redis lock exists and belongs to this userId
+  // 1. Verify that Redis or Supabase HELD lock exists and belongs to this userId
   let isLockedByUser = false;
   const redis = getRedisClient();
 
@@ -369,6 +391,29 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
     const memoryLock = inMemoryLocks.get(lockKey);
     if (memoryLock && memoryLock.expiresAt > Date.now() && memoryLock.userId === userId) {
       isLockedByUser = true;
+    }
+  }
+
+  // Also check Supabase for active HELD lock from this user
+  let heldBookingId: string | null = null;
+  if (!isLockedByUser && SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+    try {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: dbHolds, error: dbError } = await supabase
+        .from('bookings')
+        .select('id, user_id, payment_status, created_at')
+        .eq('slot_id', slotId)
+        .eq('user_id', userId)
+        .eq('payment_status', 'HELD')
+        .gte('created_at', tenMinutesAgo)
+        .order('created_at', { ascending: false });
+
+      if (!dbError && dbHolds && dbHolds.length > 0) {
+        isLockedByUser = true;
+        heldBookingId = dbHolds[0].id;
+      }
+    } catch (err) {
+      console.warn('⚠️ Database HELD lock check warning in createBookingOrder:', err);
     }
   }
 
@@ -412,27 +457,46 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
     }
   }
 
-  // 3. Save initial booking entry into Supabase with payment_status = 'PENDING'
+  // 3. Save/Update booking entry in Supabase with payment_status = 'PENDING'
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert([
-          {
-            user_id: userId,
-            service_id: serviceId,
-            slot_id: slotId,
+      let result;
+      if (heldBookingId) {
+        // Update existing unexpired HELD booking to PENDING
+        result = await supabase
+          .from('bookings')
+          .update({
             amount: amount,
             currency: razorpayCurrency,
             payment_status: 'PENDING',
             payment_order_id: razorpayOrderId,
-          },
-        ])
-        .select('id')
-        .single();
+          })
+          .eq('id', heldBookingId)
+          .select('id')
+          .single();
+      } else {
+        // Fallback insert if DB record wasn't found but lock was in Redis/Memory
+        result = await supabase
+          .from('bookings')
+          .insert([
+            {
+              user_id: userId,
+              service_id: serviceId,
+              slot_id: slotId,
+              amount: amount,
+              currency: razorpayCurrency,
+              payment_status: 'PENDING',
+              payment_order_id: razorpayOrderId,
+            },
+          ])
+          .select('id')
+          .single();
+      }
+
+      const { data, error } = result;
 
       if (error) {
-        console.error('❌ Supabase bookings insert error:', error.message, error.details || '', error);
+        console.error('❌ Supabase bookings save error:', error.message, error.details || '', error);
         return {
           success: false,
           statusCode: 500,

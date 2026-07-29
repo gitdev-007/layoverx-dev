@@ -34,8 +34,9 @@ router.post(['/hold-slot', '/api/v1/booking/hold-slot'], async (req: Request, re
     res.status(200).json({
       status: 'success',
       message: result.message,
-      holdExpiresInSeconds: result.holdExpiresInSeconds,
-      lockKey: result.lockKey,
+      bookingId: result.bookingId,
+      slotId: result.slotId,
+      serviceId: result.serviceId,
     });
   } catch (error: any) {
     if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
