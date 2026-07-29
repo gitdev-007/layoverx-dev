@@ -271,7 +271,20 @@ export default function MyItineraryPage() {
                             </span>
                           </div>
                           <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
-                          <p className="text-xs text-slate-600">{item.detail}</p>
+                          <p className="text-xs text-slate-600 flex items-center gap-1.5 relative">
+                            {item.detail}
+                            {item.cost !== '₹0' && (
+                              <span 
+                                className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-sky-100 text-sky-700 text-[9px] font-black cursor-help relative group/tooltip" 
+                                title="Package Details Summary"
+                              >
+                                ?
+                                <span className="hidden group-hover/tooltip:block absolute left-full ml-1 bottom-full bg-slate-900 text-white text-[9px] p-1.5 rounded border border-slate-800 shadow-xl whitespace-nowrap z-50">
+                                  Includes 24/7 terminal airport shuttle & baggage assistance.
+                                </span>
+                              </span>
+                            )}
+                          </p>
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
@@ -383,6 +396,26 @@ export default function MyItineraryPage() {
                     <div className="hidden group-hover:block absolute right-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-emerald-400 whitespace-nowrap">
                       12m Chauffeur transfer distance
                     </div>
+                  </div>
+
+                  {/* Map Controls */}
+                  <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-10">
+                    <button
+                      type="button"
+                      onClick={() => alert('Map Zoomed In')}
+                      className="w-5 h-5 bg-slate-900 border border-slate-800 text-white rounded flex items-center justify-center text-[10px] hover:bg-slate-800 transition"
+                      title="Zoom In"
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => alert('Map Zoomed Out')}
+                      className="w-5 h-5 bg-slate-900 border border-slate-800 text-white rounded flex items-center justify-center text-[10px] hover:bg-slate-800 transition"
+                      title="Zoom Out"
+                    >
+                      -
+                    </button>
                   </div>
 
                   <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
