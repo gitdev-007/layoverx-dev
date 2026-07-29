@@ -10,6 +10,7 @@ import {
   FAQS_DATA,
   REVIEWS_DATA,
 } from '@/data/layover-data';
+import { fetchServices } from '@/lib/api';
 import {
   Hotel,
   Utensils,
@@ -35,7 +36,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const dynamicServices = await fetchServices();
+  const hotelPods = dynamicServices.filter(item => item.category === 'HOTEL_PODS');
+  const hotelsToRender = hotelPods && hotelPods.length > 0
+    ? hotelPods.slice(0, 3).map(item => ({
+        id: item.id,
+        name: item.name,
+        terminal: item.terminal || 'CSMIA Terminal 2',
+        rating: item.rating || 4.8,
+        reviews: item.reviews || 1200,
+        price3h: `₹${item.price || 3499}`,
+        image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+        amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
+      }))
+    : HOTELS_DATA;
   const categories = [
     {
       title: 'Transit Hotels & Pods',
@@ -212,7 +227,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {HOTELS_DATA.map((h) => (
+            {hotelsToRender.map((h) => (
               <div
                 key={h.id}
                 className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col justify-between"

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
-import { holdSlot } from '@/lib/api';
+import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
+import { holdSlot, fetchServices } from '@/lib/api';
 import {
   Plane,
   Clock,
@@ -34,6 +34,120 @@ export default function PlanMyLayoverPage() {
   const [travelers, setTravelers] = useState('2');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [isHolding, setIsHolding] = useState(false);
+
+  const [hotelsList, setHotelsList] = useState<Hotel[]>(HOTELS_DATA);
+  const [diningList, setDiningList] = useState<Restaurant[]>(RESTAURANTS_DATA);
+  const [toursList, setToursList] = useState<Tour[]>(TOURS_DATA);
+  const [spasList, setSpasList] = useState<Spa[]>(SPAS_DATA);
+  const [gamingList, setGamingList] = useState<GamingLounge[]>(GAMING_DATA);
+
+  useEffect(() => {
+    async function loadDynamicCatalog() {
+      try {
+        const data = await fetchServices();
+        if (data && data.length > 0) {
+          const hotelPods = data.filter(item => item.category === 'HOTEL_PODS');
+          if (hotelPods.length > 0) {
+            setHotelsList(hotelPods.map(item => ({
+              id: item.id,
+              slotId: item.slotId || `slot_${item.id}_101`,
+              name: item.name,
+              terminal: item.terminal || 'CSMIA Terminal 2',
+              distance: item.distance || '0 km',
+              rating: item.rating || 4.8,
+              reviews: item.reviews || 1200,
+              stars: 5,
+              price3h: `₹${item.price || 3499}`,
+              price6h: `₹${Math.round((item.price || 3499) * 1.4)}`,
+              priceFullNight: `₹${Math.round((item.price || 3499) * 1.8)}`,
+              locationCategory: 'in-terminal',
+              badge: item.badge || 'Inside T2',
+              amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
+              description: item.description || 'Hourly micro-stay transit accommodations.',
+              image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+            })));
+          }
+
+          const spas = data.filter(item => item.category === 'SPA');
+          if (spas.length > 0) {
+            setSpasList(spas.map(item => ({
+              id: item.id,
+              slotId: item.slotId || `slot_${item.id}_101`,
+              name: item.name,
+              location: item.terminal || 'Inside T2',
+              distance: item.distance || '0 km',
+              rating: item.rating || 4.8,
+              reviews: item.reviews || 230,
+              price: `₹${item.price || 1999}`,
+              duration: '45 Mins',
+              treatment: item.description || 'Express Foot Reflexology & Back Relief',
+              badge: item.badge || 'In-Terminal',
+              amenities: item.amenities || ['🚿 Hot Rain Shower', '💆 Deep Tissue', '☕ Herbal Tea'],
+              description: item.description || 'Express reflexology therapy inside Terminal 2.',
+              image: item.image || 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
+            })));
+          }
+
+          const gaming = data.filter(item => item.category === 'GAMING');
+          if (gaming.length > 0) {
+            setGamingList(gaming.map(item => ({
+              id: item.id,
+              slotId: item.slotId || `slot_${item.id}_101`,
+              name: item.name,
+              location: item.terminal || 'Terminal 2 Departures',
+              distance: item.distance || '0 km',
+              rating: item.rating || 4.7,
+              reviews: item.reviews || 140,
+              price: `₹${item.price || 1499} / 3 Hours`,
+              features: item.amenities || ['PS5 Pro Gaming Stations', 'High-Speed Fiber Wi-Fi'],
+              description: item.description || 'High-tech gaming setup.',
+              image: item.image || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+            })));
+          }
+
+          const tours = data.filter(item => item.category === 'TOURS');
+          if (tours.length > 0) {
+            setToursList(tours.map(item => ({
+              id: item.id,
+              name: item.name,
+              duration: '5 Hours',
+              safeWindow: '6+ Hr Layover Required',
+              rating: item.rating || 4.9,
+              reviews: item.reviews || 480,
+              price: `₹${item.price || 3999} per car`,
+              badge: item.badge || 'Most Popular',
+              highlights: item.amenities || ['Gateway of India', 'Taj Mahal Palace'],
+              description: item.description || 'Explore Mumbai with private air-conditioned cars.',
+              image: item.image || 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
+            })));
+          }
+
+          const dining = data.filter(item => item.category === 'DINING' || item.category === 'dining');
+          if (dining.length > 0) {
+            setDiningList(dining.map(item => ({
+              id: item.id,
+              name: item.name,
+              cuisine: 'Coastal Seafood',
+              category: 'seafood',
+              location: item.terminal || 'Vile Parle East',
+              distance: item.distance || '3.5 km',
+              rating: item.rating || 4.8,
+              reviews: item.reviews || 940,
+              avgCost: `₹${item.price || 1800}`,
+              transitTime: '15 mins taxi',
+              badge: item.badge || '🦀 Seafood',
+              amenities: item.amenities || ['🦀 Fresh Coastal', '🍷 Premium Lounge'],
+              description: item.description || 'Authentic dining near airport.',
+              image: item.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+            })));
+          }
+        }
+      } catch (err) {
+        console.warn('[PlanMyLayover] Failed to load dynamic services catalog:', err);
+      }
+    }
+    loadDynamicCatalog();
+  }, []);
 
   React.useEffect(() => {
     const now = new Date();
@@ -178,19 +292,19 @@ export default function PlanMyLayoverPage() {
 
   // Cost calculations
   const cabPrice = selectedCab === 'sedan' ? 899 : 1499;
-  const hotelObj = HOTELS_DATA.find((h) => h.id === selectedHotelId);
+  const hotelObj = hotelsList.find((h) => h.id === selectedHotelId);
   const hotelPrice = hotelObj ? parseInt(hotelObj.price6h.replace(/[^0-9]/g, '')) || 3499 : 0;
   
-  const diningObj = RESTAURANTS_DATA.find((r) => r.id === selectedDiningId);
+  const diningObj = diningList.find((r) => r.id === selectedDiningId);
   const diningPrice = diningObj ? parseInt(diningObj.avgCost.replace(/[^0-9]/g, '')) || 1800 : 0;
 
-  const tourObj = TOURS_DATA.find((t) => t.id === selectedTourId);
+  const tourObj = toursList.find((t) => t.id === selectedTourId);
   const tourPrice = tourObj ? parseInt(tourObj.price.replace(/[^0-9]/g, '')) || 2899 : 0;
 
-  const spaObj = SPAS_DATA.find((s) => s.id === selectedSpaId);
+  const spaObj = spasList.find((s) => s.id === selectedSpaId);
   const spaPrice = spaObj ? parseInt(spaObj.price.replace(/[^0-9]/g, '')) || 1800 : 0;
 
-  const gamingObj = GAMING_DATA.find((g) => g.id === selectedGamingId);
+  const gamingObj = gamingList.find((g) => g.id === selectedGamingId);
   const gamingPrice = gamingObj ? parseInt(gamingObj.price.replace(/[^0-9]/g, '')) || 1200 : 0;
 
   const totalPrice = cabPrice + hotelPrice + diningPrice + tourPrice + spaPrice + gamingPrice;
@@ -486,7 +600,7 @@ export default function PlanMyLayoverPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {HOTELS_DATA.slice(0, 2).map((h) => (
+                  {hotelsList.slice(0, 2).map((h) => (
                     <label
                       key={h.id}
                       onClick={() => setSelectedHotelId(selectedHotelId === h.id ? null : h.id)}
@@ -525,7 +639,7 @@ export default function PlanMyLayoverPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {RESTAURANTS_DATA.slice(0, 2).map((r) => (
+                  {diningList.slice(0, 2).map((r) => (
                     <label
                       key={r.id}
                       onClick={() => setSelectedDiningId(selectedDiningId === r.id ? null : r.id)}
@@ -590,7 +704,7 @@ export default function PlanMyLayoverPage() {
                 {/* Tab Content: Tours */}
                 {expTab === 'tours' && (
                   <div className="space-y-4">
-                    {TOURS_DATA.slice(0, 2).map((t) => (
+                    {toursList.slice(0, 2).map((t) => (
                       <label
                         key={t.id}
                         onClick={() => setSelectedTourId(selectedTourId === t.id ? null : t.id)}
@@ -616,7 +730,7 @@ export default function PlanMyLayoverPage() {
                 {/* Tab Content: Spa */}
                 {expTab === 'spa' && (
                   <div className="space-y-4">
-                    {SPAS_DATA.slice(0, 2).map((s) => (
+                    {spasList.slice(0, 2).map((s) => (
                       <label
                         key={s.id}
                         onClick={() => setSelectedSpaId(selectedSpaId === s.id ? null : s.id)}
@@ -642,7 +756,7 @@ export default function PlanMyLayoverPage() {
                 {/* Tab Content: Gaming */}
                 {expTab === 'gaming' && (
                   <div className="space-y-4">
-                    {GAMING_DATA.slice(0, 2).map((g) => (
+                    {gamingList.slice(0, 2).map((g) => (
                       <label
                         key={g.id}
                         onClick={() => setSelectedGamingId(selectedGamingId === g.id ? null : g.id)}
