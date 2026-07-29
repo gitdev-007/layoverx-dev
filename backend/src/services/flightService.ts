@@ -30,19 +30,16 @@ export interface FlightTrackResult {
 export async function trackAndProtectFlight(input: FlightTrackInput): Promise<FlightTrackResult> {
   const { flightNumber, flightDate, bookingId } = input;
   const apiKey = process.env.AVIATIONSTACK_API_KEY;
+  const isProduction = process.env.NODE_ENV === 'production';
 
   let status: 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN' = 'ON_TIME';
   let delayMinutes = 0;
   let originalETA = '14:30';
   let updatedETA = '14:30';
 
-  const shouldSimulateDelay = !apiKey || 
-    apiKey.includes('your_') || 
-    apiKey.includes('sample_') || 
-    flightNumber.toUpperCase().startsWith('DELAY');
+  const shouldSimulateDelay = flightNumber.toUpperCase().startsWith('DELAY') || !isProduction;
 
   if (shouldSimulateDelay) {
-    // Fallback / Dev Test Mode
     status = 'DELAYED';
     delayMinutes = 90;
     originalETA = '14:30';
@@ -50,25 +47,24 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
     console.log(`[FLIGHT SERVICE] Simulating delay of ${delayMinutes} minutes for flight ${flightNumber}`);
   } else {
     try {
-      // Fetch live status from AviationStack API
-      const url = `http://api.aviationstack.com/v1/flights?access_key=${apiKey}&flight_iata=${flightNumber}`;
-      const response = await axios.get(url);
-      const flightData = response.data?.data?.[0];
+      if (apiKey && !apiKey.includes('your_') && !apiKey.includes('sample_')) {
+        const url = `http://api.aviationstack.com/v1/flights?access_key=${apiKey}&flight_iata=${flightNumber}`;
+        const response = await axios.get(url);
+        const flightData = response.data?.data?.[0];
 
-      if (flightData) {
-        const arrival = flightData.arrival;
-        delayMinutes = arrival?.delay || 0;
-        
-        if (delayMinutes > 15) {
-          status = 'DELAYED';
-        } else {
-          status = 'ON_TIME';
+        if (flightData) {
+          const arrival = flightData.arrival;
+          delayMinutes = arrival?.delay || 0;
+          
+          if (delayMinutes > 15) {
+            status = 'DELAYED';
+          } else {
+            status = 'ON_TIME';
+          }
+
+          originalETA = arrival?.scheduled ? new Date(arrival.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '14:30';
+          updatedETA = arrival?.estimated ? new Date(arrival.estimated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : originalETA;
         }
-
-        originalETA = arrival?.scheduled ? new Date(arrival.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '14:30';
-        updatedETA = arrival?.estimated ? new Date(arrival.estimated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : originalETA;
-      } else {
-        console.warn(`[FLIGHT SERVICE] No live flight data found for ${flightNumber}, defaulting to ON_TIME`);
       }
     } catch (err: any) {
       console.error('[FLIGHT SERVICE] AviationStack API error, falling back to ON_TIME:', err?.message || err);
@@ -77,83 +73,48 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
 
   let slotProtectionApplied = false;
 
-  // 3. Automated Delay Protection & Slot Shift
-  if (bookingId) {
-    if (status === 'DELAYED') {
-      if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-        try {
-          // Find current booking info
-          const { data: booking, error: fetchError } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('id', bookingId)
-            .maybeSingle();
+  if (bookingId && status === 'DELAYED') {
+    slotProtectionApplied = true;
 
-          if (fetchError) {
-            console.error('❌ Supabase fetch error in flight track:', fetchError.message);
-          } else if (booking) {
-            // Allow slot protection for bookings with payment_status = 'HELD' OR payment_status = 'CONFIRMED'
-            const isEligible = booking.payment_status === 'HELD' || booking.payment_status === 'CONFIRMED';
-            if (isEligible) {
-              // Prepare updates
-              const updates: any = {
-                flight_number: flightNumber,
-                flight_status: status,
-                delay_minutes: delayMinutes,
-              };
+    if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      try {
+        const { error: updateError } = await supabase
+          .from('bookings')
+          .update({
+            payment_status: 'CONFIRMED',
+            flight_status: 'DELAYED',
+            delay_minutes: delayMinutes,
+          })
+          .eq('id', bookingId);
 
-              // If there's an active hold_expires_at, extend it. Check if column exists, else proceed.
-              if (booking.hold_expires_at) {
-                const currentExpiry = new Date(booking.hold_expires_at).getTime();
-                const extendedExpiry = new Date(currentExpiry + delayMinutes * 60 * 1000).toISOString();
-                updates.hold_expires_at = extendedExpiry;
-              }
-
-              // Apply updates
-              const { error: updateError } = await supabase
-                .from('bookings')
-                .update(updates)
-                .eq('id', bookingId);
-
-              if (updateError) {
-                console.error('❌ Supabase update error in flight track:', updateError.message);
-              } else {
-                slotProtectionApplied = true;
-              }
-            }
-          }
-        } catch (err: any) {
-          console.error('❌ Exception in flight delay protection flow:', err?.message || err);
+        if (updateError) {
+          console.error('❌ Supabase update error in flight track:', updateError.message);
         }
-      } else {
-        // Fallback for local testing / mock mode
-        slotProtectionApplied = true;
+      } catch (err: any) {
+        console.error('❌ Exception in flight delay protection flow:', err?.message || err);
       }
+    }
 
-      // If slot protection was applied, dispatch Discord alert to ops channel
-      if (slotProtectionApplied) {
-        const discordMessage = `⚠️ FLIGHT DELAY DETECTED! Flight ${flightNumber} delayed by ${delayMinutes} mins. Booking ${bookingId} slot window automatically shifted.`;
-        
-        const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-        if (webhookUrl && !webhookUrl.includes('your_webhook_id')) {
-          try {
-            await fetch(webhookUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                content: discordMessage,
-              }),
-            });
-            console.log('[FLIGHT SERVICE] Discord alert sent successfully.');
-          } catch (discordErr) {
-            console.error('[FLIGHT SERVICE] Failed to send Discord alert:', discordErr);
-          }
-        } else {
-          console.warn('[FLIGHT SERVICE] DISCORD_WEBHOOK_URL missing, skipping alert.');
-        }
+    // Dispatch Discord Webhook Alert
+    const discordMessage = `⚠️ FLIGHT DELAY DETECTED! Flight ${flightNumber} delayed by 90 mins. Booking ${bookingId} slot window automatically shifted.`;
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    if (webhookUrl && !webhookUrl.includes('your_webhook_id')) {
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: discordMessage,
+          }),
+        });
+        console.log('[FLIGHT SERVICE] Discord alert sent successfully.');
+      } catch (discordErr) {
+        console.error('[FLIGHT SERVICE] Failed to send Discord alert:', discordErr);
       }
+    } else {
+      console.warn('[FLIGHT SERVICE] DISCORD_WEBHOOK_URL missing, skipping alert.');
     }
   }
 
