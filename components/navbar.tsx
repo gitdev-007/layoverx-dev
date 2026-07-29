@@ -15,6 +15,8 @@ import {
   Shield,
   Plane,
   ChevronDown,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -22,11 +24,31 @@ export const Navbar: React.FC = () => {
   const { user, isAdmin, setIsAdmin, signOut, openAuthModal } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
+    
+    const active = localStorage.getItem('layoverx_dark_mode') === 'true';
+    setDarkMode(active);
+    if (active) {
+      document.body.classList.add('dark-theme-active');
+    } else {
+      document.body.classList.remove('dark-theme-active');
+    }
   }, [pathname]);
+
+  const toggleDarkMode = () => {
+    const nextVal = !darkMode;
+    setDarkMode(nextVal);
+    localStorage.setItem('layoverx_dark_mode', String(nextVal));
+    if (nextVal) {
+      document.body.classList.add('dark-theme-active');
+    } else {
+      document.body.classList.remove('dark-theme-active');
+    }
+  };
 
   const navLinks = [
     { href: '/hotels', label: 'Hotels' },
@@ -115,6 +137,15 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Buttons - Single Auth State */}
           <div className="hidden lg:flex items-center gap-3.5">
+            <button
+              onClick={toggleDarkMode}
+              type="button"
+              className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition text-[#64748B] hover:text-[#0369a1]"
+              title="Toggle Aesthetics Mode"
+            >
+              {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
+            </button>
+
             <Link
               href="/my-itinerary"
               className={`text-sm font-semibold transition-colors ${

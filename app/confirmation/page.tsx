@@ -31,6 +31,20 @@ export default function ConfirmationPage() {
   const [trackingResult, setTrackingResult] = useState<any>(null);
   const [trackingError, setTrackingError] = useState<string | null>(null);
 
+  const [reminderType, setReminderType] = useState<'sms' | 'email'>('email');
+  const [reminderInput, setReminderInput] = useState('');
+  const [reminderStatus, setReminderStatus] = useState<string | null>(null);
+
+  const handleSetReminder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reminderInput.trim()) {
+      setReminderStatus('Please enter details.');
+      return;
+    }
+    setReminderStatus(`Active alerts set for ${reminderInput.trim()}!`);
+    setTimeout(() => setReminderStatus(null), 4000);
+  };
+
   useEffect(() => {
     // Retrieve dynamic draft details from localStorage
     const saved = localStorage.getItem('layoverx_draft');
@@ -166,6 +180,47 @@ export default function ConfirmationPage() {
                 <span className="text-slate-400">Total Price Paid:</span>
                 <strong className="text-sky-400 text-sm font-extrabold">₹{booking.totalPrice.toLocaleString()}</strong>
               </div>
+            </div>
+
+            {/* Reminder Alert subscription */}
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs print:hidden">
+              <div className="font-bold text-slate-200">⏰ Check-out Alert Reminders</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setReminderType('email'); setReminderInput(''); }}
+                  className={`px-3 py-1 rounded-lg font-bold border transition ${reminderType === 'email' ? 'bg-sky-500/10 border-sky-400 text-sky-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                >
+                  Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setReminderType('sms'); setReminderInput(''); }}
+                  className={`px-3 py-1 rounded-lg font-bold border transition ${reminderType === 'sms' ? 'bg-sky-500/10 border-sky-400 text-sky-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                >
+                  SMS
+                </button>
+              </div>
+              <form onSubmit={handleSetReminder} className="flex gap-2">
+                <input
+                  type={reminderType === 'email' ? 'email' : 'tel'}
+                  value={reminderInput}
+                  onChange={(e) => setReminderInput(e.target.value)}
+                  placeholder={reminderType === 'email' ? 'passenger@travel.com' : '+1-xxx-xxx-xxxx'}
+                  className="flex-grow bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition"
+                >
+                  Set
+                </button>
+              </form>
+              {reminderStatus && (
+                <div className="text-[10px] font-bold text-emerald-400">
+                  {reminderStatus}
+                </div>
+              )}
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
