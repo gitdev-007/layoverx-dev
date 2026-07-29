@@ -45,6 +45,34 @@ export default function ConfirmationPage() {
     setTimeout(() => setReminderStatus(null), 4000);
   };
 
+  const handleExportICS = () => {
+    if (!booking) return;
+    
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//LayoverX//Mumbai Transit Platform//EN',
+      'BEGIN:VEVENT',
+      `UID:${booking.bookingId}@layoverx.dev`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+      `DTSTART:${new Date(booking.arrivalTime).toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+      `DTEND:${new Date(booking.departureTime).toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+      `SUMMARY:LayoverX stopover booking: ${booking.bookingId}`,
+      `DESCRIPTION:Your LayoverX Mumbai Airport stopover bookings are active. Lead traveler: ${booking.leadPassengerName}. Flight: ${booking.flightIn}`,
+      'LOCATION:Mumbai CSM International Airport (BOM) Terminal 2',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `layoverx-booking-${booking.bookingId}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     // Retrieve dynamic draft details from localStorage
     const saved = localStorage.getItem('layoverx_draft');
@@ -231,9 +259,16 @@ export default function ConfirmationPage() {
               >
                 🖨️ Export / Print Pass
               </button>
+              <button 
+                onClick={handleExportICS}
+                type="button"
+                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700 print:hidden"
+              >
+                📅 Add to Calendar (.ics)
+              </button>
               <Link 
                 href="/" 
-                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700 print:hidden"
+                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-slate-700 print:hidden"
               >
                 <Home size={14} /> Back to Homepage
               </Link>

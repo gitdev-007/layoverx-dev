@@ -211,6 +211,41 @@ export default function PlanMyLayoverPage() {
             </div>
           </form>
 
+          {/* Quick-fill Templates */}
+          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-400 pt-1">
+            <span className="font-semibold text-gray-300">⚡ Quick Transit Templates:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setDestinationArea('near-airport');
+                setTravelers('1');
+              }}
+              className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
+            >
+              Short Airport Layover
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDestinationArea('colaba');
+                setTravelers('2');
+              }}
+              className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
+            >
+              Colaba Heritage Tour
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDestinationArea('bandra');
+                setTravelers('3');
+              }}
+              className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
+            >
+              Bandra Sea Link Day
+            </button>
+          </div>
+
           {/* Safe Window Banner */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-sky-950/40 border border-sky-900/50 p-3.5 rounded-xl text-sky-200 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
