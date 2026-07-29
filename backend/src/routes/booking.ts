@@ -122,6 +122,10 @@ router.post(['/create-order', '/api/v1/booking/create-order'], async (req: Reque
     res.status(200).json({
       status: 'success',
       bookingId: result.bookingId,
+      razorpayOrderId: result.razorpayOrderId,
+      amount: result.amount,
+      currency: result.currency,
+      keyId: result.keyId,
       order: result.order,
     });
   } catch (error: any) {

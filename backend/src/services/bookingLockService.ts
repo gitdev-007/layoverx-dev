@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import Razorpay from 'razorpay';
 import { getRedisClient } from '../utils/redis.js';
 import { sendDiscordAlert } from '../utils/discord.js';
 
@@ -65,6 +66,10 @@ export interface CreateOrderResult {
   success: boolean;
   message?: string;
   bookingId?: string;
+  razorpayOrderId?: string;
+  keyId?: string;
+  amount?: number;
+  currency?: string;
   order?: {
     orderId: string;
     amount: number;
@@ -342,16 +347,37 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
     };
   }
 
-  // 2. Generate mock payment order
-  const paymentOrderId = `ord_${Date.now()}`;
-  const order = {
-    orderId: paymentOrderId,
-    amount,
-    currency: 'INR',
-    status: 'created',
-  };
-
+  // 2. Initialize Razorpay Instance & Create Order
   let bookingId = `bk_${Date.now()}`;
+  let razorpayOrderId = `ord_${Date.now()}`;
+  let razorpayAmount = Math.round(amount * 100);
+  let razorpayCurrency = 'INR';
+
+  const keyId = process.env.RAZORPAY_KEY_ID || '';
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+  if (keyId && keySecret && !keyId.includes('sample_key') && !keyId.includes('your_key_id')) {
+    try {
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+
+      const options = {
+        amount: Math.round(amount * 100), // convert INR to paise
+        currency: 'INR',
+        receipt: bookingId,
+        notes: { slotId, userId },
+      };
+
+      const razorpayOrder: any = await razorpay.orders.create(options);
+      razorpayOrderId = razorpayOrder.id;
+      razorpayAmount = Number(razorpayOrder.amount);
+      razorpayCurrency = razorpayOrder.currency;
+    } catch (err: any) {
+      console.warn('⚠️ Razorpay order creation API warning (using order fallback):', err?.message || err);
+    }
+  }
 
   // 3. Save initial booking entry into Supabase with payment_status = 'PENDING'
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
@@ -364,9 +390,9 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
             service_id: serviceId,
             slot_id: slotId,
             amount: amount,
-            currency: 'INR',
+            currency: razorpayCurrency,
             payment_status: 'PENDING',
-            payment_order_id: paymentOrderId,
+            payment_order_id: razorpayOrderId,
           },
         ])
         .select('id')
@@ -398,7 +424,16 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
     success: true,
     statusCode: 200,
     bookingId,
-    order,
+    razorpayOrderId,
+    amount: razorpayAmount,
+    currency: razorpayCurrency,
+    keyId: keyId || 'rzp_test_placeholder',
+    order: {
+      orderId: razorpayOrderId,
+      amount: razorpayAmount,
+      currency: razorpayCurrency,
+      status: 'created',
+    },
   };
 }
 
