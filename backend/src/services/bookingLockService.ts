@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import { getRedisClient } from '../utils/redis.js';
 import { sendDiscordAlert } from '../utils/discord.js';
 
@@ -16,12 +17,8 @@ function toValidUUID(str: string): string {
   if (uuidRegex.test(str)) {
     return str;
   }
-  let hex = '';
-  for (let i = 0; i < str.length; i++) {
-    hex += str.charCodeAt(i).toString(16);
-  }
-  hex = hex.padEnd(32, '0').slice(0, 32);
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  const hash = crypto.createHash('md5').update(str).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}`;
 }
 
 const KNOWN_SAMPLE_SERVICE_IDS = new Set([
