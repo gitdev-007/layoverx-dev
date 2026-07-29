@@ -10,6 +10,15 @@ export const LayoverCalculator: React.FC = () => {
   const [departure, setDeparture] = useState('2026-07-28T16:00');
   const [guests, setGuests] = useState('1');
 
+  React.useEffect(() => {
+    const now = new Date();
+    const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+    arr.setMinutes(0);
+    const dep = new Date(arr.getTime() + 6 * 60 * 60 * 1000); // 6 hours stay
+    setArrival(arr.toISOString().slice(0, 16));
+    setDeparture(dep.toISOString().slice(0, 16));
+  }, []);
+
   const getCalculatedTime = () => {
     if (!arrival || !departure) return null;
     const arrDate = new Date(arrival);

@@ -30,6 +30,49 @@ export default function PlanMyLayoverPage() {
   const [arrivalTime, setArrivalTime] = useState('2026-07-28T10:00');
   const [departureTime, setDepartureTime] = useState('2026-07-28T18:00');
   const [travelers, setTravelers] = useState('2');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const now = new Date();
+    const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+    arr.setMinutes(0);
+    const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000); // 8 hours layover
+    setArrivalTime(arr.toISOString().slice(0, 16));
+    setDepartureTime(dep.toISOString().slice(0, 16));
+  }, []);
+
+  const handleSaveDraft = () => {
+    const draftData = {
+      destinationArea,
+      arrivalTime,
+      departureTime,
+      travelers,
+      selectedCab,
+      selectedHotelId,
+      selectedDiningId,
+      selectedTourId,
+      selectedSpaId,
+      selectedGamingId,
+      totalPrice
+    };
+    localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
+    setSaveStatus('Draft saved successfully!');
+    setTimeout(() => setSaveStatus(null), 3000);
+  };
+
+  const handleSharePlan = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Mumbai Stopover Plan - LayoverX',
+        text: `Check out my stopover plan at CSMIA Mumbai for ₹${totalPrice.toLocaleString()}!`,
+        url: window.location.href,
+      }).catch((err) => console.warn(err));
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setSaveStatus('Plan link copied to clipboard!');
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
+  };
 
   // Step selections
   const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv'>('sedan');
@@ -634,13 +677,27 @@ export default function PlanMyLayoverPage() {
                 </Link>
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button className="h-10 flex items-center justify-center bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-sm transition gap-1.5">
+                  <button 
+                    onClick={handleSaveDraft}
+                    type="button"
+                    className="h-10 flex items-center justify-center bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-sm transition gap-1.5"
+                  >
                     <Bookmark size={14} /> Save Draft
                   </button>
-                  <button className="h-10 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-900 font-bold text-xs rounded-xl border border-gray-200 shadow-sm transition gap-1.5">
+                  <button 
+                    onClick={handleSharePlan}
+                    type="button"
+                    className="h-10 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-900 font-bold text-xs rounded-xl border border-gray-200 shadow-sm transition gap-1.5"
+                  >
                     <Share2 size={14} /> Share Plan
                   </button>
                 </div>
+                
+                {saveStatus && (
+                  <div className="p-2.5 text-center text-xs font-bold text-emerald-800 bg-emerald-50 rounded-xl border border-emerald-100 animate-pulse">
+                    {saveStatus}
+                  </div>
+                )}
               </div>
 
               {/* Your Smart AI Timeline */}
