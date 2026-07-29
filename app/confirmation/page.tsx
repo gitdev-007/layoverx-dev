@@ -322,6 +322,29 @@ export default function ConfirmationPage() {
                   placeholder="e.g. EK-504"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
                 />
+                <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setFlightNumber('EK-504')}
+                    className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded text-[10px] transition"
+                  >
+                    Emirates EK-504
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFlightNumber('AI-102')}
+                    className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded text-[10px] transition"
+                  >
+                    Air India AI-102
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFlightNumber('DELAY-6E-213')}
+                    className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-amber-500 hover:text-amber-400 rounded text-[10px] transition font-bold"
+                  >
+                    Test Delay (DELAY-6E)
+                  </button>
+                </div>
               </div>
 
               <div>
