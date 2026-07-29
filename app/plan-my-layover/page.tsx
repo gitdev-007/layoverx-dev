@@ -116,6 +116,26 @@ export default function PlanMyLayoverPage() {
   const [flightIn, setFlightIn] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
 
+  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR'>('INR');
+
+  const currencyRates = {
+    INR: 1,
+    USD: 0.012,
+    EUR: 0.011,
+  };
+
+  const currencySymbols = {
+    INR: '₹',
+    USD: '$',
+    EUR: '€',
+  };
+
+  const formatPrice = (val: number) => {
+    const rate = currencyRates[currency];
+    const symbol = currencySymbols[currency];
+    return `${symbol}${Math.round(val * rate).toLocaleString()}`;
+  };
+
   // Cost calculations
   const cabPrice = selectedCab === 'sedan' ? 899 : 1499;
   const hotelObj = HOTELS_DATA.find((h) => h.id === selectedHotelId);
@@ -694,36 +714,45 @@ export default function PlanMyLayoverPage() {
               {/* Booking Summary Card */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">BOOKING SUMMARY</h2>
-                  <span className="bg-sky-50 text-sky-700 text-xs font-bold px-2 py-0.5 rounded-full border border-sky-100">
-                    {travelers} Guests
-                  </span>
+                  <h2 className="text-xs font-black text-gray-900 uppercase tracking-widest">BOOKING SUMMARY</h2>
+                  <div className="flex gap-1 items-center">
+                    {(['INR', 'USD', 'EUR'] as const).map((curr) => (
+                      <button
+                        key={curr}
+                        type="button"
+                        onClick={() => setCurrency(curr)}
+                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition border ${currency === curr ? 'bg-sky-500/10 border-sky-400 text-sky-700 font-extrabold' : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'}`}
+                      >
+                        {curr}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-3 text-xs text-gray-800">
                   <div className="flex justify-between items-center">
                     <span>🚗 Airport Cabs (Return)</span>
-                    <strong className="text-gray-900">₹{cabPrice}</strong>
+                    <strong className="text-gray-900">{formatPrice(cabPrice)}</strong>
                   </div>
 
                   {hotelObj && (
                     <div className="flex justify-between items-center text-sky-800 font-medium">
                       <span className="truncate max-w-[180px]">🏨 {hotelObj.name}</span>
-                      <strong>{hotelObj.price6h}</strong>
+                      <strong>{formatPrice(hotelPrice)}</strong>
                     </div>
                   )}
 
                   {diningObj && (
                     <div className="flex justify-between items-center text-orange-800 font-medium">
                       <span className="truncate max-w-[180px]">🍽️ {diningObj.name}</span>
-                      <strong>{diningObj.avgCost}</strong>
+                      <strong>{formatPrice(diningPrice)}</strong>
                     </div>
                   )}
 
                   {tourObj && (
                     <div className="flex justify-between items-center text-rose-800 font-medium">
                       <span className="truncate max-w-[180px]">🌆 {tourObj.name}</span>
-                      <strong>{tourObj.price}</strong>
+                      <strong>{formatPrice(tourPrice)}</strong>
                     </div>
                   )}
                 </div>
@@ -731,7 +760,7 @@ export default function PlanMyLayoverPage() {
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-end justify-between mb-1">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL PRICE</span>
-                    <div className="text-2xl font-black text-[#0284C7] leading-none">₹{totalPrice.toLocaleString()}</div>
+                    <div className="text-2xl font-black text-[#0284C7] leading-none">{formatPrice(totalPrice)}</div>
                   </div>
                   <p className="text-[11px] text-gray-400">All taxes, flat-rate cab fees & airport charges included.</p>
                 </div>
