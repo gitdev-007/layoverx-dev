@@ -131,6 +131,28 @@ if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, () => {
     console.log(`🚀 LayoverX Backend running on port ${PORT}`);
     printRoutes(app);
+
+    // Production key format validation audit
+    const rzpKeyId = process.env.RAZORPAY_KEY_ID || '';
+    const rzpSecret = process.env.RAZORPAY_KEY_SECRET || '';
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+    const aviationKey = process.env.AVIATIONSTACK_API_KEY || '';
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction) {
+      if (!rzpKeyId.startsWith('rzp_live_')) {
+        console.warn('⚠️  LAUNCH WARNING: RAZORPAY_KEY_ID does not start with "rzp_live_". Test keys detected in production!');
+      }
+      if (!webhookSecret || webhookSecret.trim() === '') {
+        console.warn('⚠️  LAUNCH WARNING: RAZORPAY_WEBHOOK_SECRET is not set. Webhook verification will reject all events.');
+      }
+      if (!aviationKey || aviationKey.includes('sample_') || aviationKey.includes('your_')) {
+        console.warn('⚠️  LAUNCH WARNING: AVIATIONSTACK_API_KEY is missing or placeholder. Live flight tracking disabled.');
+      }
+    } else {
+      console.log('🔧 Running in development mode — test keys accepted.');
+    }
+
     startKeepAlive();
   });
 }

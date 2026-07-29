@@ -61,25 +61,47 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
         let updatedBooking: any = null;
 
         if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-          let query = supabase
-            .from('bookings')
-            .update({
-              payment_status: 'CONFIRMED',
-              payment_id: razorpayPaymentId,
-            });
-
+          // Double-capture idempotency guard: skip if already CONFIRMED
+          let existingStatus: string | null = null;
           if (bookingIdFromNotes) {
-            query = query.eq('id', bookingIdFromNotes);
-          } else {
-            query = query.eq('payment_order_id', razorpayOrderId);
+            const { data: existing } = await supabase
+              .from('bookings')
+              .select('payment_status')
+              .eq('id', bookingIdFromNotes)
+              .maybeSingle();
+            existingStatus = existing?.payment_status;
+          } else if (razorpayOrderId) {
+            const { data: existing } = await supabase
+              .from('bookings')
+              .select('payment_status')
+              .eq('payment_order_id', razorpayOrderId)
+              .maybeSingle();
+            existingStatus = existing?.payment_status;
           }
 
-          const { data, error } = await query.select();
+          if (existingStatus === 'CONFIRMED') {
+            console.log(`[WEBHOOK] Booking already CONFIRMED. Skipping duplicate capture for order ${razorpayOrderId}`);
+          } else {
+            let query = supabase
+              .from('bookings')
+              .update({
+                payment_status: 'CONFIRMED',
+                payment_id: razorpayPaymentId,
+              });
 
-          if (error) {
-            console.error('❌ Webhook Supabase update error:', error);
-          } else if (data && data.length > 0) {
-            updatedBooking = data[0];
+            if (bookingIdFromNotes) {
+              query = query.eq('id', bookingIdFromNotes);
+            } else {
+              query = query.eq('payment_order_id', razorpayOrderId);
+            }
+
+            const { data, error } = await query.select();
+
+            if (error) {
+              console.error('❌ Webhook Supabase update error:', error);
+            } else if (data && data.length > 0) {
+              updatedBooking = data[0];
+            }
           }
         }
 
