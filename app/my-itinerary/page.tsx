@@ -354,6 +354,20 @@ export default function MyItineraryPage() {
                     </g>
                   </svg>
                   
+                  {/* Tooltip Badges */}
+                  <div className="absolute bottom-8 left-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-help group z-10 transition">
+                    📍 T2 Node
+                    <div className="hidden group-hover:block absolute left-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-rose-400 whitespace-nowrap">
+                      Start point (CSMIA Term 2)
+                    </div>
+                  </div>
+                  <div className="absolute top-8 right-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-help group z-10 transition">
+                    🏨 Stay Node
+                    <div className="hidden group-hover:block absolute right-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-emerald-400 whitespace-nowrap">
+                      12m Chauffeur transfer distance
+                    </div>
+                  </div>
+
                   <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
                     Terminal 2
                   </span>

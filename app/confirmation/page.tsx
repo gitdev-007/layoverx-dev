@@ -73,6 +73,81 @@ export default function ConfirmationPage() {
     document.body.removeChild(link);
   };
 
+  const handleDownloadTicketSlip = () => {
+    if (!booking) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, 600, 400);
+
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(10, 10, 580, 380);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('LAYOVERX BOARDING PASS', 40, 60);
+
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, 80);
+    ctx.lineTo(560, 80);
+    ctx.stroke();
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px monospace';
+    ctx.fillText('BOOKING ID:', 40, 120);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText(booking.bookingId, 160, 120);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('PASSENGER:', 40, 170);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(booking.leadPassengerName, 160, 170);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('FLIGHT IN:', 40, 220);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(booking.flightIn, 160, 220);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('ARRIVAL:', 40, 270);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(new Date(booking.arrivalTime).toLocaleString(), 160, 270);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('DEPARTURE:', 40, 320);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(new Date(booking.departureTime).toLocaleString(), 160, 320);
+
+    ctx.fillStyle = '#0284c7';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('MUMBAI CSMIA TRANSIT ZONE • FLAT-RATE CAB CHARGES INCLUDED', 40, 370);
+
+    const url = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `layoverx-boarding-pass-${booking.bookingId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getStayHours = () => {
     if (!booking) return '8.0 Hours';
     const arr = new Date(booking.arrivalTime);
@@ -284,6 +359,13 @@ export default function ConfirmationPage() {
                 className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 print:hidden"
               >
                 🖨️ Export / Print Pass
+              </button>
+              <button 
+                onClick={handleDownloadTicketSlip}
+                type="button"
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 print:hidden"
+              >
+                🎟️ Download Boarding Pass (.png)
               </button>
               <button 
                 onClick={handleExportICS}
