@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Plane,
   Clock,
@@ -15,9 +16,15 @@ import {
   Sparkles,
   Save,
   Copy,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
+import { createRazorpayOrder } from '@/lib/api';
+import { useAuth } from '@/context/auth-context';
 
 export default function MyItineraryPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [totalHours, setTotalHours] = useState('8.0 Hours');
   const [usedHours, setUsedHours] = useState('4.5 Hours');
   const [remainingHours, setRemainingHours] = useState('3.5 Hours');
@@ -26,6 +33,9 @@ export default function MyItineraryPage() {
   const [countdown, setCountdown] = useState({ min: 28, sec: 42 });
   const [trafficLevel, setTrafficLevel] = useState<'normal' | 'heavy'>('normal');
   const [selectedRouteNode, setSelectedRouteNode] = useState<'t2' | 'stay' | null>(null);
+
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -168,6 +178,58 @@ export default function MyItineraryPage() {
 
   const removeItem = (id: string) => {
     setItems(items.filter((i) => i.id !== id));
+  };
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    const calculatedAmount = (items.some(i => i.badge === 'Hotel') ? 3499 : 0) + (items.some(i => i.badge === 'Dining') ? 1299 : 0);
+    const userId = user?.id || 'usr_demo_123';
+    const serviceId = 'h1';
+    const slotId = 'slot_niranta_101';
+
+    try {
+      const orderData = await createRazorpayOrder({
+        userId,
+        serviceId,
+        slotId,
+        amount: calculatedAmount || 3499,
+      });
+
+      const options = {
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_samplekey',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        order_id: orderData.razorpayOrderId,
+        name: 'LayoverX Mumbai T2',
+        description: 'Transit Slot Booking',
+        handler: function (response: any) {
+          router.push(`/confirmation`);
+        },
+        prefill: {
+          name: user?.name || 'Alex Traveler',
+          email: user?.email || 'traveler@layoverx.com',
+        },
+        theme: {
+          color: '#0284c7',
+        },
+      };
+
+      if ((window as any).Razorpay) {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        // Fallback redirection if SDK blocked by adblocker
+        console.warn('[Razorpay SDK] Window.Razorpay not loaded, simulating checkout redirect');
+        router.push('/confirmation');
+      }
+    } catch (err: any) {
+      console.warn('[Checkout API Error]', err);
+      setCheckoutError(err.message || 'Unable to connect to payment gateway server.');
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   const pathD = trafficLevel === 'normal' 
@@ -509,12 +571,29 @@ export default function MyItineraryPage() {
                   </span>
                 </div>
 
-                <Link 
-                  href="/confirmation"
-                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 text-center"
+                {checkoutError && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs rounded-xl flex items-start gap-2">
+                    <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                    <span>{checkoutError}</span>
+                  </div>
+                )}
+
+                <button 
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 text-center cursor-pointer"
                 >
-                  Proceed to Checkout &rarr;
-                </Link>
+                  {checkoutLoading ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" /> Creating Order & Launching Razorpay...
+                    </>
+                  ) : (
+                    <>
+                      Proceed to Checkout &rarr;
+                    </>
+                  )}
+                </button>
               </div>
 
             </div>

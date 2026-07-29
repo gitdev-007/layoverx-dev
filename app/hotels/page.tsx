@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOTELS_DATA, FAQS_DATA, REVIEWS_DATA } from '@/data/layover-data';
+import { HOTELS_DATA, FAQS_DATA, REVIEWS_DATA, Hotel } from '@/data/layover-data';
+import { fetchServices } from '@/lib/api';
 import {
   Hotel as HotelIcon,
   MapPin,
@@ -23,6 +24,43 @@ export default function HotelsPage() {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [stayDuration, setStayDuration] = useState('6');
   const [checkinTime, setCheckinTime] = useState('2026-07-28T12:00');
+  const [hotelsList, setHotelsList] = useState<Hotel[]>(HOTELS_DATA);
+  const [loadingServices, setLoadingServices] = useState(false);
+
+  useEffect(() => {
+    async function loadCatalog() {
+      setLoadingServices(true);
+      try {
+        const data = await fetchServices('hotel', parseInt(stayDuration) * 60, selectedLocation);
+        if (data && data.length > 0) {
+          const mapped: Hotel[] = data.map((item) => ({
+            id: item.id,
+            slotId: item.slotId || `slot_${item.id}_101`,
+            name: item.name,
+            terminal: item.terminal || 'CSMIA Terminal 2',
+            distance: item.distance || '0 km',
+            rating: item.rating || 4.8,
+            reviews: item.reviews || 1200,
+            stars: 5,
+            price3h: `₹${item.price || 3499}`,
+            price6h: `₹${Math.round((item.price || 3499) * 1.4)}`,
+            priceFullNight: `₹${Math.round((item.price || 3499) * 1.8)}`,
+            locationCategory: 'in-terminal',
+            badge: item.badge || 'Verified Partner',
+            amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
+            description: item.description || 'Hourly micro-stay transit accommodations.',
+            image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+          }));
+          setHotelsList(mapped);
+        }
+      } catch (err) {
+        console.warn('[HotelsPage] API fetch fallback to static data:', err);
+      } finally {
+        setLoadingServices(false);
+      }
+    }
+    loadCatalog();
+  }, [selectedLocation, stayDuration]);
 
   // Filters state
   const [priceFilter, setPriceFilter] = useState<string[]>([]);
@@ -58,7 +96,7 @@ export default function HotelsPage() {
   };
 
   // Filtered hotels
-  const filteredHotels = HOTELS_DATA.filter((hotel) => {
+  const filteredHotels = hotelsList.filter((hotel) => {
     if (selectedLocation !== 'all' && hotel.locationCategory !== selectedLocation) {
       return false;
     }

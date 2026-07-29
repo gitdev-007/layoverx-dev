@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Home
 } from 'lucide-react';
+import { trackFlight } from '@/lib/api';
 
 interface BookingData {
   bookingId: string;
@@ -193,29 +194,20 @@ export default function ConfirmationPage() {
     setTrackingResult(null);
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiBase}/api/v1/flight/track`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          flightNumber: flightNumber.trim(),
-          flightDate: flightDate.trim(),
-          bookingId: booking?.bookingId,
-        }),
+      const data = await trackFlight({
+        flightNumber: flightNumber.trim(),
+        flightDate: flightDate.trim(),
+        bookingId: booking?.bookingId,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || data.status === 'error') {
+      if (data.status === 'error' || !data.flight) {
         setTrackingError(data.message || 'Failed to track flight status.');
       } else {
         setTrackingResult(data.flight);
       }
     } catch (err: any) {
-      setTrackingError('Unable to connect to flight tracking server.');
-      console.error('[FLIGHT TRACK CLIENT ERROR]', err);
+      setTrackingError(err.message || 'Unable to connect to flight tracking server.');
+      console.warn('[FLIGHT TRACK CLIENT ERROR]', err);
     } finally {
       setTrackingLoading(false);
     }

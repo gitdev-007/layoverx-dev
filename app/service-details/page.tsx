@@ -1,12 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight, X, AlertCircle, RefreshCw } from 'lucide-react';
+import { holdSlot } from '@/lib/api';
+import { useAuth } from '@/context/auth-context';
 
 export default function ServiceDetailsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [showReviews, setShowReviews] = useState(false);
+  const [holdingSlot, setHoldingSlot] = useState(false);
+  const [holdError, setHoldError] = useState<string | null>(null);
+
+  // Live 10-minute hold countdown timer state
+  const [holdTimerSeconds, setHoldTimerSeconds] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (holdTimerSeconds === null || holdTimerSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setHoldTimerSeconds((prev) => (prev && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [holdTimerSeconds]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const handleReservePod = async () => {
+    setHoldingSlot(true);
+    setHoldError(null);
+
+    const userId = user?.id || 'usr_demo_123';
+    const serviceId = 'h1';
+    const slotId = 'slot_niranta_101';
+
+    try {
+      const response = await holdSlot({ userId, serviceId, slotId });
+      // Start 10-minute countdown timer (600 seconds)
+      setHoldTimerSeconds(600);
+      
+      // Save lock details to localStorage
+      const draft = {
+        selectedHotelId: 'h1',
+        slotId,
+        serviceId,
+        bookingId: response.bookingId || `bk_${Date.now()}`,
+        totalPrice: 3919,
+        holdExpiry: Date.now() + 600 * 1000
+      };
+      localStorage.setItem('layoverx_draft', JSON.stringify(draft));
+
+      setTimeout(() => {
+        router.push('/my-itinerary');
+      }, 1000);
+    } catch (err: any) {
+      console.warn('[HoldSlot API Call Error]', err);
+      setHoldError(err.message || '⚠️ This slot is currently held or booked by another traveler. Please choose another time slot.');
+    } finally {
+      setHoldingSlot(false);
+    }
+  };
 
   const [reviews, setReviews] = useState([
     { name: 'Sarah M.', rating: 5, comment: 'Super convenient! Clean showers and extremely comfortable bed for a quick sleep between flights.' },
@@ -155,12 +214,38 @@ export default function ServiceDetailsPage() {
                 </div>
               </div>
 
-              <Link
-                href="/my-itinerary"
-                className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20"
+              {/* Live Hold Timer Banner */}
+              {holdTimerSeconds !== null && holdTimerSeconds > 0 && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs p-3 rounded-xl flex items-center justify-between font-mono font-bold animate-pulse">
+                  <span className="flex items-center gap-1.5"><Clock size={14} /> Slot Lock Active:</span>
+                  <span>{formatTimer(holdTimerSeconds)} min</span>
+                </div>
+              )}
+
+              {/* Conflict Error Notification Banner */}
+              {holdError && (
+                <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3 rounded-xl flex items-start gap-2">
+                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                  <span>{holdError}</span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleReservePod}
+                disabled={holdingSlot}
+                className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 cursor-pointer"
               >
-                Proceed to Reserve <ArrowRight size={14} />
-              </Link>
+                {holdingSlot ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" /> Holding Slot (10m Lock)...
+                  </>
+                ) : (
+                  <>
+                    Reserve Pod / Book Slot <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
