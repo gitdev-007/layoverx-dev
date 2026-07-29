@@ -18,6 +18,8 @@ export default function ServiceDetailsPage() {
   const [newCommentText, setNewCommentText] = useState('');
   const [newCommentRating, setNewCommentRating] = useState(5);
 
+  const [showToast, setShowToast] = useState(false);
+
   const handlePostReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentName.trim() || !newCommentText.trim()) return;
@@ -27,6 +29,8 @@ export default function ServiceDetailsPage() {
     ]);
     setNewCommentName('');
     setNewCommentText('');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   return (
@@ -225,6 +229,13 @@ export default function ServiceDetailsPage() {
               </button>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Floating Success Toast Alert */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-[2000] bg-emerald-600 text-white font-bold text-xs px-4.5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce border border-emerald-500">
+          <span>✓ Review posted successfully! Thank you for your feedback.</span>
         </div>
       )}
     </div>

@@ -115,3 +115,13 @@
 .animate-dash {
   animation: dash 5s linear infinite;
 }
+
+@media print {
+  header, footer, nav, button, input, select, textarea, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
