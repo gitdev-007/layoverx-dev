@@ -21,7 +21,9 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     let isValidSignature = false;
-    if (signature && secret && !secret.includes('sample_webhook_secret') && !secret.includes('your_razorpay')) {
+    const hasSecret = secret && !secret.includes('sample_webhook_secret') && !secret.includes('your_razorpay');
+
+    if (signature && hasSecret) {
       const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
       const generatedSignature = crypto
         .createHmac('sha256', secret)
@@ -31,18 +33,16 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
       isValidSignature = (generatedSignature === signature);
     }
 
-    if (!isProduction || !signature) {
-      console.log('[DEV] Bypassing webhook signature verification for test request');
-    } else if (!isValidSignature) {
-      if (isProduction) {
+    if (isProduction && hasSecret) {
+      if (!signature || !isValidSignature) {
         res.status(400).json({
           status: 'error',
-          message: 'Invalid webhook signature',
+          message: 'Invalid or missing webhook signature',
         });
         return;
-      } else {
-        console.log('[DEV] Bypassing webhook signature verification for test request');
       }
+    } else {
+      console.log('[DEV] Bypassing webhook signature verification');
     }
 
     const event = req.body?.event;

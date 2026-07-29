@@ -3,6 +3,7 @@ export interface DiscordBookingAlert {
   slotId: string;
   userId: string;
   paymentId: string;
+  serviceName?: string;
 }
 
 export async function sendDiscordAlert(bookingData: DiscordBookingAlert): Promise<void> {
@@ -13,8 +14,9 @@ export async function sendDiscordAlert(bookingData: DiscordBookingAlert): Promis
     return;
   }
 
+  const serviceName = bookingData.serviceName || 'Niranta Airport Transit Hotel';
   const payload = {
-    content: '🚨 **NEW LAYOVERX CONCIERGE BOOKING!** @everyone',
+    content: `🟢 NEW BOOKING CONFIRMED!\nBooking ID: ${bookingData.bookingId}\nService: ${serviceName}\nPayment Status: CONFIRMED`,
     embeds: [
       {
         title: 'Booking Details',

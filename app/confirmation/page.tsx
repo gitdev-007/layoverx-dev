@@ -167,7 +167,7 @@ export default function ConfirmationPage() {
       try {
         const draft = JSON.parse(saved);
         setBooking({
-          bookingId: `bk_${Math.floor(100000 + Math.random() * 900000)}`,
+          bookingId: draft.bookingId || `bk_${Math.floor(100000 + Math.random() * 900000)}`,
           leadPassengerName: draft.leadPassengerName || 'Guest Traveler',
           flightIn: draft.flightIn || 'EK-504',
           arrivalTime: draft.arrivalTime || new Date().toISOString(),
