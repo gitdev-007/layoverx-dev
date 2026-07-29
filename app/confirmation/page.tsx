@@ -542,6 +542,34 @@ export default function ConfirmationPage() {
             )}
           </div>
 
+          {/* Detailed Transit Activity Duration Summary */}
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+            <div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Stopover Activity Schedule</h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Calculated transit block times inside CSMIA airport boundary zone.
+              </p>
+            </div>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">🚗 Chauffeur Return:</span>
+                <span className="font-bold text-white">45 Mins</span>
+              </div>
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">🏨 Transit Hotel Stay:</span>
+                <span className="font-bold text-white">3.0 Hours</span>
+              </div>
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">🍽️ Peshawri Fine Dining:</span>
+                <span className="font-bold text-white">1.5 Hours</span>
+              </div>
+              <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400">🛡️ Terminal Buffer Allowance:</span>
+                <span className="font-bold text-sky-400">3.5 Hours</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
       

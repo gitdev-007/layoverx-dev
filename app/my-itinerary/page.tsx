@@ -170,6 +170,10 @@ export default function MyItineraryPage() {
     setItems(items.filter((i) => i.id !== id));
   };
 
+  const pathD = trafficLevel === 'normal' 
+    ? "M 10 80 Q 50 20 90 40" 
+    : "M 10 80 Q 30 10, 60 70, 90 40";
+
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
       
@@ -354,14 +358,14 @@ export default function MyItineraryPage() {
                   
                   <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <path 
-                      d="M 10 80 Q 50 20 90 40" 
+                      d={pathD} 
                       fill="none" 
                       stroke="#1e293b" 
                       strokeWidth="2" 
                       strokeDasharray="4 4"
                     />
                     <path 
-                      d="M 10 80 Q 50 20 90 40" 
+                      d={pathD} 
                       fill="none" 
                       stroke="#0284c7" 
                       strokeWidth="2" 
@@ -381,7 +385,7 @@ export default function MyItineraryPage() {
                       <animateMotion 
                         dur="6s" 
                         repeatCount="indefinite" 
-                        path="M 10 80 Q 50 20 90 40"
+                        path={pathD}
                       />
                     </g>
                   </svg>
