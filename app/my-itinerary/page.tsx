@@ -309,6 +309,53 @@ export default function MyItineraryPage() {
                 </button>
               </div>
 
+              {/* Dynamic Path Map Card */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-900">CSMIA Transfer Route Map</h3>
+                  <span className="bg-sky-50 text-[#0369a1] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                    Chauffeur Live
+                  </span>
+                </div>
+                <div className="relative w-full h-44 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 opacity-90"></div>
+                  
+                  <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path 
+                      d="M 10 80 Q 50 20 90 40" 
+                      fill="none" 
+                      stroke="#1e293b" 
+                      strokeWidth="2" 
+                      strokeDasharray="4 4"
+                    />
+                    <path 
+                      d="M 10 80 Q 50 20 90 40" 
+                      fill="none" 
+                      stroke="#0284c7" 
+                      strokeWidth="2" 
+                      className="animate-dash"
+                      style={{
+                        strokeDasharray: '100',
+                        strokeDashoffset: '100',
+                      }}
+                    />
+                    
+                    <circle cx="10" cy="80" r="4" fill="#ef4444" className="animate-pulse" />
+                    <circle cx="90" cy="40" r="4" fill="#22c55e" className="animate-pulse" />
+                  </svg>
+                  
+                  <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    Terminal 2
+                  </span>
+                  <span className="absolute top-2 right-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    Stay / Dining Node
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Estimated transit distance: 3.2 km. Chauffeur route is calculated dynamically using flight delay records.
+                </p>
+              </div>
+
               {/* Checkout Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-md space-y-6">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-3">

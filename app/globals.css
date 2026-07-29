@@ -106,3 +106,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #0369a1;
 }
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.animate-dash {
+  animation: dash 5s linear infinite;
+}

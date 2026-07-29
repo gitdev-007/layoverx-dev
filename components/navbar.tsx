@@ -139,8 +139,12 @@ export const Navbar: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  <div className="w-6 h-6 bg-[#0369a1] text-white rounded-full flex items-center justify-center text-xs font-bold uppercase">
-                    {user.email[0]}
+                  <div className="relative w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border border-slate-200">
+                    <img 
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80" 
+                      alt="Traveler Profile Avatar" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
                     {user.name}
