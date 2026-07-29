@@ -8,11 +8,26 @@ import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight, X } from 'lucide-r
 export default function ServiceDetailsPage() {
   const [showReviews, setShowReviews] = useState(false);
 
-  const reviewsList = [
+  const [reviews, setReviews] = useState([
     { name: 'Sarah M.', rating: 5, comment: 'Super convenient! Clean showers and extremely comfortable bed for a quick sleep between flights.' },
     { name: 'Alex K.', rating: 4, comment: 'Right inside Terminal 2, no customs needed. A bit noisy near the entrance but rooms are fully soundproof.' },
     { name: 'Rahul S.', rating: 5, comment: 'Amazing delay protection. My flight was late by 2 hours and they rescheduled my transit room stay for free.' }
-  ];
+  ]);
+
+  const [newCommentName, setNewCommentName] = useState('');
+  const [newCommentText, setNewCommentText] = useState('');
+  const [newCommentRating, setNewCommentRating] = useState(5);
+
+  const handlePostReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommentName.trim() || !newCommentText.trim()) return;
+    setReviews([
+      ...reviews,
+      { name: newCommentName, rating: newCommentRating, comment: newCommentText }
+    ]);
+    setNewCommentName('');
+    setNewCommentText('');
+  };
 
   return (
     <div className="min-h-screen pb-20 bg-slate-900 text-slate-100">
@@ -159,8 +174,8 @@ export default function ServiceDetailsPage() {
               <X size={18} />
             </button>
             <h3 className="text-lg font-bold text-white">Guest Reviews & Testimonials</h3>
-            <div className="space-y-3.5 max-h-72 overflow-y-auto pr-1">
-              {reviewsList.map((rev, idx) => (
+            <div className="space-y-3.5 max-h-56 overflow-y-auto pr-1">
+              {reviews.map((rev, idx) => (
                 <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 space-y-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-white">{rev.name}</span>
@@ -174,6 +189,41 @@ export default function ServiceDetailsPage() {
                 </div>
               ))}
             </div>
+
+            {/* Post review form */}
+            <form onSubmit={handlePostReview} className="border-t border-slate-700 pt-4 space-y-2 text-xs">
+              <div className="font-bold text-white text-xs">Post a Review</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  value={newCommentName}
+                  onChange={(e) => setNewCommentName(e.target.value)}
+                  className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500"
+                />
+                <select
+                  value={newCommentRating}
+                  onChange={(e) => setNewCommentRating(parseInt(e.target.value))}
+                  className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500"
+                >
+                  <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                  <option value="3">⭐⭐⭐ 3 Stars</option>
+                </select>
+              </div>
+              <textarea
+                placeholder="Write your review comments here..."
+                value={newCommentText}
+                onChange={(e) => setNewCommentText(e.target.value)}
+                className="w-full h-12 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500 resize-none"
+              />
+              <button
+                type="submit"
+                className="w-full py-1.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition"
+              >
+                Submit Review
+              </button>
+            </form>
           </div>
         </div>
       )}

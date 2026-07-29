@@ -25,6 +25,7 @@ export default function MyItineraryPage() {
 
   const [countdown, setCountdown] = useState({ min: 28, sec: 42 });
   const [trafficLevel, setTrafficLevel] = useState<'normal' | 'heavy'>('normal');
+  const [selectedRouteNode, setSelectedRouteNode] = useState<'t2' | 'stay' | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -386,18 +387,28 @@ export default function MyItineraryPage() {
                   </svg>
                   
                   {/* Tooltip Badges */}
-                  <div className="absolute bottom-8 left-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-help group z-10 transition">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRouteNode('t2')}
+                    className="absolute bottom-8 left-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-pointer group z-10 transition hover:bg-slate-800"
+                    title="Click to view T2 GPS Coordinates"
+                  >
                     📍 T2 Node
                     <div className="hidden group-hover:block absolute left-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-rose-400 whitespace-nowrap">
                       Start point (CSMIA Term 2)
                     </div>
-                  </div>
-                  <div className="absolute top-8 right-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-help group z-10 transition">
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRouteNode('stay')}
+                    className="absolute top-8 right-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-pointer group z-10 transition hover:bg-slate-800"
+                    title="Click to view Stay GPS Coordinates"
+                  >
                     🏨 Stay Node
                     <div className="hidden group-hover:block absolute right-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-emerald-400 whitespace-nowrap">
                       12m Chauffeur transfer distance
                     </div>
-                  </div>
+                  </button>
 
                   {/* Map Controls */}
                   <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-10">
@@ -507,6 +518,40 @@ export default function MyItineraryPage() {
           </div>
         </div>
       </section>
+
+      {/* Step Coordinates Modal Overlay */}
+      {selectedRouteNode && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 relative space-y-4 shadow-2xl text-white">
+            <button
+              onClick={() => setSelectedRouteNode(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              {selectedRouteNode === 't2' ? '📍 Terminal 2 Route Coordinates' : '🏨 Stay Node Route Coordinates'}
+            </h3>
+            <div className="space-y-2 text-xs font-mono text-slate-300 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+              {selectedRouteNode === 't2' ? (
+                <>
+                  <div>Node: CSMIA T2 Departures</div>
+                  <div>Lat: 19.0896° N</div>
+                  <div>Long: 72.8656° E</div>
+                  <div className="text-rose-400 mt-1">Chauffeur pick-up zone: Pillar 4B</div>
+                </>
+              ) : (
+                <>
+                  <div>Node: Niranta Airport Stay</div>
+                  <div>Lat: 19.0885° N</div>
+                  <div>Long: 72.8679° E</div>
+                  <div className="text-emerald-400 mt-1">Transit access gate: Security Corridor 2</div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
