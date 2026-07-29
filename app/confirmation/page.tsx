@@ -73,6 +73,17 @@ export default function ConfirmationPage() {
     document.body.removeChild(link);
   };
 
+  const getStayHours = () => {
+    if (!booking) return '8.0 Hours';
+    const arr = new Date(booking.arrivalTime);
+    const dep = new Date(booking.departureTime);
+    const diff = dep.getTime() - arr.getTime();
+    if (diff > 0) {
+      return `${(diff / (1000 * 60 * 60)).toFixed(1)} Hours`;
+    }
+    return '8.0 Hours';
+  };
+
   useEffect(() => {
     // Retrieve dynamic draft details from localStorage
     const saved = localStorage.getItem('layoverx_draft');
@@ -210,6 +221,21 @@ export default function ConfirmationPage() {
               </div>
             </div>
 
+            {/* Total Stay Elapsed Progress Indicator */}
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <div className="flex justify-between items-center text-slate-300">
+                <span className="font-bold">Total Transit Elapsed</span>
+                <span className="font-semibold text-sky-400">{getStayHours()}</span>
+              </div>
+              <div className="relative w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                <div className="absolute top-0 left-0 h-full bg-sky-500 rounded-full w-[65%]"></div>
+              </div>
+              <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                <span>0h Checked-in</span>
+                <span>{getStayHours()} Check-out</span>
+              </div>
+            </div>
+
             {/* Reminder Alert subscription */}
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs print:hidden">
               <div className="font-bold text-slate-200">⏰ Check-out Alert Reminders</div>
@@ -308,6 +334,28 @@ export default function ConfirmationPage() {
                   onChange={(e) => setFlightDate(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
                 />
+                <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      setFlightDate(today);
+                    }}
+                    className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded text-[10px] transition"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tomorrow = new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0];
+                      setFlightDate(tomorrow);
+                    }}
+                    className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded text-[10px] transition"
+                  >
+                    Tomorrow
+                  </button>
+                </div>
               </div>
 
               <button 
