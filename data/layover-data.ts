@@ -1,5 +1,6 @@
 export interface Hotel {
   id: string;
+  slotId?: string;
   name: string;
   terminal: string;
   distance: string;
@@ -18,6 +19,7 @@ export interface Hotel {
 
 export interface Restaurant {
   id: string;
+  slotId?: string;
   name: string;
   cuisine: string;
   category: 'seafood' | 'local' | 'north-indian' | 'street-food' | 'fine-dining';
@@ -35,6 +37,7 @@ export interface Restaurant {
 
 export interface Spa {
   id: string;
+  slotId?: string;
   name: string;
   category?: string;
   location: string;
@@ -52,6 +55,7 @@ export interface Spa {
 
 export interface GamingLounge {
   id: string;
+  slotId?: string;
   name: string;
   category?: string;
   location: string;

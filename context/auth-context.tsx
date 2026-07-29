@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState } from 'react';
 export type AuthMode = 'login' | 'signup' | 'reset-password';
 
 export interface UserProfile {
+  id: string;
   email: string;
   name: string;
   role: 'user' | 'admin';
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>({
+    id: 'usr_demo_123',
     email: 'traveler@layoverx.com',
     name: 'Alex Traveler',
     role: 'user',
@@ -44,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = (email = 'traveler@layoverx.com', name = 'Alex Traveler') => {
-    setUser({ email, name, role: isAdmin ? 'admin' : 'user' });
+    setUser({ id: 'usr_demo_123', email, name, role: isAdmin ? 'admin' : 'user' });
     closeAuthModal();
   };
 
