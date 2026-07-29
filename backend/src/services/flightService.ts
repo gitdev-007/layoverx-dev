@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -8,6 +9,15 @@ const supabase = createClient(
   SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
   SUPABASE_ANON_KEY || 'placeholder'
 );
+
+function toValidUUID(str: string): string {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(str)) {
+    return str;
+  }
+  const hash = crypto.createHash('md5').update(str).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}`;
+}
 
 export interface FlightTrackInput {
   flightNumber: string;
@@ -96,7 +106,7 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
         const { data: booking, error: fetchError } = await supabase
           .from('bookings')
           .select('*')
-          .eq('id', bookingId)
+          .eq('id', toValidUUID(bookingId))
           .maybeSingle();
 
         if (fetchError) {
@@ -141,7 +151,7 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
               delay_minutes: delayMinutes,
               hold_expires_at: extendedExpiry,
             })
-            .eq('id', bookingId);
+            .eq('id', toValidUUID(bookingId));
 
           if (updateError) {
             console.error('[FLIGHT TRACK ERROR] Supabase booking update error:', updateError.message);
