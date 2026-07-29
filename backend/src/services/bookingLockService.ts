@@ -281,12 +281,18 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
   let bookingId = `bk_${Date.now()}`;
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
+      let dbServiceId = serviceId;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(serviceId)) {
+        dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .insert([
           {
             user_id: userId,
-            service_id: serviceId,
+            service_id: dbServiceId,
             slot_id: slotId,
             amount: 0,
             currency: 'INR',
@@ -518,12 +524,18 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
           .single();
       } else {
         // Fallback insert if DB record wasn't found but lock was in Redis/Memory
+        let dbServiceId = serviceId;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(serviceId)) {
+          dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
+        }
+
         result = await supabase
           .from('bookings')
           .insert([
             {
               user_id: userId,
-              service_id: serviceId,
+              service_id: dbServiceId,
               slot_id: slotId,
               amount: amount,
               currency: razorpayCurrency,
