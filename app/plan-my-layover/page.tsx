@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
@@ -73,7 +74,31 @@ export default function PlanMyLayoverPage() {
       setTimeout(() => setSaveStatus(null), 3000);
     }
   };
+  const router = useRouter();
+  const [validationError, setValidationError] = useState<string | null>(null);
 
+  const handleProceedCheckout = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadPassengerName.trim()) {
+      setValidationError('Lead Passenger Name is required.');
+      return;
+    }
+    if (!passportNumber.trim()) {
+      setValidationError('Passport / ID Number is required.');
+      return;
+    }
+    if (!flightIn.trim()) {
+      setValidationError('Incoming Flight Number is required.');
+      return;
+    }
+    if (!emergencyContact.trim()) {
+      setValidationError('Emergency Contact is required.');
+      return;
+    }
+
+    setValidationError(null);
+    router.push('/my-itinerary');
+  };
   // Step selections
   const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv'>('sedan');
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>('h1');
@@ -611,12 +636,19 @@ export default function PlanMyLayoverPage() {
                   </ul>
                 </div>
 
-                <Link
-                  href="/my-itinerary"
+                {validationError && (
+                  <div className="p-3 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-100 rounded-xl">
+                    ⚠️ {validationError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleProceedCheckout}
                   className="w-full py-4 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2"
                 >
                   🚀 Proceed to Secure Checkout
-                </Link>
+                </button>
               </div>
 
             </div>
