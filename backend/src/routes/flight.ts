@@ -22,6 +22,14 @@ router.post(['/track', '/api/v1/flight/track'], async (req: Request, res: Respon
       bookingId: bookingId ? String(bookingId) : undefined,
     });
 
+    if (!result.success) {
+      res.status(result.statusCode || 500).json({
+        status: 'error',
+        message: result.message || 'Failed to track flight status',
+      });
+      return;
+    }
+
     res.status(200).json({
       status: 'success',
       flight: {
