@@ -24,6 +24,7 @@ export default function MyItineraryPage() {
   const [percentUsed, setPercentUsed] = useState(55);
 
   const [countdown, setCountdown] = useState({ min: 28, sec: 42 });
+  const [trafficLevel, setTrafficLevel] = useState<'normal' | 'heavy'>('normal');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -418,6 +419,24 @@ export default function MyItineraryPage() {
                     </button>
                   </div>
 
+                  {/* Traffic Level Selector */}
+                  <div className="absolute bottom-2 left-20 bg-slate-900/90 border border-slate-800 text-white rounded p-1 text-[9px] flex gap-1 z-10">
+                    <button
+                      type="button"
+                      onClick={() => setTrafficLevel('normal')}
+                      className={`px-1.5 py-0.5 rounded transition font-bold ${trafficLevel === 'normal' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    >
+                      🟢 Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTrafficLevel('heavy')}
+                      className={`px-1.5 py-0.5 rounded transition font-bold ${trafficLevel === 'heavy' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    >
+                      🔴 Heavy
+                    </button>
+                  </div>
+
                   <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
                     Terminal 2
                   </span>
@@ -438,7 +457,7 @@ export default function MyItineraryPage() {
                 </div>
 
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Estimated transit distance: 3.2 km. Chauffeur route is calculated dynamically using flight delay records.
+                  Estimated transit distance: 3.2 km. Route is calculated dynamically based on traffic. Current traffic mode: <strong className="text-slate-800 uppercase">{trafficLevel}</strong>. Est. travel duration: <strong className="text-slate-900">{trafficLevel === 'normal' ? '12 min' : '24 min'}</strong>.
                 </p>
               </div>
 

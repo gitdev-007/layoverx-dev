@@ -1,19 +1,19 @@
-import React from 'react';
-import type { Metadata } from 'next';
+'use client';
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Niranta Transit Hotel & Lounge | LayoverX CSMIA',
-  description:
-    'Book hourly micro-stay rooms inside Mumbai CSMIA Terminal 2 with express check-in and rain shower amenities.',
-  alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/service-details',
-  },
-};
+import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight, X } from 'lucide-react';
 
 export default function ServiceDetailsPage() {
+  const [showReviews, setShowReviews] = useState(false);
+
+  const reviewsList = [
+    { name: 'Sarah M.', rating: 5, comment: 'Super convenient! Clean showers and extremely comfortable bed for a quick sleep between flights.' },
+    { name: 'Alex K.', rating: 4, comment: 'Right inside Terminal 2, no customs needed. A bit noisy near the entrance but rooms are fully soundproof.' },
+    { name: 'Rahul S.', rating: 5, comment: 'Amazing delay protection. My flight was late by 2 hours and they rescheduled my transit room stay for free.' }
+  ];
+
   return (
     <div className="min-h-screen pb-20 bg-slate-900 text-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -42,9 +42,14 @@ export default function ServiceDetailsPage() {
               </p>
 
               <div className="flex items-center gap-4 text-xs mb-6 border-y border-slate-700 py-3">
-                <span className="flex items-center gap-1 font-bold text-white">
+                <button
+                  type="button"
+                  onClick={() => setShowReviews(true)}
+                  className="flex items-center gap-1 font-bold text-white hover:text-sky-400 transition"
+                  title="View guest reviews testimonials"
+                >
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> 4.8 / 5.0 (320 Reviews)
-                </span>
+                </button>
                 <span className="text-slate-600">|</span>
                 <span className="text-emerald-400 font-semibold flex items-center gap-1">
                   <ShieldCheck className="w-4 h-4" /> Flight Delay Protection Included
@@ -142,6 +147,36 @@ export default function ServiceDetailsPage() {
 
         </div>
       </div>
+
+      {/* Guest Reviews Modal Overlay */}
+      {showReviews && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-6 relative space-y-4 shadow-2xl">
+            <button
+              onClick={() => setShowReviews(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-lg font-bold text-white">Guest Reviews & Testimonials</h3>
+            <div className="space-y-3.5 max-h-72 overflow-y-auto pr-1">
+              {reviewsList.map((rev, idx) => (
+                <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 space-y-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-white">{rev.name}</span>
+                    <span className="flex gap-0.5 text-amber-400">
+                      {Array.from({ length: rev.rating }).map((_, i) => (
+                        <Star key={i} size={10} className="fill-current" />
+                      ))}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 italic">"{rev.comment}"</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
