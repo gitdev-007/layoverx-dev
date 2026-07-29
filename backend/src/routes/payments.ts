@@ -16,22 +16,30 @@ const supabase = createClient(
 // POST /api/v1/payments/webhook
 router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: Response): Promise<void> => {
   try {
+    const isProduction = process.env.NODE_ENV === 'production';
     const signature = req.headers['x-razorpay-signature'] as string;
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    if (secret && !secret.includes('sample_webhook_secret') && !secret.includes('your_razorpay')) {
+    let isValidSignature = false;
+    if (signature && secret && !secret.includes('sample_webhook_secret') && !secret.includes('your_razorpay')) {
       const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
       const generatedSignature = crypto
         .createHmac('sha256', secret)
         .update(payload)
         .digest('hex');
 
-      if (generatedSignature !== signature) {
+      isValidSignature = (generatedSignature === signature);
+    }
+
+    if (!isValidSignature) {
+      if (isProduction) {
         res.status(400).json({
           status: 'error',
           message: 'Invalid webhook signature',
         });
         return;
+      } else {
+        console.warn('[DEV] Bypassing webhook signature validation for test payload');
       }
     }
 
@@ -39,22 +47,29 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
 
     if (event === 'payment.captured' || event === 'order.paid') {
       const paymentEntity = req.body?.payload?.payment?.entity || req.body?.payload?.order?.entity;
-      const razorpayOrderId = paymentEntity?.order_id || paymentEntity?.id;
+      const razorpayOrderId = paymentEntity?.order_id;
       const razorpayPaymentId = paymentEntity?.id || `pay_${Date.now()}`;
+      const bookingIdFromNotes = paymentEntity?.notes?.bookingId || paymentEntity?.notes?.booking_id;
 
-      if (razorpayOrderId) {
-        // a. Update Supabase 'bookings' table where payment_order_id = razorpayOrderId
+      if (bookingIdFromNotes || razorpayOrderId) {
+        // a. Update Supabase 'bookings' table where id = bookingId or payment_order_id = razorpayOrderId
         let updatedBooking: any = null;
 
         if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-          const { data, error } = await supabase
+          let query = supabase
             .from('bookings')
             .update({
               payment_status: 'CONFIRMED',
               payment_id: razorpayPaymentId,
-            })
-            .eq('payment_order_id', razorpayOrderId)
-            .select();
+            });
+
+          if (bookingIdFromNotes) {
+            query = query.eq('id', bookingIdFromNotes);
+          } else {
+            query = query.eq('payment_order_id', razorpayOrderId);
+          }
+
+          const { data, error } = await query.select();
 
           if (error) {
             console.error('❌ Webhook Supabase update error:', error);
@@ -63,11 +78,11 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
           }
         }
 
-        const bookingId = updatedBooking?.id || `bk_${Date.now()}`;
+        const bookingId = updatedBooking?.id || bookingIdFromNotes || `bk_${Date.now()}`;
         const slotId = updatedBooking?.slot_id || paymentEntity?.notes?.slotId || 'slot_webhook';
         const userId = updatedBooking?.user_id || paymentEntity?.notes?.userId || 'usr_webhook';
 
-        // b. Call sendDiscordAlert(...) with updated booking details
+        // b. Trigger the Discord notification ping to your ops channel
         sendDiscordAlert({
           bookingId,
           slotId,
@@ -77,8 +92,11 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
       }
     }
 
-    // c. Return HTTP 200 { "status": "ok" }
-    res.status(200).json({ status: 'ok' });
+    // c. Return HTTP 200 OK
+    res.status(200).json({
+      status: 'success',
+      message: 'Webhook processed successfully',
+    });
   } catch (error: any) {
     res.status(500).json({
       status: 'error',
