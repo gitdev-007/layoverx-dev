@@ -11,6 +11,19 @@ const supabase = createClient(
   SUPABASE_ANON_KEY || 'placeholder'
 );
 
+function toValidUUID(str: string): string {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(str)) {
+    return str;
+  }
+  let hex = '';
+  for (let i = 0; i < str.length; i++) {
+    hex += str.charCodeAt(i).toString(16);
+  }
+  hex = hex.padEnd(32, '0').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 const KNOWN_SAMPLE_SERVICE_IDS = new Set([
   'srv-pod-01',
   'srv-hotel-02',
@@ -154,6 +167,13 @@ export async function verifyServiceAndSlotExistence(
 
 export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
   const { serviceId, slotId, userId } = input;
+  const dbSlotId = toValidUUID(slotId);
+
+  let dbServiceId = serviceId;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(serviceId)) {
+    dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
+  }
 
   const verification = await verifyServiceAndSlotExistence(serviceId, slotId);
   if (!verification.valid) {
@@ -174,7 +194,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
       const { data: existingBookings, error: dbError } = await supabase
         .from('bookings')
         .select('id, user_id, payment_status, created_at')
-        .eq('slot_id', slotId);
+        .eq('slot_id', dbSlotId);
 
       if (dbError) {
         console.error('❌ Supabase double booking check error:', dbError.message);
@@ -242,7 +262,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
       const { data: existingSlot, error: slotCheckError } = await supabase
         .from('slots')
         .select('id')
-        .eq('id', slotId)
+        .eq('id', dbSlotId)
         .maybeSingle();
 
       if (slotCheckError) {
@@ -250,7 +270,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
       }
 
       if (!existingSlot) {
-        console.log(`[INFO] slotId "${slotId}" does not exist in 'slots'. Inserting dummy/test slot...`);
+        console.log(`[INFO] slotId "${slotId}" (db: ${dbSlotId}) does not exist in 'slots'. Inserting dummy/test slot...`);
         const now = new Date();
         const endTime = new Date(Date.now() + 3 * 60 * 60 * 1000); // NOW() + 3 hours
         
@@ -258,8 +278,8 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
           .from('slots')
           .insert([
             {
-              id: slotId,
-              service_id: serviceId,
+              id: dbSlotId,
+              service_id: dbServiceId,
               start_time: now.toISOString(),
               end_time: endTime.toISOString(),
               is_available: true,
@@ -269,7 +289,7 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
         if (slotInsertError) {
           console.error('❌ Failed to insert default dummy slot:', slotInsertError.message);
         } else {
-          console.log(`[SUCCESS] Dummy slot "${slotId}" successfully inserted into 'slots' table.`);
+          console.log(`[SUCCESS] Dummy slot "${slotId}" (db: ${dbSlotId}) successfully inserted into 'slots' table.`);
         }
       }
     } catch (err: any) {
@@ -281,19 +301,13 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
   let bookingId = `bk_${Date.now()}`;
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      let dbServiceId = serviceId;
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(serviceId)) {
-        dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
-      }
-
       const { data, error } = await supabase
         .from('bookings')
         .insert([
           {
             user_id: userId,
             service_id: dbServiceId,
-            slot_id: slotId,
+            slot_id: dbSlotId,
             amount: 0,
             currency: 'INR',
             payment_status: 'HELD',
@@ -418,6 +432,14 @@ export async function releaseSlot(input: ReleaseSlotInput): Promise<ReleaseSlotR
 
 export async function createBookingOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
   const { slotId, serviceId, userId, amount } = input;
+  const dbSlotId = toValidUUID(slotId);
+
+  let dbServiceId = serviceId;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(serviceId)) {
+    dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
+  }
+
   const lockKey = `lock:slot:${slotId}`;
 
   // 1. Verify that Redis or Supabase HELD lock exists and belongs to this userId
@@ -450,7 +472,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
       const { data: dbHolds, error: dbError } = await supabase
         .from('bookings')
         .select('id, user_id, payment_status, created_at')
-        .eq('slot_id', slotId)
+        .eq('slot_id', dbSlotId)
         .eq('user_id', userId)
         .eq('payment_status', 'HELD')
         .gte('created_at', tenMinutesAgo)
@@ -524,19 +546,13 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
           .single();
       } else {
         // Fallback insert if DB record wasn't found but lock was in Redis/Memory
-        let dbServiceId = serviceId;
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(serviceId)) {
-          dbServiceId = 'db01ad18-d911-4cdb-b73c-2518f2eee46a';
-        }
-
         result = await supabase
           .from('bookings')
           .insert([
             {
               user_id: userId,
               service_id: dbServiceId,
-              slot_id: slotId,
+              slot_id: dbSlotId,
               amount: amount,
               currency: razorpayCurrency,
               payment_status: 'PENDING',
