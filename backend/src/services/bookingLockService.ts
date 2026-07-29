@@ -1,16 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { getRedisClient } from '../utils/redis.js';
 import { sendDiscordAlert } from '../utils/discord.js';
-
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-const supabase = createClient(
-  SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY || 'placeholder'
-);
+import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 
 function toValidUUID(str: string): string {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

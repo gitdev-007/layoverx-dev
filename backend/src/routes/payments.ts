@@ -1,47 +1,50 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
 import { sendDiscordAlert } from '../utils/discord.js';
+import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 
 const router = Router();
-
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-const supabase = createClient(
-  SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY || 'placeholder'
-);
 
 // POST /api/v1/payments/webhook
 router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: Response): Promise<void> => {
   try {
-    const isProduction = process.env.NODE_ENV === 'production';
     const signature = req.headers['x-razorpay-signature'] as string;
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    let isValidSignature = false;
-    const hasSecret = secret && !secret.includes('sample_webhook_secret') && !secret.includes('your_razorpay');
+    const hasSecret = !!(secret && secret.trim() !== '');
 
-    if (signature && hasSecret) {
+    if (hasSecret) {
+      if (!signature) {
+        res.status(401).json({
+          status: 'error',
+          message: 'Missing x-razorpay-signature header',
+        });
+        return;
+      }
+
       const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
       const generatedSignature = crypto
         .createHmac('sha256', secret)
         .update(payload)
         .digest('hex');
 
-      isValidSignature = (generatedSignature === signature);
-    }
-
-    if (isProduction && hasSecret) {
-      if (!signature || !isValidSignature) {
-        res.status(400).json({
+      const isValidSignature = (generatedSignature === signature);
+      if (!isValidSignature) {
+        res.status(401).json({
           status: 'error',
-          message: 'Invalid or missing webhook signature',
+          message: 'Invalid webhook signature',
         });
         return;
       }
     } else {
+      if (isProduction) {
+        res.status(401).json({
+          status: 'error',
+          message: 'RAZORPAY_WEBHOOK_SECRET is not configured on server',
+        });
+        return;
+      }
       console.log('[DEV] Bypassing webhook signature verification');
     }
 

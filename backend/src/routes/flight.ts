@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { trackAndProtectFlight } from '../services/flightService.js';
+import { flightLimiter } from '../middleware/rateLimiter.js';
+import { sanitizeFlightTrack } from '../middleware/sanitize.js';
 
 const router = Router();
 
 // POST /api/v1/flight/track
-router.post(['/track', '/api/v1/flight/track'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/track', '/api/v1/flight/track'], flightLimiter, sanitizeFlightTrack, async (req: Request, res: Response): Promise<void> => {
   try {
     const { flightNumber, flightDate, bookingId } = req.body || {};
 

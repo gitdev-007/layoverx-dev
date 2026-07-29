@@ -5,11 +5,13 @@ import {
   createBookingOrder,
   confirmBooking,
 } from '../services/bookingLockService.js';
+import { bookingLimiter } from '../middleware/rateLimiter.js';
+import { sanitizeHoldSlot, sanitizeCreateOrder } from '../middleware/sanitize.js';
 
 const router = Router();
 
 // POST /api/v1/booking/hold-slot
-router.post(['/hold-slot', '/api/v1/booking/hold-slot'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/hold-slot', '/api/v1/booking/hold-slot'], bookingLimiter, sanitizeHoldSlot, async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceId, slotId, userId } = req.body || {};
 
@@ -101,7 +103,7 @@ router.post(['/release-slot', '/api/v1/booking/release-slot'], async (req: Reque
 });
 
 // POST /api/v1/booking/create-order
-router.post(['/create-order', '/api/v1/booking/create-order'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/create-order', '/api/v1/booking/create-order'], bookingLimiter, sanitizeCreateOrder, async (req: Request, res: Response): Promise<void> => {
   try {
     const { slotId, serviceId, userId, amount } = req.body || {};
 

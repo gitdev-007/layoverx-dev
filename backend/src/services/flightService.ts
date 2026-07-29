@@ -1,14 +1,6 @@
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
+import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 import crypto from 'crypto';
-
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-const supabase = createClient(
-  SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY || 'placeholder'
-);
 
 function toValidUUID(str: string): string {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
