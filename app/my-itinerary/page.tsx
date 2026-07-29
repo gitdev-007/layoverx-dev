@@ -342,6 +342,16 @@ export default function MyItineraryPage() {
                     
                     <circle cx="10" cy="80" r="4" fill="#ef4444" className="animate-pulse" />
                     <circle cx="90" cy="40" r="4" fill="#22c55e" className="animate-pulse" />
+
+                    {/* Animated Telemetry Car Indicator */}
+                    <g>
+                      <circle r="4" fill="#38bdf8" />
+                      <animateMotion 
+                        dur="6s" 
+                        repeatCount="indefinite" 
+                        path="M 10 80 Q 50 20 90 40"
+                      />
+                    </g>
                   </svg>
                   
                   <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">

@@ -9,10 +9,31 @@ import { Gamepad2, MapPin, Star, ChevronDown } from 'lucide-react';
 export default function GamingEntertainmentPage() {
   const [activeCategory, setActiveCategory] = useState<'all' | 'gaming' | 'movie'>('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const [sortBy, setSortBy] = useState('popularity');
 
   const filteredGaming = activeCategory === 'all'
     ? GAMING_DATA
     : GAMING_DATA.filter((g) => g.category === activeCategory);
+
+  const sortedGaming = [...filteredGaming].sort((a, b) => {
+    if (sortBy === 'price-low') {
+      const priceA = parseInt(a.price.replace(/[^0-9]/g, '')) || 0;
+      const priceB = parseInt(b.price.replace(/[^0-9]/g, '')) || 0;
+      return priceA - priceB;
+    }
+    if (sortBy === 'price-high') {
+      const priceA = parseInt(a.price.replace(/[^0-9]/g, '')) || 0;
+      const priceB = parseInt(b.price.replace(/[^0-9]/g, '')) || 0;
+      return priceB - priceA;
+    }
+    if (sortBy === 'rating') {
+      return b.rating - a.rating;
+    }
+    if (sortBy === 'popularity') {
+      return b.reviews - a.reviews;
+    }
+    return 0;
+  });
 
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
@@ -144,7 +165,27 @@ export default function GamingEntertainmentPage() {
 
             {/* Marketplace Grid */}
             <div className="w-full lg:w-3/4 space-y-6">
-              {filteredGaming.map((g) => (
+              
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                <div className="text-sm font-medium text-slate-700">
+                  Showing <strong className="text-slate-900">{filteredGaming.length}</strong> verified transit experiences
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Sort By:</span>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="popularity">Popularity</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Guest Rating</option>
+                  </select>
+                </div>
+              </div>
+
+              {sortedGaming.map((g) => (
                 <article
                   key={g.id}
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
