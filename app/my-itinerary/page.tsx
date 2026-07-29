@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plane,
@@ -22,6 +22,23 @@ export default function MyItineraryPage() {
   const [usedHours, setUsedHours] = useState('4.5 Hours');
   const [remainingHours, setRemainingHours] = useState('3.5 Hours');
   const [percentUsed, setPercentUsed] = useState(55);
+
+  const [countdown, setCountdown] = useState({ min: 28, sec: 42 });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev.sec > 0) {
+          return { ...prev, sec: prev.sec - 1 };
+        }
+        if (prev.min > 0) {
+          return { min: prev.min - 1, sec: 59 };
+        }
+        return { min: 30, sec: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [items, setItems] = useState([
     {
@@ -375,6 +392,18 @@ export default function MyItineraryPage() {
                     Stay / Dining Node
                   </span>
                 </div>
+
+                {/* Live Chauffeur Countdown Status */}
+                <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center flex items-center justify-between gap-3 text-xs text-white">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span className="font-bold">Live Chauffeur Status</span>
+                  </div>
+                  <div className="font-mono bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-sky-400 font-bold">
+                    🚗 Pickup in {countdown.min}:{countdown.sec < 10 ? `0${countdown.sec}` : countdown.sec}
+                  </div>
+                </div>
+
                 <p className="text-[11px] text-slate-500 leading-relaxed">
                   Estimated transit distance: 3.2 km. Chauffeur route is calculated dynamically using flight delay records.
                 </p>

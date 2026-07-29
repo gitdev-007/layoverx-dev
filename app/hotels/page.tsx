@@ -368,10 +368,21 @@ export default function HotelsPage() {
                           <h3 className="text-xl font-bold text-slate-900 hover:text-[#0369a1] transition-colors">
                             <Link href={`/service-details?id=${hotel.id}`}>{hotel.name}</Link>
                           </h3>
-                          <div className="flex items-center gap-1.5 bg-slate-50 text-slate-800 px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 border border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (starFilter.includes('4') && starFilter.includes('5')) {
+                                setStarFilter([]);
+                              } else {
+                                setStarFilter(['4', '5']);
+                              }
+                            }}
+                            className="flex items-center gap-1.5 bg-slate-50 hover:bg-sky-50 text-slate-800 hover:text-[#0369a1] px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 border border-slate-100 hover:border-sky-200 transition cursor-pointer"
+                            title="Quick Filter: 4+ Star Hotels"
+                          >
                             <Star size={14} className="text-amber-500 fill-amber-500" /> {hotel.rating}
                             <span className="text-slate-500 font-medium">({hotel.reviews} reviews)</span>
-                          </div>
+                          </button>
                         </div>
 
                         <div className="text-xs text-slate-500 flex items-center gap-2 mb-3">
