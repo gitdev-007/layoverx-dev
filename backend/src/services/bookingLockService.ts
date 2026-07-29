@@ -20,6 +20,7 @@ const KNOWN_SAMPLE_SERVICE_IDS = new Set([
   'srv-spa-01',
   'srv-gaming-01',
   'srv-cab-01',
+  'srv-pod-mumbai-t2',
 ]);
 
 interface InMemoryLock {

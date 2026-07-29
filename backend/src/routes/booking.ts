@@ -37,6 +37,8 @@ router.post(['/hold-slot', '/api/v1/booking/hold-slot'], async (req: Request, re
       bookingId: result.bookingId,
       slotId: result.slotId,
       serviceId: result.serviceId,
+      paymentStatus: 'HELD',
+      expiresAt: new Date(Date.now() + (result.holdExpiresInSeconds || 600) * 1000).toISOString(),
     });
   } catch (error: any) {
     if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {

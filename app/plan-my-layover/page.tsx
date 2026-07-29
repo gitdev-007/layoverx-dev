@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
+import { holdSlot } from '@/lib/api';
 import {
   Plane,
   Clock,
@@ -32,6 +33,7 @@ export default function PlanMyLayoverPage() {
   const [departureTime, setDepartureTime] = useState('2026-07-28T18:00');
   const [travelers, setTravelers] = useState('2');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [isHolding, setIsHolding] = useState(false);
 
   React.useEffect(() => {
     const now = new Date();
@@ -77,7 +79,7 @@ export default function PlanMyLayoverPage() {
   const router = useRouter();
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleProceedCheckout = (e: React.FormEvent) => {
+  const handleProceedCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!leadPassengerName.trim()) {
       setValidationError('Lead Passenger Name is required.');
@@ -97,7 +99,45 @@ export default function PlanMyLayoverPage() {
     }
 
     setValidationError(null);
-    router.push('/my-itinerary');
+    setIsHolding(true);
+
+    try {
+      // Capture selected service details or default to mock if none selected
+      const serviceId = selectedHotelId === 'h1' ? 'db01ad18-d911-4cdb-b73c-2518f2eee46a' : 'srv-pod-mumbai-t2';
+      const slotId = 'slot-1400';
+      const userId = 'test-dev-user-01';
+
+      const holdRes = await holdSlot({ userId, serviceId, slotId });
+      
+      const draftData = {
+        destinationArea,
+        arrivalTime,
+        departureTime,
+        travelers,
+        selectedCab,
+        selectedHotelId,
+        selectedDiningId,
+        selectedTourId,
+        selectedSpaId,
+        selectedGamingId,
+        totalPrice,
+        bookingId: holdRes.bookingId || `bk_${Date.now()}`,
+        paymentStatus: 'HELD',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        leadPassengerName,
+        passportNumber,
+        flightIn,
+        emergencyContact
+      };
+      localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
+      
+      router.push('/my-itinerary');
+    } catch (err: any) {
+      console.warn('[Checkout Hold Error]', err);
+      setValidationError(err.message || '⚠️ This slot is currently held or booked by another traveler. Please choose another time slot.');
+    } finally {
+      setIsHolding(false);
+    }
   };
   // Step selections
   const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv'>('sedan');
@@ -699,10 +739,18 @@ export default function PlanMyLayoverPage() {
 
                 <button
                   type="button"
+                  disabled={isHolding}
                   onClick={handleProceedCheckout}
-                  className="w-full py-4 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2"
                 >
-                  🚀 Proceed to Secure Checkout
+                  {isHolding ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                      Holding Slot...
+                    </>
+                  ) : (
+                    '🚀 Proceed to Secure Checkout'
+                  )}
                 </button>
               </div>
 
@@ -765,12 +813,21 @@ export default function PlanMyLayoverPage() {
                   <p className="text-[11px] text-gray-400">All taxes, flat-rate cab fees & airport charges included.</p>
                 </div>
 
-                <Link
-                  href="/my-itinerary"
-                  className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl shadow-md transition w-full"
+                <button
+                  type="button"
+                  disabled={isHolding}
+                  onClick={handleProceedCheckout}
+                  className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-md transition w-full"
                 >
-                  Continue to Book
-                </Link>
+                  {isHolding ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                      Holding Slot...
+                    </>
+                  ) : (
+                    'Continue to Book'
+                  )}
+                </button>
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button 
