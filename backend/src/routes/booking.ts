@@ -175,4 +175,26 @@ router.post(['/confirm', '/api/v1/booking/confirm'], async (req: Request, res: R
   }
 });
 
+router.get('/schema-debug', async (req: Request, res: Response) => {
+  try {
+    const SUPABASE_URL = process.env.SUPABASE_URL || '';
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+    const { createClient } = await import('@supabase/supabase-js');
+    const db = createClient(
+      SUPABASE_URL.startsWith('http') ? SUPABASE_URL : 'https://placeholder.supabase.co',
+      SUPABASE_ANON_KEY || 'placeholder'
+    );
+    const { data, error } = await db.from('bookings').select('*').limit(1);
+    if (error) {
+      res.status(500).json({ error: error.message });
+    } else if (data && data.length > 0) {
+      res.status(200).json({ columns: Object.keys(data[0]) });
+    } else {
+      res.status(200).json({ message: 'No records found' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
