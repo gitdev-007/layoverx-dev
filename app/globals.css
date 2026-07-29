@@ -35,28 +35,49 @@
 }
 
 .theme-hero {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b);
+  background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #ffffff;
 }
 
 /* Category Page Hero Gradients */
 .theme-hotels-hero {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b);
+  background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .theme-restaurants-hero {
-  background: linear-gradient(to bottom right, #7c2d12, #450a0a);
+  background-image: linear-gradient(to bottom, rgba(124, 45, 18, 0.65), rgba(69, 10, 10, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .theme-spa-hero {
-  background: linear-gradient(to bottom right, #2e1065, #1e1b4b);
+  background-image: linear-gradient(to bottom, rgba(46, 16, 101, 0.65), rgba(30, 27, 75, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .theme-gaming-hero {
-  background: linear-gradient(to bottom right, #4a044e, #1e1b4b);
+  background-image: linear-gradient(to bottom, rgba(74, 4, 78, 0.65), rgba(30, 27, 75, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .theme-tours-hero {
-  background: linear-gradient(to bottom right, #881337, #4c0519);
+  background-image: linear-gradient(to bottom, rgba(136, 19, 55, 0.65), rgba(76, 5, 25, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .theme-transfers-hero {
-  background: linear-gradient(to bottom right, #0f172a, #334155);
+  background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(51, 65, 85, 0.85)), url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .card-light {
