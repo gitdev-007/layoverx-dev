@@ -29,6 +29,7 @@ export default function HotelsPage() {
   const [distanceFilter, setDistanceFilter] = useState<string[]>([]);
   const [starFilter, setStarFilter] = useState<string[]>([]);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const [sortBy, setSortBy] = useState('popularity');
 
   const togglePriceFilter = (val: string) => {
     setPriceFilter((prev) =>
@@ -65,6 +66,26 @@ export default function HotelsPage() {
       return false;
     }
     return true;
+  });
+
+  const sortedHotels = [...filteredHotels].sort((a, b) => {
+    if (sortBy === 'price-low') {
+      const priceA = parseInt(a.price6h.replace(/[^0-9]/g, '')) || 0;
+      const priceB = parseInt(b.price6h.replace(/[^0-9]/g, '')) || 0;
+      return priceA - priceB;
+    }
+    if (sortBy === 'price-high') {
+      const priceA = parseInt(a.price6h.replace(/[^0-9]/g, '')) || 0;
+      const priceB = parseInt(b.price6h.replace(/[^0-9]/g, '')) || 0;
+      return priceB - priceA;
+    }
+    if (sortBy === 'rating') {
+      return b.rating - a.rating;
+    }
+    if (sortBy === 'popularity') {
+      return b.reviews - a.reviews;
+    }
+    return 0;
   });
 
   return (
@@ -307,7 +328,11 @@ export default function HotelsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase">Sort By:</span>
-                  <select className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer">
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
                     <option value="popularity">Popularity</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
@@ -318,7 +343,7 @@ export default function HotelsPage() {
 
               {/* Cards Loop */}
               <div className="space-y-6">
-                {filteredHotels.map((hotel) => (
+                {sortedHotels.map((hotel) => (
                   <article
                     key={hotel.id}
                     className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
