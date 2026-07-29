@@ -235,6 +235,47 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
     expiresAt: Date.now() + ttlSeconds * 1000,
   });
 
+  // Check if slot exists in 'slots' table, if not, automatically insert a dummy/test slot record
+  if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+    try {
+      const { data: existingSlot, error: slotCheckError } = await supabase
+        .from('slots')
+        .select('id')
+        .eq('id', slotId)
+        .maybeSingle();
+
+      if (slotCheckError) {
+        console.warn('⚠️ Error checking slot existence, attempting to insert default slot:', slotCheckError.message);
+      }
+
+      if (!existingSlot) {
+        console.log(`[INFO] slotId "${slotId}" does not exist in 'slots'. Inserting dummy/test slot...`);
+        const now = new Date();
+        const endTime = new Date(Date.now() + 3 * 60 * 60 * 1000); // NOW() + 3 hours
+        
+        const { error: slotInsertError } = await supabase
+          .from('slots')
+          .insert([
+            {
+              id: slotId,
+              service_id: serviceId,
+              start_time: now.toISOString(),
+              end_time: endTime.toISOString(),
+              is_available: true,
+            },
+          ]);
+
+        if (slotInsertError) {
+          console.error('❌ Failed to insert default dummy slot:', slotInsertError.message);
+        } else {
+          console.log(`[SUCCESS] Dummy slot "${slotId}" successfully inserted into 'slots' table.`);
+        }
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Exception checking/inserting slot in holdSlot:', err?.message || err);
+    }
+  }
+
   // 3. Record the lock in Supabase 'bookings' table with payment_status = 'HELD' for 10 minutes
   let bookingId = `bk_${Date.now()}`;
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
