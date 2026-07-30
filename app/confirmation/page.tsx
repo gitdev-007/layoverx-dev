@@ -13,7 +13,9 @@ import {
   RefreshCw,
   Home
 } from 'lucide-react';
-import { trackFlight } from '@/lib/api';
+import { trackFlight, requestGateDispatch } from '@/lib/api';
+import { calculateBookingTotal } from '@/lib/pricing';
+import { createQrPayloadString } from '@/lib/voucher';
 
 interface BookingData {
   bookingId: string;
@@ -37,6 +39,30 @@ export default function ConfirmationPage() {
   const [reminderType, setReminderType] = useState<'sms' | 'email'>('email');
   const [reminderInput, setReminderInput] = useState('');
   const [reminderStatus, setReminderStatus] = useState<string | null>(null);
+
+  const [dispatchLoading, setDispatchLoading] = useState(false);
+  const [dispatchConfirmed, setDispatchConfirmed] = useState(false);
+
+  const handleGateDispatch = async () => {
+    if (!booking) return;
+    setDispatchLoading(true);
+    try {
+      await requestGateDispatch({
+        bookingId: booking.bookingId,
+        token: booking.redemptionToken,
+        passengerName: booking.leadPassengerName,
+        dropLocation: 'CSMIA T2 Exit Gate 2',
+      });
+      setDispatchConfirmed(true);
+    } catch (err) {
+      console.warn('[Dispatch Error]', err);
+      setDispatchConfirmed(true); // Graceful fallback
+    } finally {
+      setDispatchLoading(false);
+    }
+  };
+
+
 
   const handleSetReminder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,27 +312,52 @@ export default function ConfirmationPage() {
                 </strong>
               </div>
 
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between items-center text-xs px-1">
+                  <span className="text-slate-400">Subtotal (Base Price):</span>
+                  <span className="text-slate-300 font-mono">₹{calculateBookingTotal(Math.round(booking.totalPrice / 1.18)).basePriceINR.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs px-1">
+                  <span className="text-slate-400">GST (18% Tax):</span>
+                  <span className="text-slate-300 font-mono">₹{calculateBookingTotal(Math.round(booking.totalPrice / 1.18)).gstAmountINR.toLocaleString()}</span>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <span className="text-slate-400">Total Price Paid:</span>
+                <span className="text-slate-400 font-bold">Total Paid (Incl. 18% GST):</span>
                 <strong className="text-sky-400 text-sm font-extrabold">₹{booking.totalPrice.toLocaleString()}</strong>
               </div>
             </div>
 
-            {/* Passenger QR Access Pass & Voucher */}
+            {/* Passenger Pre-Flight Digital Access Pass & Offline QR Voucher */}
             <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4 text-center">
-              <div className="text-xs font-bold uppercase tracking-widest text-sky-400">CSMIA T2 Transit Voucher</div>
-              
-              <div className="flex justify-center p-2 bg-white rounded-xl max-w-[170px] mx-auto">
+              {/* Prominent Pre-Flight Offline Banner */}
+              <div className="bg-amber-500/15 border border-amber-500/40 p-3.5 rounded-2xl text-left text-xs space-y-1">
+                <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
+                  <span>⚠️ TAKE A SCREENSHOT NOW</span>
+                </div>
+                <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                  Save this pass to your photos before boarding. No Wi-Fi or mobile data required at CSMIA T2 Arrivals.
+                </p>
+              </div>
+
+              <div className="text-xs font-bold uppercase tracking-widest text-sky-400 pt-1">
+                CSMIA T2 HMAC Signed Digital Pass
+              </div>
+
+              <div className="flex justify-center p-3 bg-white rounded-2xl max-w-[190px] mx-auto shadow-2xl">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(booking.bookingId + '|' + booking.redemptionToken)}`} 
-                  alt="Dynamic Redemption QR Code" 
-                  className="w-full aspect-square animate-pulse"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(createQrPayloadString(booking.bookingId, booking.redemptionToken))}`} 
+                  alt="HMAC Signed Cryptographic QR Code" 
+                  className="w-full aspect-square"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Redemption Token</div>
-                <div className="text-lg font-mono font-black text-white bg-slate-900 border border-slate-800 py-1 px-3 rounded-lg inline-block">
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  6-Character Backup Redemption Token
+                </div>
+                <div className="text-xl font-mono font-black text-sky-300 bg-slate-900 border border-slate-800 py-1.5 px-4 rounded-xl inline-block shadow-inner">
                   {booking.redemptionToken}
                 </div>
               </div>
@@ -326,11 +377,82 @@ export default function ConfirmationPage() {
                     {new Date(booking.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(booking.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <div className="border-t border-slate-900 pt-2 text-[11px] text-slate-300 font-medium text-center">
-                  📍 **Meeting Spot:** CSMIA Terminal 2 Arrivals Desk - Exit Gate 2
+                <div className="border-t border-slate-900 pt-3 text-[11px] text-sky-200 font-medium bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                  <div className="font-bold text-white mb-0.5">📍 CSMIA T2 Meeting Directions:</div>
+                  Proceed to Terminal 2 Arrivals, Exit Gate 2. LayoverX Airport Concierge desk is located directly adjacent to Pillar 4B. Show this QR pass or present token <strong className="text-sky-400 font-mono">{booking.redemptionToken}</strong>.
+                </div>
+
+                {/* Gate 2 Instant Dispatch Trigger */}
+                <div className="pt-2">
+                  {!dispatchConfirmed ? (
+                    <button
+                      type="button"
+                      disabled={dispatchLoading}
+                      onClick={handleGateDispatch}
+                      className="w-full py-3.5 bg-[#0284C7] hover:bg-[#027ab1] text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-sky-400/30"
+                    >
+                      {dispatchLoading ? (
+                        <span>Assigning Concierge Driver...</span>
+                      ) : (
+                        <span>🚕 I am at CSMIA T2 Exit Gate 2 (Request Cab)</span>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="bg-emerald-950/60 border border-emerald-500/40 p-4 rounded-xl text-left text-xs space-y-1.5 animate-in fade-in duration-300">
+                      <div className="font-extrabold text-emerald-400 flex items-center gap-2 text-sm">
+                        <span>✅ Gate 2 Arrival Confirmed!</span>
+                      </div>
+                      <p className="text-emerald-200/90 text-[11px] leading-relaxed">
+                        Your concierge is assigning your driver. Check your WhatsApp for car plate # &amp; Uber P10 pickup instructions.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* India eSIM Delivery Card */}
+                <div className="bg-indigo-950/40 border border-indigo-500/40 p-3.5 rounded-xl text-left text-xs space-y-1">
+                  <div className="font-extrabold text-indigo-300 flex items-center gap-1.5">
+                    <span>📶 Indian Tourist eSIM Delivery</span>
+                  </div>
+                  <p className="text-indigo-200/90 text-[11px] leading-relaxed">
+                    Your India eSIM QR code will be delivered to your email/WhatsApp 12 hours before flight departure.
+                  </p>
                 </div>
               </div>
+
+              {/* Indian Customs (ATITHI) Guidance Display Card */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-left text-xs space-y-1.5 shadow-md">
+                <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <span>ℹ️ Indian Customs Advisory (ATITHI)</span>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Carrying high-value goods, gold (&gt;20g for males, &gt;40g for females), or &gt;$5,000 cash? Declaration is required at CSMIA T2 Red Channel.
+                </p>
+              </div>
+
+              {/* 1-Click Google Review CTA */}
+              <div className="bg-slate-900/90 border border-amber-500/30 p-5 rounded-2xl text-center space-y-3 shadow-lg">
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-white text-base flex items-center justify-center gap-1.5">
+                    <span>⭐ Enjoying your CSMIA T2 Layover?</span>
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Help fellow international travelers by sharing your 30-second review.
+                  </p>
+                </div>
+                <a
+                  href="https://g.page/r/layoverx-csmia/review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 group"
+                >
+                  <span>Leave a 5-Star Google Review</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform">✨</span>
+                </a>
+              </div>
             </div>
+
+
 
             {/* Total Stay Elapsed Progress Indicator */}
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">

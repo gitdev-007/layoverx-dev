@@ -35,6 +35,8 @@ export interface CreateOrderPayload {
   serviceId: string;
   slotId: string;
   amount: number;
+  country_code?: string;
+  currency?: string;
 }
 
 export interface CreateOrderResponse {
@@ -122,3 +124,69 @@ export async function trackFlight(payload: TrackFlightPayload): Promise<TrackFli
   }
   return json;
 }
+
+export interface VerifyVoucherPayload {
+  qrData?: string;
+  token?: string;
+  bookingId?: string;
+  hmac?: string;
+}
+
+export interface VerifyVoucherResponse {
+  status: 'success' | 'error';
+  code: 'VALID_BOOKING' | 'ALREADY_REDEEMED' | 'TAMPERED_VOUCHER' | 'INVALID_BOOKING' | string;
+  message: string;
+  redeemedAt?: string;
+  booking?: {
+    bookingId: string;
+    passengerName: string;
+    flightNumber: string;
+    passportNumber: string;
+    bookedService: string;
+    redemptionToken: string;
+    redeemedAt?: string;
+  };
+}
+
+export async function verifyVoucher(payload: VerifyVoucherPayload): Promise<VerifyVoucherResponse> {
+  const res = await fetch(`${API_BASE}/booking/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json();
+  return json;
+}
+
+export interface DispatchRequestPayload {
+  bookingId?: string;
+  token?: string;
+  passengerName?: string;
+  dropLocation?: string;
+}
+
+export interface DispatchRequestResponse {
+  status: 'success' | 'error';
+  code: string;
+  message: string;
+  dispatch?: {
+    bookingId: string;
+    passengerName: string;
+    scanGate: string;
+    dispatchStatus: string;
+    assignedAt: string;
+    pickupZone: string;
+  };
+}
+
+export async function requestGateDispatch(payload: DispatchRequestPayload): Promise<DispatchRequestResponse> {
+  const res = await fetch(`${API_BASE}/ops/dispatch-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json();
+  return json;
+}
+
+

@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
+import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel as HotelItem, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
 import { holdSlot, fetchServices } from '@/lib/api';
+import { calculateBookingTotal } from '@/lib/pricing';
 import {
   Plane,
   Clock,
@@ -14,7 +15,7 @@ import {
   CheckCircle2,
   ArrowRight,
   Car,
-  Hotel,
+  Hotel as HotelIcon,
   Utensils,
   Compass,
   Sparkles,
@@ -35,7 +36,7 @@ export default function PlanMyLayoverPage() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [isHolding, setIsHolding] = useState(false);
 
-  const [hotelsList, setHotelsList] = useState<Hotel[]>(HOTELS_DATA);
+  const [hotelsList, setHotelsList] = useState<HotelItem[]>(HOTELS_DATA);
   const [diningList, setDiningList] = useState<Restaurant[]>(RESTAURANTS_DATA);
   const [toursList, setToursList] = useState<Tour[]>(TOURS_DATA);
   const [spasList, setSpasList] = useState<Spa[]>(SPAS_DATA);
@@ -193,25 +194,116 @@ export default function PlanMyLayoverPage() {
   const router = useRouter();
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleProceedCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leadPassengerName.trim()) {
-      setValidationError('Lead Passenger Name is required.');
-      return;
-    }
-    if (!passportNumber.trim()) {
-      setValidationError('Passport / ID Number is required.');
-      return;
-    }
-    if (!flightIn.trim()) {
-      setValidationError('Incoming Flight Number is required.');
-      return;
-    }
-    if (!emergencyContact.trim()) {
-      setValidationError('Emergency Contact is required.');
-      return;
-    }
+  // Step selections
+  const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv' | null>('sedan');
+  const [selectedHotelId, setSelectedHotelId] = useState<string | null>('h1');
+  const [selectedDiningId, setSelectedDiningId] = useState<string | null>('r1');
+  
+  // Step 4 Experience Tab State
+  const [expTab, setExpTab] = useState<'tours' | 'spa' | 'gaming'>('tours');
+  const [selectedTourId, setSelectedTourId] = useState<string | null>('t1');
+  const [selectedSpaId, setSelectedSpaId] = useState<string | null>(null);
+  const [selectedGamingId, setSelectedGamingId] = useState<string | null>(null);
 
+  // Step 5 Registration Inputs & Pillar 7 Hyper-Local Add-ons
+  const [leadPassengerName, setLeadPassengerName] = useState('');
+  const [passportNumber, setPassportNumber] = useState('');
+  const [flightIn, setFlightIn] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('INR');
+
+  // Pillar 7: Terminal Mismatch & Hyper-Local Services State
+  const [onwardTerminal, setOnwardTerminal] = useState<'T2' | 'T1'>('T2');
+  const [interTerminalCabAddon, setInterTerminalCabAddon] = useState(true);
+  const [selectedEsim, setSelectedEsim] = useState(false);
+  const [selectedVipBuggy, setSelectedVipBuggy] = useState(false);
+
+  // Currency & Cost calculations & 18% GST Engine
+  const currencyRates = {
+    INR: 1,
+    USD: 0.012,
+    EUR: 0.011,
+    GBP: 0.0094,
+  };
+
+  const currencySymbols = {
+    INR: '₹',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+
+  const formatPrice = (val: number) => {
+    const rate = currencyRates[currency];
+    const symbol = currencySymbols[currency];
+    return `${symbol}${Math.round(val * rate).toLocaleString()}`;
+  };
+
+  const cabPrice = selectedCab === 'sedan' ? 899 : selectedCab === 'suv' ? 1499 : 0;
+  const hotelObj = hotelsList.find((h) => h.id === selectedHotelId);
+  const hotelPrice = hotelObj ? parseInt(hotelObj.price6h.replace(/[^0-9]/g, '')) || 3499 : 0;
+  
+  const diningObj = diningList.find((r) => r.id === selectedDiningId);
+  const diningPrice = diningObj ? parseInt(diningObj.avgCost.replace(/[^0-9]/g, '')) || 1800 : 0;
+
+  const tourObj = toursList.find((t) => t.id === selectedTourId);
+  const tourPrice = tourObj ? parseInt(tourObj.price.replace(/[^0-9]/g, '')) || 2899 : 0;
+
+  const spaObj = spasList.find((s) => s.id === selectedSpaId);
+  const spaPrice = spaObj ? parseInt(spaObj.price.replace(/[^0-9]/g, '')) || 1800 : 0;
+
+  const gamingObj = gamingList.find((g) => g.id === selectedGamingId);
+  const gamingPrice = gamingObj ? parseInt(gamingObj.price.replace(/[^0-9]/g, '')) || 1200 : 0;
+
+  const esimPrice = selectedEsim ? 400 : 0;
+  const vipBuggyPrice = selectedVipBuggy ? 1999 : 0;
+  const interTerminalCabPrice = (onwardTerminal === 'T1' && interTerminalCabAddon) ? 699 : 0;
+
+  const baseSubtotalINR = cabPrice + hotelPrice + diningPrice + tourPrice + spaPrice + gamingPrice + esimPrice + vipBuggyPrice + interTerminalCabPrice;
+  const pricingBreakdown = calculateBookingTotal(baseSubtotalINR, currency);
+  const totalPrice = pricingBreakdown.grandTotalINR;
+
+
+  // Pillar 5: Country Selection & Visa Smart Guardrails State
+  const [passportCountry, setPassportCountry] = useState('India');
+  const [showVisaModal, setShowVisaModal] = useState(false);
+  const [visaAffirmed, setVisaAffirmed] = useState(false);
+  const [visaBlocked, setVisaBlocked] = useState(false);
+
+  const PASSPORT_COUNTRIES = [
+    'India',
+    'United States',
+    'United Kingdom',
+    'Canada',
+    'Australia',
+    'Germany',
+    'France',
+    'Singapore',
+    'United Arab Emirates',
+    'Japan',
+    'China',
+    'Brazil',
+    'South Africa',
+    'Other',
+  ];
+
+  // Service classification into AIRSIDE vs LANDSIDE
+  const isLandsideServiceSelected = !!(selectedCab || selectedTourId || selectedDiningId);
+  const isAirsideOnlyService = !isLandsideServiceSelected && !!(selectedHotelId || selectedSpaId || selectedGamingId);
+  const selectedServiceCategory: 'AIRSIDE' | 'LANDSIDE' = isLandsideServiceSelected ? 'LANDSIDE' : 'AIRSIDE';
+
+  const handleCountryChange = (country: string) => {
+    setPassportCountry(country);
+    if (country === 'United States') setCurrency('USD');
+    else if (country === 'United Kingdom') setCurrency('GBP');
+    else if (['Germany', 'France'].includes(country)) setCurrency('EUR');
+    else if (country === 'India') setCurrency('INR');
+    
+    setVisaAffirmed(false);
+    setVisaBlocked(false);
+  };
+
+  const performHoldSlot = async () => {
     setValidationError(null);
     setIsHolding(true);
 
@@ -240,12 +332,29 @@ export default function PlanMyLayoverPage() {
         expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
         leadPassengerName,
         passportNumber,
+        passportCountry,
         flightIn,
-        emergencyContact
+        emergencyContact,
+        serviceCategory: selectedServiceCategory,
+        visaAffirmed,
+        currency,
+        onwardTerminal,
+        selectedEsim,
+        selectedVipBuggy,
+        interTerminalCabAddon,
       };
+
+      if (selectedEsim) {
+        console.log(`[ACTION REQUIRED - eSIM]: Order #${holdRes.bookingId || 'bk_draft'} purchased India eSIM for passenger ${leadPassengerName}. Passport: ${passportNumber}`);
+      }
+      if (selectedVipBuggy) {
+        console.log(`[ACTION REQUIRED - VIP BUGGY]: Passenger ${leadPassengerName} flight ${flightIn} landing at T2. Call Adani Pranaam Desk to confirm buggy.`);
+      }
+
       localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
       
       router.push('/my-itinerary');
+
     } catch (err: any) {
       console.warn('[Checkout Hold Error]', err);
       let errMsg = err.message || 'This slot is currently held or booked by another traveler. Please select another time slot.';
@@ -257,63 +366,41 @@ export default function PlanMyLayoverPage() {
       setIsHolding(false);
     }
   };
-  // Step selections
-  const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv'>('sedan');
-  const [selectedHotelId, setSelectedHotelId] = useState<string | null>('h1');
-  const [selectedDiningId, setSelectedDiningId] = useState<string | null>('r1');
-  
-  // Step 4 Experience Tab State
-  const [expTab, setExpTab] = useState<'tours' | 'spa' | 'gaming'>('tours');
-  const [selectedTourId, setSelectedTourId] = useState<string | null>('t1');
-  const [selectedSpaId, setSelectedSpaId] = useState<string | null>(null);
-  const [selectedGamingId, setSelectedGamingId] = useState<string | null>(null);
 
-  // Step 5 Registration Inputs
-  const [leadPassengerName, setLeadPassengerName] = useState('');
-  const [passportNumber, setPassportNumber] = useState('');
-  const [flightIn, setFlightIn] = useState('');
-  const [emergencyContact, setEmergencyContact] = useState('');
+  const handleProceedCheckout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadPassengerName.trim()) {
+      setValidationError('Lead Passenger Name is required.');
+      return;
+    }
+    if (!passportNumber.trim()) {
+      setValidationError('Passport / ID Number is required.');
+      return;
+    }
+    if (!passportCountry.trim()) {
+      setValidationError('Passport Issuing Country is required.');
+      return;
+    }
+    if (!flightIn.trim()) {
+      setValidationError('Incoming Flight Number is required.');
+      return;
+    }
+    if (!emergencyContact.trim()) {
+      setValidationError('Emergency Contact is required.');
+      return;
+    }
 
-  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR'>('INR');
+    // Visa Smart Guardrail: Non-Indian passport & Landside service
+    if (passportCountry !== 'India' && selectedServiceCategory === 'LANDSIDE' && !visaAffirmed) {
+      setShowVisaModal(true);
+      return;
+    }
 
-  const currencyRates = {
-    INR: 1,
-    USD: 0.012,
-    EUR: 0.011,
+    await performHoldSlot();
   };
-
-  const currencySymbols = {
-    INR: '₹',
-    USD: '$',
-    EUR: '€',
-  };
-
-  const formatPrice = (val: number) => {
-    const rate = currencyRates[currency];
-    const symbol = currencySymbols[currency];
-    return `${symbol}${Math.round(val * rate).toLocaleString()}`;
-  };
-
-  // Cost calculations
-  const cabPrice = selectedCab === 'sedan' ? 899 : 1499;
-  const hotelObj = hotelsList.find((h) => h.id === selectedHotelId);
-  const hotelPrice = hotelObj ? parseInt(hotelObj.price6h.replace(/[^0-9]/g, '')) || 3499 : 0;
-  
-  const diningObj = diningList.find((r) => r.id === selectedDiningId);
-  const diningPrice = diningObj ? parseInt(diningObj.avgCost.replace(/[^0-9]/g, '')) || 1800 : 0;
-
-  const tourObj = toursList.find((t) => t.id === selectedTourId);
-  const tourPrice = tourObj ? parseInt(tourObj.price.replace(/[^0-9]/g, '')) || 2899 : 0;
-
-  const spaObj = spasList.find((s) => s.id === selectedSpaId);
-  const spaPrice = spaObj ? parseInt(spaObj.price.replace(/[^0-9]/g, '')) || 1800 : 0;
-
-  const gamingObj = gamingList.find((g) => g.id === selectedGamingId);
-  const gamingPrice = gamingObj ? parseInt(gamingObj.price.replace(/[^0-9]/g, '')) || 1200 : 0;
-
-  const totalPrice = cabPrice + hotelPrice + diningPrice + tourPrice + spaPrice + gamingPrice;
 
   return (
+
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
       
       {/* SEARCH INPUT & HERO SECTION */}
@@ -818,6 +905,23 @@ export default function PlanMyLayoverPage() {
                   </div>
 
                   <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      Passport Issuing Country <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={passportCountry}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-sky-500"
+                    >
+                      {PASSPORT_COUNTRIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c} {c === 'India' ? '(Domestic)' : '(International)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Incoming Flight Number</label>
                     <input
                       type="text"
@@ -826,6 +930,20 @@ export default function PlanMyLayoverPage() {
                       placeholder="e.g. EK-504"
                       className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-sky-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      Onward Flight Terminal <span className="text-sky-500">*</span>
+                    </label>
+                    <select
+                      value={onwardTerminal}
+                      onChange={(e) => setOnwardTerminal(e.target.value as 'T2' | 'T1')}
+                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="T2">Terminal 2 (CSMIA International &amp; Premium Domestic)</option>
+                      <option value="T1">Terminal 1 (Santacruz - Budget Domestic: IndiGo/Akasa)</option>
+                    </select>
                   </div>
 
                   <div>
@@ -839,6 +957,75 @@ export default function PlanMyLayoverPage() {
                     />
                   </div>
                 </div>
+
+                {/* Terminal Mismatch Warning Card */}
+                {onwardTerminal === 'T1' && (
+                  <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-2 text-xs text-amber-950">
+                    <div className="font-extrabold flex items-center gap-1.5 text-amber-900 text-sm">
+                      <span>⚠️ TERMINAL CHANGE DETECTED</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      Your onward flight departs from <strong>Terminal 1 (Santacruz - 5 km from T2)</strong>. A 45-minute inter-terminal road transfer buffer is required.
+                    </p>
+                    <label className="flex items-center gap-2 pt-1 cursor-pointer font-bold text-amber-900">
+                      <input
+                        type="checkbox"
+                        checked={interTerminalCabAddon}
+                        onChange={(e) => setInterTerminalCabAddon(e.target.checked)}
+                        className="rounded border-amber-400 text-amber-700 focus:ring-amber-500"
+                      />
+                      <span>T2 to T1 Private Inter-Terminal Transfer (Cab) — ₹699</span>
+                    </label>
+                  </div>
+                )}
+
+                {/* VIP Services & Connectivity Add-ons */}
+                <div className="bg-slate-50 border border-gray-200 p-4 rounded-xl space-y-3 text-xs">
+                  <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                    <span>⚡ Hyper-Local VIP Services &amp; Connectivity Add-ons</span>
+                  </h3>
+
+                  <label className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-sky-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={selectedEsim}
+                      onChange={(e) => setSelectedEsim(e.target.checked)}
+                      className="mt-0.5 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="font-extrabold text-slate-900 block">🇮🇳 Indian Tourist eSIM (1GB / High-Speed 5G) — ₹400 / $5 USD</span>
+                      <p className="text-slate-500 text-[11px]">Instant digital activation. QR code delivered before flight landing.</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-sky-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={selectedVipBuggy}
+                      onChange={(e) => setSelectedVipBuggy(e.target.checked)}
+                      className="mt-0.5 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="font-extrabold text-slate-900 block">⚡ VIP Aerobridge Escort &amp; Fast-Track Golf Buggy (Adani Pranaam) — ₹1,999</span>
+                      <p className="text-slate-500 text-[11px]">Met directly at aerobridge by dedicated agent with electric cart to fast-track customs.</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Service Classification Badges */}
+                <div className="pt-2">
+                  {selectedServiceCategory === 'AIRSIDE' ? (
+                    <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center gap-2 text-emerald-800 text-xs font-bold">
+                      <span>🟢 AIRSIDE SERVICE: No Indian Visa required. You remain in the international transit area.</span>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-xs font-bold">
+                      <span>🛂 LANDSIDE SERVICE: Requires valid Indian Immigration entry permission (Tourist Visa, e-Visa, Transit Visa, or OCI Card).</span>
+                    </div>
+                  )}
+                </div>
+
+
 
                 <div className="bg-slate-50 border border-gray-200 p-4 rounded-xl text-xs text-gray-700 space-y-2">
                   <p className="font-bold text-gray-900">🛡️ LayoverX Delay Protection & Visa Guarantee Included</p>
@@ -879,10 +1066,16 @@ export default function PlanMyLayoverPage() {
               
               {/* Booking Summary Card */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col space-y-4">
+                {/* High-Trust Launch Badge */}
+                <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 text-center text-xs font-bold text-sky-900 flex items-center justify-center gap-1.5 shadow-sm">
+                  <span>🚀 CSMIA T2 Launch Special — 24/7 Gate 2 Airport Concierge Included</span>
+                </div>
+
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                   <h2 className="text-xs font-black text-gray-900 uppercase tracking-widest">BOOKING SUMMARY</h2>
+
                   <div className="flex gap-1 items-center">
-                    {(['INR', 'USD', 'EUR'] as const).map((curr) => (
+                    {(['INR', 'USD', 'EUR', 'GBP'] as const).map((curr) => (
                       <button
                         key={curr}
                         type="button"
@@ -921,14 +1114,27 @@ export default function PlanMyLayoverPage() {
                       <strong>{formatPrice(tourPrice)}</strong>
                     </div>
                   )}
+
+                  <div className="border-t border-gray-100 pt-2 space-y-1.5 text-xs text-gray-600">
+                    <div className="flex justify-between items-center">
+                      <span>Subtotal (Base Price):</span>
+                      <strong className="text-gray-900">{formatPrice(pricingBreakdown.basePriceINR)}</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>GST (18% Tax):</span>
+                      <strong className="text-gray-900">{formatPrice(pricingBreakdown.gstAmountINR)}</strong>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-end justify-between mb-1">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL PRICE</span>
-                    <div className="text-2xl font-black text-[#0284C7] leading-none">{formatPrice(totalPrice)}</div>
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">TOTAL PAYABLE</span>
+                      <span className="text-[10px] text-gray-400">Inclusive of 18% GST</span>
+                    </div>
+                    <div className="text-2xl font-black text-[#0284C7] leading-none">{formatPrice(pricingBreakdown.grandTotalINR)}</div>
                   </div>
-                  <p className="text-[11px] text-gray-400">All taxes, flat-rate cab fees & airport charges included.</p>
                 </div>
 
                 <button
@@ -1037,6 +1243,128 @@ export default function PlanMyLayoverPage() {
         </div>
       </section>
 
+      {/* VISA AFFIRMATION MODAL */}
+      {showVisaModal && (
+
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <span className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+                🛂
+              </span>
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-base">Visa Smart Guardrail — CSMIA T2</h3>
+                <p className="text-xs text-slate-500">Immigration Entry Verification Required</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed font-medium">
+                <p className="font-bold text-amber-950 mb-1">
+                  Confirm you hold a valid Indian Tourist Visa, e-Visa, Transit Visa, or OCI Card to pass through CSMIA T2 Immigration.
+                </p>
+                <p>
+                  You have selected <strong>Landside Services</strong> (Airport Cabs / City Tours / External Dining). Passengers with passport issuing country <strong>{passportCountry}</strong> must pass through Indian Immigration control at Terminal 2.
+                </p>
+              </div>
+
+              {visaBlocked ? (
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-xs text-rose-900 space-y-3">
+                  <div className="font-bold flex items-center gap-2 text-rose-950 text-sm">
+                    <span>🚫 Landside Checkout Blocked</span>
+                  </div>
+                  <p>
+                    Without a valid Indian visa, you cannot clear immigration to access landside transport or city tours.
+                  </p>
+                  <div className="bg-white p-3 rounded-xl border border-rose-200 space-y-1">
+                    <span className="font-bold text-slate-900 block">Apply for official Indian e-Visa:</span>
+                    <a
+                      href="https://indianvisaonline.gov.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-600 font-bold underline hover:text-sky-700 break-all block"
+                    >
+                      https://indianvisaonline.gov.in
+                    </a>
+                  </div>
+                  <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 space-y-1">
+                    <span className="font-bold block">🟢 Airside Transit Pod Alternative Offered:</span>
+                    <p>
+                      Switched your booking to <strong>In-Terminal Airside Transit Pods</strong>. No Indian Visa required as you remain in international transit!
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVisaModal(false);
+                      setVisaBlocked(false);
+                      performHoldSlot();
+                    }}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition"
+                  >
+                    Continue with Airside Transit Pods 🟢
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <label className="flex items-start gap-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl cursor-pointer hover:bg-slate-100 transition">
+                    <input
+                      type="checkbox"
+                      checked={visaAffirmed}
+                      onChange={(e) => setVisaAffirmed(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                    />
+                    <span className="text-xs text-slate-800 font-semibold leading-snug">
+                      I confirm all passengers hold valid Indian Immigration clearance (Tourist Visa, e-Visa, Transit Visa, or OCI Card) required to exit Terminal 2.
+                    </span>
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={!visaAffirmed}
+                      onClick={() => {
+                        setShowVisaModal(false);
+                        performHoldSlot();
+                      }}
+                      className="flex-1 py-3.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-md transition"
+                    >
+                      Confirm &amp; Continue Checkout
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVisaBlocked(true);
+                        // Deselect landside items, switch to airside transit pod
+                        setSelectedTourId(null);
+                        setSelectedDiningId(null);
+                        setSelectedHotelId('h1'); // Airside Pod
+                      }}
+                      className="py-3.5 px-4 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-xl transition border border-rose-200"
+                    >
+                      No Visa / Switch to Airside Pods
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowVisaModal(false);
+                setVisaBlocked(false);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-sm font-bold p-1"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

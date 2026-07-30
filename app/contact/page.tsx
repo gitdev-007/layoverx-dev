@@ -1,29 +1,18 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ContactForm } from '@/components/contact-form';
+
+export const metadata: Metadata = {
+  title: 'Contact Us & Grievance Office | LayoverX — CSMIA T2 Mumbai',
+  description:
+    'Contact LayoverX 24/7 airport support hotline (+91 022 4900-1234), email support@layoverx.com, or get in touch with our Grievance Officer at CSMIA Terminal 2 Exit Gate 2.',
+  alternates: {
+    canonical: 'https://layoverx-dev.vercel.app/contact',
+  },
+};
 
 export default function ContactPage() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [date, setDate] = useState('');
-  const [message, setMessage] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFullName('');
-      setEmail('');
-      setPhone('');
-      setDate('');
-      setMessage('');
-    }, 4000);
-  };
-
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
       
@@ -40,24 +29,24 @@ export default function ContactPage() {
               </nav>
               
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-sky-500/20 text-sky-300 border border-sky-400/30">
-                📞 24/7 SUPPORT & ASSISTANCE
+                📞 24/7 SUPPORT &amp; ASSISTANCE
               </span>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
                 24/7 Transit Customer <br />
                 <span className="bg-gradient-to-r from-sky-400 to-sky-200 bg-clip-text text-transparent">
-                  Support & Dispatch
+                  Support &amp; Dispatch
                 </span>
               </h1>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
-                Have a question about an upcoming layover? Need urgent help with a booking? Contact our 24/7 airport dispatch office or apply to join our partner program.
+                Have a question about an upcoming layover? Need urgent help with a booking? Contact our 24/7 airport dispatch office at CSMIA Terminal 2 or reach our grievance team.
               </p>
 
               <div className="grid grid-cols-2 gap-4 pt-2 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                  <span className="font-semibold text-slate-200">24/7 Dispatch Hotline Support</span>
+                  <span className="font-semibold text-slate-200">24/7 Dispatch Hotline (+91 022 4900-1234)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>
@@ -65,11 +54,11 @@ export default function ContactPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                  <span className="font-semibold text-slate-200">WhatsApp Live Chat Assistance</span>
+                  <span className="font-semibold text-slate-200">WhatsApp Live Concierge</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                  <span className="font-semibold text-slate-200">Corporate & Supplier Registrations</span>
+                  <span className="font-semibold text-slate-200">Designated Grievance Officer</span>
                 </div>
               </div>
             </div>
@@ -98,90 +87,7 @@ export default function ContactPage() {
           <div className="flex flex-col lg:flex-row gap-12">
             
             {/* CONTACT FORM */}
-            <div className="w-full lg:w-3/5 space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Send Us a Message</h2>
-                <p className="text-slate-600 text-sm mt-1">Our transit coordinators usually respond within 15 minutes.</p>
-              </div>
-
-              {submitted ? (
-                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-bold text-center">
-                  ✓ Message sent successfully! Our dispatch team will contact you shortly.
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe"
-                        required
-                        className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        required
-                        className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">WhatsApp / Phone Number</label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+1 123 456 7890"
-                        required
-                        className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Layover Date</label>
-                      <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        required
-                        className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Tell us about your flight timings & layover details
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Write landing times, airlines, and specific help needed..."
-                      required
-                      className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
-                    ></textarea>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl shadow-md transition"
-                  >
-                    Send Message
-                  </button>
-                </form>
-              )}
-            </div>
+            <ContactForm />
 
             {/* SUPPORT INFO & BUSINESS ENQUIRIES */}
             <aside className="w-full lg:w-2/5 space-y-8">
@@ -191,8 +97,8 @@ export default function ContactPage() {
                   <li className="flex items-start gap-3">
                     <span className="text-xl">📞</span>
                     <div>
-                      <strong className="text-slate-800 block">Urgent Support Hotline</strong>
-                      <a href="tel:+912212345678" className="text-[#0284C7] font-bold">+91 22 1234 5678</a>
+                      <strong className="text-slate-800 block">24/7 Airport Support Hotline</strong>
+                      <a href="tel:+9102249001234" className="text-[#0284C7] font-bold">+91 022 4900-1234</a>
                       <p className="text-slate-500 text-xs mt-0.5">Available 24/7 for active transit passenger coordination.</p>
                     </div>
                   </li>
@@ -201,7 +107,7 @@ export default function ContactPage() {
                     <span className="text-xl">💬</span>
                     <div>
                       <strong className="text-slate-800 block">WhatsApp Dispatch Chat</strong>
-                      <a href="https://wa.me/912212345678" target="_blank" rel="noopener" className="text-emerald-700 font-bold">+91 22 1234 5678</a>
+                      <a href="https://wa.me/9102249001234" target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold">+91 022 4900-1234</a>
                       <p className="text-slate-500 text-xs mt-0.5">Quickest channel for live coordinates updates.</p>
                     </div>
                   </li>
@@ -214,6 +120,31 @@ export default function ContactPage() {
                     </div>
                   </li>
                 </ul>
+              </div>
+
+              {/* Corporate Entity & Grievance Officer */}
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
+                <h3 className="font-bold text-slate-900 text-lg">Corporate &amp; Legal</h3>
+                <div className="text-xs sm:text-sm text-slate-700 space-y-3">
+                  <div>
+                    <strong className="text-slate-800 block">Corporate Entity Name</strong>
+                    <p className="font-semibold text-slate-900">LayoverX Technologies Pvt. Ltd.</p>
+                  </div>
+                  <div>
+                    <strong className="text-slate-800 block">Airport Hub Address</strong>
+                    <p>CSMIA Terminal 2, Exit Gate 2 Arrivals,<br />Sahar, Mumbai 400099, India</p>
+                  </div>
+                  <div>
+                    <strong className="text-slate-800 block">Registered Corporate Address</strong>
+                    <p>4th Floor, WeWork BKC, Bandra Kurla Complex,<br />Mumbai 400051, Maharashtra, India</p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200">
+                    <strong className="text-slate-800 block">Designated Grievance / Nodal Officer</strong>
+                    <p className="mt-1">For legal notices, compliance, and dispute escalations:</p>
+                    <a href="mailto:grievance@layoverx.com" className="text-[#0284C7] font-bold block mt-1">grievance@layoverx.com</a>
+                    <p className="text-slate-500 text-xs mt-1">All grievances are acknowledged within 48 hours and resolved within 15 working days in accordance with Indian regulatory norms.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Partner Callout Box */}

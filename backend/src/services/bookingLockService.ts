@@ -76,6 +76,8 @@ export interface CreateOrderInput {
   serviceId: string;
   userId: string;
   amount: number;
+  country_code?: string;
+  currency?: string;
 }
 
 export interface CreateOrderResult {
@@ -501,7 +503,7 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
   let bookingId = `bk_${Date.now()}`;
   let razorpayOrderId = `ord_${Date.now()}`;
   let razorpayAmount = Math.round(amount * 100);
-  let razorpayCurrency = 'INR';
+  let razorpayCurrency = (input.currency || 'INR').toUpperCase();
 
   const keyId = process.env.RAZORPAY_KEY_ID || '';
   const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
@@ -515,9 +517,9 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
 
       const options = {
         amount: Math.round(amount * 100), // convert INR to paise
-        currency: 'INR',
+        currency: razorpayCurrency,
         receipt: bookingId,
-        notes: { slotId, userId },
+        notes: { slotId, userId, country_code: input.country_code || 'IN' },
       };
 
       const razorpayOrder: any = await razorpay.orders.create(options);
@@ -580,8 +582,29 @@ export async function createBookingOrder(input: CreateOrderInput): Promise<Creat
 
       if (data && data.id) {
         bookingId = data.id;
+
+        // Auto-calculate 80/20 Vendor Split & insert into payout_ledger
+        const totalPaidInr = Math.round(amount);
+        const platformFeeInr = Math.round(totalPaidInr * 0.20);
+        const vendorShareInr = totalPaidInr - platformFeeInr;
+
+        try {
+          await supabase.from('payout_ledger').insert([
+            {
+              booking_id: bookingId,
+              vendor_name: 'CSMIA T2 Partner Pool',
+              total_paid_inr: totalPaidInr,
+              vendor_share_inr: vendorShareInr,
+              platform_fee_inr: platformFeeInr,
+              payout_status: 'PENDING',
+            },
+          ]);
+        } catch (payoutErr: any) {
+          console.warn('⚠️ Payout ledger entry insertion warning:', payoutErr?.message || payoutErr);
+        }
       }
     } catch (err: any) {
+
       console.error('❌ Exception inserting into Supabase bookings table:', err?.message || err);
       return {
         success: false,

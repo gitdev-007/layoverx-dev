@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { createRazorpayOrder } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
+import { calculateBookingTotal } from '@/lib/pricing';
 
 export default function MyItineraryPage() {
   const router = useRouter();
@@ -100,7 +101,11 @@ export default function MyItineraryPage() {
     if (saved) {
       try {
         const draft = JSON.parse(saved);
+        if (draft.passportCountry) setPassportCountry(draft.passportCountry);
+        if (draft.currency) setCurrency(draft.currency);
+
         if (draft.arrivalTime && draft.departureTime) {
+
           const arrDate = new Date(draft.arrivalTime);
           const depDate = new Date(draft.departureTime);
           const diffMs = depDate.getTime() - arrDate.getTime();
@@ -180,11 +185,16 @@ export default function MyItineraryPage() {
     setItems(items.filter((i) => i.id !== id));
   };
 
+  const rawBaseAmount = (items.some(i => i.badge === 'Hotel') ? 3499 : 0) + (items.some(i => i.badge === 'Dining') ? 1299 : 0);
+  const pricingBreakdown = calculateBookingTotal(rawBaseAmount || 3499);
+
+  const [passportCountry, setPassportCountry] = useState('India');
+  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('INR');
+
   const handleCheckout = async () => {
     setCheckoutLoading(true);
     setCheckoutError(null);
 
-    const calculatedAmount = (items.some(i => i.badge === 'Hotel') ? 3499 : 0) + (items.some(i => i.badge === 'Dining') ? 1299 : 0);
     const userId = user?.id || 'usr_demo_123';
     const serviceId = 'h1';
     const slotId = 'slot_niranta_101';
@@ -194,8 +204,11 @@ export default function MyItineraryPage() {
         userId,
         serviceId,
         slotId,
-        amount: calculatedAmount || 3499,
+        amount: pricingBreakdown.grandTotalINR, // Payload receives grand total inclusive of 18% GST
+        country_code: passportCountry || 'IN',
+        currency: currency || 'INR',
       });
+
 
       const options = {
         key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_samplekey',
@@ -540,9 +553,15 @@ export default function MyItineraryPage() {
 
               {/* Checkout Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-md space-y-6">
+                {/* High-Trust Launch Badge */}
+                <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 text-center text-xs font-bold text-sky-900 flex items-center justify-center gap-1.5 shadow-sm">
+                  <span>🚀 CSMIA T2 Launch Special — 24/7 Gate 2 Airport Concierge Included</span>
+                </div>
+
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-3">
                   Pricing Breakdown
                 </h3>
+
 
                 <div className="space-y-3 text-xs sm:text-sm text-slate-700">
                   {items.some(i => i.badge === 'Hotel') && (
@@ -562,12 +581,26 @@ export default function MyItineraryPage() {
                       No services selected.
                     </div>
                   )}
+
+                  <div className="border-t border-slate-100 pt-3 space-y-2">
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <span>Subtotal (Base Price):</span>
+                      <strong className="text-slate-800">₹{pricingBreakdown.basePriceINR.toLocaleString()}</strong>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <span>GST (18% Tax):</span>
+                      <strong className="text-slate-800">₹{pricingBreakdown.gstAmountINR.toLocaleString()}</strong>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border-t border-slate-100 pt-4 flex justify-between items-baseline">
-                  <span className="text-sm font-bold text-slate-900">Total Price</span>
+                  <div>
+                    <span className="text-sm font-bold text-slate-900 block">Total Payable</span>
+                    <span className="text-[11px] text-slate-500">Incl. 18% GST &amp; Razorpay tokenization</span>
+                  </div>
                   <span className="text-2xl sm:text-3xl font-black text-[#0369a1]">
-                    ₹{((items.some(i => i.badge === 'Hotel') ? 3499 : 0) + (items.some(i => i.badge === 'Dining') ? 1299 : 0)).toLocaleString()}
+                    ₹{pricingBreakdown.grandTotalINR.toLocaleString()}
                   </span>
                 </div>
 

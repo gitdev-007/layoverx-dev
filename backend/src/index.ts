@@ -9,6 +9,8 @@ import itineraryRouter from './routes/itinerary.js';
 import telemetryRouter from './routes/telemetry.js';
 import paymentsRouter from './routes/payments.js';
 import flightRouter from './routes/flight.js';
+import verifyRouter from './routes/verify.js';
+import opsRouter from './routes/ops.js';
 
 dotenv.config();
 
@@ -78,6 +80,10 @@ app.use('/api/v1/itinerary', itineraryRouter);
 app.use('/api/v1/telemetry', telemetryRouter);
 app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/flight', flightRouter);
+app.use('/api/v1/verify', verifyRouter);
+app.use('/api/v1/ops', opsRouter);
+
+
 
 // Startup helper to log all registered Express routes
 function printRoutes(app: Express) {

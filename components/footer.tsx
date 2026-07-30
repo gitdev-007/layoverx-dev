@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plane, Phone, Mail, MapPin, ShieldCheck, Heart } from 'lucide-react';
+import { Plane, Phone, Mail, MapPin, ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -23,7 +23,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex items-center gap-3 text-xs text-slate-400 pt-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>AeroAPI Live Flight Tracking & On-Time Guarantee</span>
+              <span>AeroAPI Live Flight Tracking &amp; On-Time Guarantee</span>
             </div>
           </div>
 
@@ -35,22 +35,22 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/hotels" className="hover:text-sky-400 transition">
-                  Transit Hotels & Pods
+                  Transit Hotels &amp; Pods
                 </Link>
               </li>
               <li>
                 <Link href="/restaurants" className="hover:text-sky-400 transition">
-                  Airport Dining & Trails
+                  Airport Dining &amp; Trails
                 </Link>
               </li>
               <li>
                 <Link href="/spa-wellness" className="hover:text-sky-400 transition">
-                  Spa & Rejuvenation
+                  Spa &amp; Rejuvenation
                 </Link>
               </li>
               <li>
                 <Link href="/gaming-entertainment" className="hover:text-sky-400 transition">
-                  Gaming & Lounges
+                  Gaming &amp; Lounges
                 </Link>
               </li>
               <li>
@@ -66,35 +66,35 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick & Legal Links */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 mb-4">
-              Plan & Info
+              Legal &amp; Policy
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/plan-my-layover" className="hover:text-sky-400 transition">
-                  Layover Calculator
+                <Link href="/terms" className="hover:text-sky-400 transition">
+                  Terms &amp; Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/my-itinerary" className="hover:text-sky-400 transition">
-                  My Saved Itinerary
+                <Link href="/privacy" className="hover:text-sky-400 transition">
+                  Privacy Policy (DPDP)
+                </Link>
+              </li>
+              <li>
+                <Link href="/refund-policy" className="hover:text-sky-400 transition">
+                  Cancellation &amp; Refunds
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-sky-400 transition">
+                  Contact Us &amp; Grievance
                 </Link>
               </li>
               <li>
                 <Link href="/how-it-works" className="hover:text-sky-400 transition">
-                  Transit Visa & Exit FAQ
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-sky-400 transition">
-                  Partner Onboarding
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-sky-400 transition">
-                  24/7 Concierge Desk
+                  Transit Visa &amp; Exit FAQ
                 </Link>
               </li>
             </ul>
@@ -108,12 +108,12 @@ export const Footer: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
-                <span>CSMIA Terminal 1 & 2 Arrivals Desk, Mumbai, India</span>
+                <span>CSMIA Terminal 2, Exit Gate 2 Arrivals, Sahar, Mumbai 400099</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                <a href="tel:+912212345678" className="hover:text-sky-400 transition font-mono font-bold">
-                  +91 22 1234 5678
+                <a href="tel:+9102249001234" className="hover:text-sky-400 transition font-mono font-bold">
+                  +91 022 4900-1234
                 </a>
               </div>
               <div className="flex items-center gap-2">
@@ -127,17 +127,26 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-          <p>© {new Date().getFullYear()} LayoverX Platform. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <Link href="/how-it-works" className="hover:text-slate-200 transition">
-              Terms of Service
-            </Link>
-            <Link href="/how-it-works" className="hover:text-slate-200 transition">
-              Privacy Policy
-            </Link>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-500">CSMIA Official Transit Partner</span>
+        <div className="mt-12 pt-8 border-t border-slate-800 space-y-4 text-xs">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>© {new Date().getFullYear()} LayoverX Technologies Pvt. Ltd. All rights reserved.</p>
+            <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center font-medium">
+              <Link href="/terms" className="hover:text-slate-200 transition">
+                Terms &amp; Conditions
+              </Link>
+              <Link href="/privacy" className="hover:text-slate-200 transition">
+                Privacy Policy
+              </Link>
+              <Link href="/refund-policy" className="hover:text-slate-200 transition">
+                Cancellation &amp; Refund Policy
+              </Link>
+              <Link href="/contact" className="hover:text-slate-200 transition">
+                Contact Us
+              </Link>
+            </div>
+          </div>
+          <div className="text-center text-slate-400 text-[11px] leading-relaxed pt-2 border-t border-slate-800/60">
+            <span className="font-semibold text-slate-300">LayoverX Technologies Pvt. Ltd.</span> &nbsp;|&nbsp; Physical Address: CSMIA Terminal 2, Exit Gate 2 Arrivals, Sahar, Mumbai 400099 &nbsp;|&nbsp; GSTIN: <span className="font-mono text-slate-300">27AAAAA0000A1Z5</span> &nbsp;|&nbsp; Support Email: <a href="mailto:support@layoverx.com" className="text-sky-400 hover:underline font-semibold">support@layoverx.com</a>
           </div>
         </div>
       </div>
