@@ -9,7 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  openAuthModal: (mode?: 'login' | 'signup' | 'reset-password' | string) => void;
   closeAuthModal: () => void;
   setAuthModalOpen: (open: boolean) => void;
   signOut: () => Promise<void>;
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const openAuthModal = () => setIsAuthModalOpen(true);
+  const openAuthModal = (_mode?: string) => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const signOut = async () => {
