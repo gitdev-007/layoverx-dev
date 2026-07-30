@@ -7,7 +7,9 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { AuthModal } from '@/components/auth-modal';
 
+import AuthGuard from '@/components/auth/AuthGuard';
 import WhatsAppConcierge from '@/components/WhatsAppConcierge';
+
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -58,15 +60,17 @@ export default function RootLayout({
     <html lang="en" className={`${jakarta.variable} scroll-smooth`}>
       <body className="font-sans bg-[#F8FAFC] text-[#0F172A] antialiased selection:bg-[#0369a1] selection:text-white min-h-screen flex flex-col pt-16">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-          <AuthModal />
-          <WhatsAppConcierge />
+          <AuthGuard>
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+            <WhatsAppConcierge />
+          </AuthGuard>
         </AuthProvider>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );
 }
+
 

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel as HotelItem, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
 import { holdSlot, fetchServices } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
+import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
+
 import {
   Plane,
   Clock,
@@ -413,70 +415,18 @@ export default function PlanMyLayoverPage() {
             <span className="text-white font-medium">Plan Layover</span>
           </nav>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-            AI Itinerary Builder & Estimator
-          </h1>
-
-          {/* Interactive Inputs Bar */}
-          <form onSubmit={(e) => e.preventDefault()} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-800 p-4 rounded-2xl border border-gray-700">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Destination Area
-              </label>
-              <select
-                value={destinationArea}
-                onChange={(e) => setDestinationArea(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-xl p-3 text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
-              >
-                <option value="near-airport">Near Mumbai Airport</option>
-                <option value="bandra">Bandra (Sea Link District)</option>
-                <option value="colaba">Colaba (South Mumbai Heritage)</option>
-                <option value="juhu">Juhu Beach Area</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Landing Flight Arrival
-              </label>
-              <input
-                type="datetime-local"
-                value={arrivalTime}
-                onChange={(e) => setArrivalTime(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-xl p-3 text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Boarding Flight Departure
-              </label>
-              <input
-                type="datetime-local"
-                value={departureTime}
-                onChange={(e) => setDepartureTime(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-xl p-3 text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Travelers Count
-              </label>
-              <select
-                value={travelers}
-                onChange={(e) => setTravelers(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-600 rounded-xl p-3 text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
-              >
-                <option value="1">1 Traveler</option>
-                <option value="2">2 Travelers</option>
-                <option value="3">3 Travelers</option>
-                <option value="4">4+ Travelers</option>
-              </select>
-            </div>
-          </form>
+          <LayoverCalculatorForm
+            initialValues={{ destinationArea, arrivalTime, departureTime, travelers }}
+            onSearch={(data) => {
+              setDestinationArea(data.destinationArea);
+              setArrivalTime(data.arrivalTime);
+              setDepartureTime(data.departureTime);
+              setTravelers(data.travelers);
+            }}
+          />
 
           {/* Quick-fill Templates */}
+
           <div className="flex items-center gap-2 flex-wrap text-xs text-gray-400 pt-1">
             <span className="font-semibold text-gray-300">⚡ Quick Transit Templates:</span>
             <button

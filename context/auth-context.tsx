@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { useState } from 'react';
+import { useAuth as useSupabaseAuth, AuthProvider as SupabaseAuthProvider } from '@/lib/auth-context';
 
 export type AuthMode = 'login' | 'signup' | 'reset-password';
 
@@ -11,73 +12,38 @@ export interface UserProfile {
   role: 'user' | 'admin';
 }
 
-interface AuthContextType {
-  user: UserProfile | null;
-  isAdmin: boolean;
-  setIsAdmin: (val: boolean) => void;
-  authModalOpen: boolean;
-  authModalMode: AuthMode;
-  openAuthModal: (mode?: AuthMode) => void;
-  closeAuthModal: () => void;
-  signIn: (email?: string, name?: string) => void;
-  signOut: () => void;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <SupabaseAuthProvider>{children}</SupabaseAuthProvider>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>({
-    id: 'usr_demo_123',
-    email: 'traveler@layoverx.com',
-    name: 'Alex Traveler',
-    role: 'user',
-  });
+export function useAuth() {
+  const { user, session, loading, isAuthModalOpen, openAuthModal, closeAuthModal, setAuthModalOpen, signOut } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<AuthMode>('login');
 
-  const openAuthModal = (mode: AuthMode = 'login') => {
-    setAuthModalMode(mode);
-    setAuthModalOpen(true);
+  const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler';
+
+  const userProfile: UserProfile | null = user
+    ? {
+        id: user.id,
+        email: user.email || '',
+        name: fullName,
+        role: isAdmin ? 'admin' : 'user',
+      }
+    : null;
+
+  return {
+    user: userProfile,
+    rawUser: user,
+    session,
+    loading,
+    isAdmin,
+    setIsAdmin,
+    authModalOpen: isAuthModalOpen,
+    authModalMode: 'login' as AuthMode,
+    openAuthModal,
+    closeAuthModal,
+    setAuthModalOpen,
+    signIn: openAuthModal,
+    signOut,
   };
-
-  const closeAuthModal = () => {
-    setAuthModalOpen(false);
-  };
-
-  const signIn = (email = 'traveler@layoverx.com', name = 'Alex Traveler') => {
-    setUser({ id: 'usr_demo_123', email, name, role: isAdmin ? 'admin' : 'user' });
-    closeAuthModal();
-  };
-
-  const signOut = () => {
-    setUser(null);
-    closeAuthModal();
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAdmin,
-        setIsAdmin,
-        authModalOpen,
-        authModalMode,
-        openAuthModal,
-        closeAuthModal,
-        signIn,
-        signOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+}

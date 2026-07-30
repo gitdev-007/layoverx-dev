@@ -73,21 +73,8 @@ export const Navbar: React.FC = () => {
               </div>
               <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F172A]">LayoverX</span>
             </Link>
-
-            {/* Admin Toggle Badge for QA */}
-            <button
-              onClick={() => setIsAdmin(!isAdmin)}
-              className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border transition-all ${
-                isAdmin
-                  ? 'bg-amber-100 text-amber-900 border-amber-300'
-                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-              }`}
-              title="Toggle Admin Privilege Guard"
-            >
-              <Shield size={13} />
-              {isAdmin ? 'Admin Mode ON' : 'Traveler Mode'}
-            </button>
           </div>
+
 
           {/* Desktop Nav Links */}
           <div className="hidden lg:flex items-center gap-6">
@@ -170,18 +157,15 @@ export const Navbar: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  <div className="relative w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border border-slate-200">
-                    <img 
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80" 
-                      alt="Traveler Profile Avatar" 
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
+                    {user.name ? user.name.charAt(0) : 'U'}
                   </div>
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
                     {user.name}
                   </span>
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
+
 
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-[1010] text-slate-800">

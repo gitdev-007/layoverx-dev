@@ -2,7 +2,8 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LayoverCalculator } from '@/components/layover-calculator';
+import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
+import { fetchServices } from '@/lib/api';
 import {
   HOTELS_DATA,
   RESTAURANTS_DATA,
@@ -10,7 +11,6 @@ import {
   FAQS_DATA,
   REVIEWS_DATA,
 } from '@/data/layover-data';
-import { fetchServices } from '@/lib/api';
 import {
   Hotel,
   Utensils,
@@ -26,6 +26,7 @@ import {
   ArrowRight,
   HelpCircle,
 } from 'lucide-react';
+
 
 export const metadata: Metadata = {
   title: 'Mumbai Travel & Layover Experience Platform | LayoverX',
@@ -114,7 +115,7 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="theme-hero py-20 lg:py-28 relative overflow-hidden text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-bold shadow-sm">
               <Plane size={14} /> CSMIA Mumbai Airport Layover Hub
@@ -132,13 +133,14 @@ export default async function HomePage() {
             </p>
 
             {/* Layover Calculator Widget */}
-            <div className="pt-6">
-              <LayoverCalculator />
+            <div className="pt-6 text-left">
+              <LayoverCalculatorForm />
             </div>
 
           </div>
         </div>
       </section>
+
 
       {/* Service Categories */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
