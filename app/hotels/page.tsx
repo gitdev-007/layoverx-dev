@@ -205,61 +205,95 @@ export default function HotelsPage() {
         </div>
       </section>
 
-      {/* SEARCH & FILTER BAR */}
-      <section className="bg-white border-b border-slate-200 py-5 sticky top-16 z-40 shadow-sm">
+      {/* HOTEL CATEGORY PILLS BAR (Matching Screenshot 2 style, related to Hotels) */}
+      <section className="bg-white border-b border-slate-200 py-4 sticky top-16 z-40 shadow-sm overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <form onSubmit={(e) => e.preventDefault()} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#0369a1] mb-1">
-                Terminal / Area
-              </label>
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#0369a1] focus:bg-white"
-              >
-                <option value="all">All Airport Areas</option>
-                <option value="near-t2">Near T2 (International)</option>
-                <option value="near-t1">Near T1 (Domestic)</option>
-                <option value="in-terminal">Inside Terminal 2 (Transit)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#0369a1] mb-1">
-                Check-in Date & Time
-              </label>
-              <input
-                type="datetime-local"
-                value={checkinTime}
-                onChange={(e) => setCheckinTime(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#0369a1] focus:bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#0369a1] mb-1">
-                Stay Duration
-              </label>
-              <select
-                value={stayDuration}
-                onChange={(e) => setStayDuration(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#0369a1] focus:bg-white"
-              >
-                <option value="3">3 Hours (Day-Use)</option>
-                <option value="6">6 Hours (Day-Use)</option>
-                <option value="12">12 Hours (Day-Use)</option>
-                <option value="24">Overnight / Full Day</option>
-              </select>
-            </div>
-
+          <div className="flex items-center gap-2 min-w-max pb-1 sm:pb-0">
             <button
-              type="submit"
-              className="py-3 px-6 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => {
+                setSelectedLocation('all');
+                setStarFilter([]);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                selectedLocation === 'all' && starFilter.length === 0
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
             >
-              <Search size={16} /> Search Hotels
+              All Hotels
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLocation('in-terminal');
+                setStarFilter([]);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                selectedLocation === 'in-terminal'
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🏨 Inside T2 (Airside)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLocation('near-t2');
+                setStarFilter([]);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                selectedLocation === 'near-t2'
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🏬 Near Airport (Landside)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLocation('all');
+                setStarFilter(['3']);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                starFilter.includes('3') && selectedLocation === 'all'
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🛏️ Sleeping Pods
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLocation('all');
+                setStarFilter(['5']);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                starFilter.includes('5') && selectedLocation === 'all'
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              ⭐ 5-Star Luxury
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLocation('near-t1');
+                setStarFilter([]);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                selectedLocation === 'near-t1'
+                  ? 'bg-[#0369a1] text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🚿 Hourly Rest & Shower
+            </button>
+          </div>
         </div>
       </section>
 

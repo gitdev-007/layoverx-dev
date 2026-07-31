@@ -18,6 +18,8 @@ import {
   Copy,
   AlertCircle,
   RefreshCw,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { createRazorpayOrder } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
@@ -97,89 +99,125 @@ export default function MyItineraryPage() {
   ]);
 
   React.useEffect(() => {
-    const saved = localStorage.getItem('layoverx_draft');
-    if (saved) {
-      try {
+    let arrivalTime = '';
+    let departureTime = '';
+    let flightIn = '';
+    let travelers = '2';
+
+    try {
+      const calcData = localStorage.getItem('layoverx_calculator_data');
+      if (calcData) {
+        const parsed = JSON.parse(calcData);
+        if (parsed.arrivalTime) arrivalTime = parsed.arrivalTime;
+        if (parsed.departureTime) departureTime = parsed.departureTime;
+        if (parsed.travelers) travelers = parsed.travelers;
+      }
+    } catch {}
+
+    try {
+      const saved = localStorage.getItem('layoverx_draft');
+      if (saved) {
         const draft = JSON.parse(saved);
         if (draft.passportCountry) setPassportCountry(draft.passportCountry);
         if (draft.currency) setCurrency(draft.currency);
+        if (!arrivalTime && draft.arrivalTime) arrivalTime = draft.arrivalTime;
+        if (!departureTime && draft.departureTime) departureTime = draft.departureTime;
+        if (draft.flightIn) flightIn = draft.flightIn;
+        if (draft.travelers) travelers = draft.travelers;
+      }
+    } catch (e) {
+      console.warn('Failed to parse draft details:', e);
+    }
 
-        if (draft.arrivalTime && draft.departureTime) {
+    if (arrivalTime && departureTime) {
+      const arrDate = new Date(arrivalTime);
+      const depDate = new Date(departureTime);
+      const diffMs = depDate.getTime() - arrDate.getTime();
+      
+      if (diffMs > 0) {
+        const totalH = diffMs / (1000 * 60 * 60);
+        const bufferH = 3.5;
+        const remainingH = Math.max(0, totalH - bufferH);
+        const usedH = totalH - remainingH;
 
-          const arrDate = new Date(draft.arrivalTime);
-          const depDate = new Date(draft.departureTime);
-          const diffMs = depDate.getTime() - arrDate.getTime();
-          
-          if (diffMs > 0) {
-            const totalH = diffMs / (1000 * 60 * 60);
-            const bufferH = 3.5; // immigration transit buffer
-            const remainingH = Math.max(0, totalH - bufferH);
-            const usedH = totalH - remainingH;
+        setTotalHours(`${totalH.toFixed(1)} Hours`);
+        setUsedHours(`${usedH.toFixed(1)} Hours`);
+        setRemainingHours(`${remainingH.toFixed(1)} Hours`);
+        setPercentUsed(Math.round((usedH / totalH) * 100));
 
-            setTotalHours(`${totalH.toFixed(1)} Hours`);
-            setUsedHours(`${usedH.toFixed(1)} Hours`);
-            setRemainingHours(`${remainingH.toFixed(1)} Hours`);
-            setPercentUsed(Math.round((usedH / totalH) * 100));
+        const formatTime = (date: Date) => {
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        };
 
-            const formatTime = (date: Date) => {
-              return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-            };
+        const t1 = formatTime(arrDate);
+        const t2 = formatTime(new Date(arrDate.getTime() + 45 * 60 * 1000));
+        const t3 = formatTime(new Date(arrDate.getTime() + 1.5 * 60 * 60 * 1000));
+        const t4 = formatTime(new Date(arrDate.getTime() + 5.0 * 60 * 60 * 1000));
+        const t5 = formatTime(new Date(depDate.getTime() - 2.5 * 60 * 60 * 1000));
 
-            const t1 = formatTime(arrDate);
-            const t2 = formatTime(new Date(arrDate.getTime() + 30 * 60 * 1000));
-            const t3 = formatTime(new Date(arrDate.getTime() + 2 * 60 * 60 * 1000));
-            const t4 = formatTime(new Date(arrDate.getTime() + 5.5 * 60 * 60 * 1000));
-            const t5 = formatTime(new Date(depDate.getTime() - 2.5 * 60 * 60 * 1000));
-
-            setItems([
-              {
-                id: '1',
-                time: t1,
-                title: 'Flight Arrival at CSMIA Terminal 2',
-                detail: `Incoming Flight: ${draft.flightIn || 'EK-504'}. Flight status: On Time.`,
-                badge: 'Arrival',
-                cost: '₹0',
-              },
-              {
-                id: '2',
-                time: t2,
-                title: 'Immigration & Baggage Clearance',
-                detail: 'Estimated clearance time: 45 minutes.',
-                badge: 'Security',
-                cost: '₹0',
-              },
-              {
-                id: '3',
-                time: t3,
-                title: 'Niranta Transit Hotel Micro-Stay Check-In',
-                detail: '3-Hour rest room booked. Booking #LX-BOM-88329.',
-                badge: 'Hotel',
-                cost: draft.selectedHotelId ? '₹3,499' : '₹0',
-              },
-              {
-                id: '4',
-                time: t4,
-                title: 'Peshawri ITC Maratha Express Lunch',
-                detail: `Table reserved for ${draft.travelers || '2'}. 5 mins from Terminal 2.`,
-                badge: 'Dining',
-                cost: draft.selectedDiningId ? '₹1,299' : '₹0',
-              },
-              {
-                id: '5',
-                time: t5,
-                title: 'Return to Terminal 2 Departures',
-                detail: 'Clear security for outgoing connection flight.',
-                badge: 'Departure',
-                cost: '₹0',
-              },
-            ].filter(item => item.cost !== '₹0' || item.id === '1' || item.id === '2' || item.id === '5'));
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to parse draft details:', e);
+        setItems([
+          {
+            id: '1',
+            time: t1,
+            title: 'Flight Arrival at CSMIA Terminal 2',
+            detail: `Incoming Flight: ${flightIn || 'AI 102 from JFK'}. Flight status: On Time.`,
+            badge: 'Arrival',
+            cost: '₹0',
+          },
+          {
+            id: '2',
+            time: t2,
+            title: 'Immigration & Baggage Clearance',
+            detail: 'Estimated clearance time: 45 minutes.',
+            badge: 'Security',
+            cost: '₹0',
+          },
+          {
+            id: '3',
+            time: t3,
+            title: 'Niranta Transit Hotel Micro-Stay Check-In',
+            detail: '3-Hour rest room booked. Booking #LX-BOM-88329.',
+            badge: 'Hotel',
+            cost: '₹3,499',
+          },
+          {
+            id: '4',
+            time: t4,
+            title: 'Peshawri ITC Maratha Express Lunch',
+            detail: `Table reserved for ${travelers}. 5 mins from Terminal 2.`,
+            badge: 'Dining',
+            cost: '₹1,299',
+          },
+          {
+            id: '5',
+            time: t5,
+            title: 'Return to Terminal 2 Departures',
+            detail: 'Clear security for outgoing connection flight.',
+            badge: 'Departure',
+            cost: '₹0',
+          },
+        ]);
       }
     }
   }, []);
+
+  const moveItemUp = (index: number) => {
+    if (index <= 0) return;
+    const newItems = [...items];
+    const temp = newItems[index];
+    newItems[index] = newItems[index - 1];
+    newItems[index - 1] = temp;
+    setItems(newItems);
+  };
+
+  const moveItemDown = (index: number) => {
+    if (index >= items.length - 1) return;
+    const newItems = [...items];
+    const temp = newItems[index];
+    newItems[index] = newItems[index + 1];
+    newItems[index + 1] = temp;
+    setItems(newItems);
+  };
 
   const removeItem = (id: string) => {
     setItems(items.filter((i) => i.id !== id));
@@ -337,7 +375,7 @@ export default function MyItineraryPage() {
                 </div>
 
                 <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">
-                  {items.map((item) => (
+                  {items.map((item, idx) => (
                     <div key={item.id} className="relative group">
                       <div className="absolute -left-[41px] top-0 w-7 h-7 rounded-full bg-[#0369a1] text-white flex items-center justify-center text-xs font-bold shadow">
                         ✓
@@ -370,15 +408,53 @@ export default function MyItineraryPage() {
 
                         <div className="flex flex-col items-end gap-2">
                           <span className="text-xs font-bold text-slate-900">{item.cost}</span>
-                          {item.cost !== '₹0' && (
+                          
+                          {/* Priority Shift & Action Controls */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            {/* Move Up */}
                             <button
-                              onClick={() => removeItem(item.id)}
-                              className="text-slate-400 hover:text-rose-600 text-xs transition"
-                              title="Remove item"
+                              type="button"
+                              onClick={() => moveItemUp(idx)}
+                              disabled={idx === 0}
+                              className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
+                              title="Increase Priority (Move Up)"
                             >
-                              <Trash2 size={15} />
+                              <ChevronUp size={14} />
                             </button>
-                          )}
+
+                            {/* Move Down */}
+                            <button
+                              type="button"
+                              onClick={() => moveItemDown(idx)}
+                              disabled={idx === items.length - 1}
+                              className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
+                              title="Decrease Priority (Move Down)"
+                            >
+                              <ChevronDown size={14} />
+                            </button>
+
+                            {/* Replace Option */}
+                            <button
+                              type="button"
+                              onClick={() => router.push('/plan-my-layover')}
+                              className="px-2 py-0.5 rounded bg-sky-100 hover:bg-sky-200 text-[#0369a1] text-[11px] font-bold transition flex items-center gap-1"
+                              title="Replace with alternative stopover activity"
+                            >
+                              <RefreshCw size={11} /> Replace
+                            </button>
+
+                            {/* Delete Item */}
+                            {item.cost !== '₹0' && (
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.id)}
+                                className="p-1 text-slate-400 hover:text-rose-600 transition"
+                                title="Remove item"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

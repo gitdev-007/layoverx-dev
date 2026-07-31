@@ -166,8 +166,18 @@ export default function AirportTransfersPage() {
                   key={c.id}
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
                 >
-                  <div className="relative w-full md:w-80 h-52 md:h-auto flex-shrink-0 bg-slate-100 flex items-center justify-center text-5xl">
-                    🚕
+                  <div className="relative w-full md:w-80 h-52 md:h-auto flex-shrink-0 overflow-hidden bg-slate-900">
+                    <Image
+                      src={c.image}
+                      alt={c.name}
+                      fill
+                      className="object-cover"
+                    />
+                    {c.badge && (
+                      <span className="absolute top-4 left-4 bg-[#0284C7] text-white text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-md">
+                        {c.badge}
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
