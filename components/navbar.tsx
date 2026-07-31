@@ -155,7 +155,7 @@ export const Navbar: React.FC = () => {
               {/* Toast Pop-Up Notification originating from My Itinerary navbar node */}
               {toast && (
                 <div
-                  className={`absolute top-10 right-0 z-[2000] min-w-[280px] max-w-xs p-3.5 rounded-2xl shadow-2xl border text-xs font-bold transition-all duration-300 transform translate-y-0 animate-bounce ${
+                  className={`absolute top-10 right-0 z-[2000] min-w-[280px] max-w-xs p-3.5 rounded-2xl shadow-2xl border text-xs font-bold transition-all duration-300 transform translate-y-0 ${
                     toast.type === 'warning'
                       ? 'bg-amber-950 text-amber-100 border-amber-500/50'
                       : toast.type === 'info'

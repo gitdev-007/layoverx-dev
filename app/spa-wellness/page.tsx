@@ -10,12 +10,19 @@ import { Sparkles, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'l
 export default function SpaWellnessPage() {
   const { addItem } = useItinerary();
   const [activeCategory, setActiveCategory] = useState<'all' | 'massage' | 'express' | 'full-day'>('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [sortBy, setSortBy] = useState('popularity');
 
-  const filteredSpas = activeCategory === 'all'
-    ? SPAS_DATA
-    : SPAS_DATA.filter((s) => s.category === activeCategory);
+  const filteredSpas = SPAS_DATA.filter((s) => {
+    if (activeCategory !== 'all' && s.category !== activeCategory) return false;
+    if (ratingFilter === '4.5' && s.rating < 4.5) return false;
+    const priceNum = parseInt(s.price.replace(/[^0-9]/g, '')) || 0;
+    if (priceFilter === 'under-2000' && priceNum >= 2000) return false;
+    if (priceFilter === 'above-2000' && priceNum < 2000) return false;
+    return true;
+  });
 
   const sortedSpas = [...filteredSpas].sort((a, b) => {
     if (sortBy === 'price-low') {
@@ -184,7 +191,26 @@ export default function SpaWellnessPage() {
                 <div className="text-sm font-medium text-slate-700">
                   Showing <strong className="text-slate-900">{filteredSpas.length}</strong> verified transit treatments
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <select 
+                    value={ratingFilter}
+                    onChange={(e) => setRatingFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="all">All Ratings</option>
+                    <option value="4.5">⭐ 4.5+ Rating</option>
+                  </select>
+
+                  <select 
+                    value={priceFilter}
+                    onChange={(e) => setPriceFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="all">All Prices</option>
+                    <option value="under-2000">Under ₹2,000</option>
+                    <option value="above-2000">Above ₹2,000</option>
+                  </select>
+
                   <span className="text-xs font-semibold text-slate-500 uppercase">Sort By:</span>
                   <select 
                     value={sortBy}

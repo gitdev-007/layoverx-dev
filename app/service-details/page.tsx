@@ -1,190 +1,274 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Star, MapPin, ShieldCheck, Clock, Check, ArrowRight, X, AlertCircle, RefreshCw } from 'lucide-react';
-import { holdSlot } from '@/lib/api';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Star, MapPin, ShieldCheck, Clock, Check, Plus, AlertCircle, ArrowLeft } from 'lucide-react';
+import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
+import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
 
-export default function ServiceDetailsPage() {
+function ServiceDetailsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const serviceId = searchParams.get('id') || 'h1';
+  const { addItem } = useItinerary();
   const { user } = useAuth();
-  const [showReviews, setShowReviews] = useState(false);
-  const [holdingSlot, setHoldingSlot] = useState(false);
-  const [holdError, setHoldError] = useState<string | null>(null);
 
-  // Live 10-minute hold countdown timer state
-  const [holdTimerSeconds, setHoldTimerSeconds] = useState<number | null>(null);
+  // Look up item across catalogs
+  const hotelMatch = HOTELS_DATA.find((h) => h.id === serviceId);
+  const restaurantMatch = RESTAURANTS_DATA.find((r) => r.id === serviceId);
+  const spaMatch = SPAS_DATA.find((s) => s.id === serviceId);
+  const gamingMatch = GAMING_DATA.find((g) => g.id === serviceId);
+  const tourMatch = TOURS_DATA.find((t) => t.id === serviceId);
 
-  useEffect(() => {
-    if (holdTimerSeconds === null || holdTimerSeconds <= 0) return;
-    const interval = setInterval(() => {
-      setHoldTimerSeconds((prev) => (prev && prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [holdTimerSeconds]);
+  const matchedType = hotelMatch
+    ? 'Hotel'
+    : restaurantMatch
+    ? 'Dining'
+    : spaMatch
+    ? 'Spa'
+    : gamingMatch
+    ? 'Gaming'
+    : tourMatch
+    ? 'Tour'
+    : 'Hotel';
 
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  const service = {
+    id: serviceId,
+    name:
+      hotelMatch?.name ||
+      restaurantMatch?.name ||
+      spaMatch?.name ||
+      gamingMatch?.name ||
+      tourMatch?.name ||
+      'Niranta Transit Hotel & Lounge',
+    location:
+      hotelMatch?.terminal ||
+      restaurantMatch?.location ||
+      spaMatch?.location ||
+      gamingMatch?.location ||
+      'Mumbai CSMIA Terminal 2',
+    distance:
+      hotelMatch?.distance ||
+      restaurantMatch?.distance ||
+      spaMatch?.distance ||
+      gamingMatch?.distance ||
+      '0 km',
+    rating:
+      hotelMatch?.rating ||
+      restaurantMatch?.rating ||
+      spaMatch?.rating ||
+      gamingMatch?.rating ||
+      tourMatch?.rating ||
+      4.8,
+    reviews:
+      hotelMatch?.reviews ||
+      restaurantMatch?.reviews ||
+      spaMatch?.reviews ||
+      gamingMatch?.reviews ||
+      tourMatch?.reviews ||
+      320,
+    badge:
+      hotelMatch?.badge ||
+      restaurantMatch?.badge ||
+      spaMatch?.badge ||
+      gamingMatch?.badge ||
+      tourMatch?.badge ||
+      'Inside Airport Security (T2)',
+    amenities:
+      hotelMatch?.amenities ||
+      restaurantMatch?.amenities ||
+      spaMatch?.amenities ||
+      gamingMatch?.features ||
+      tourMatch?.highlights || [
+        '🚿 Rain Shower',
+        '⚡ High-Speed Wi-Fi',
+        '🛋️ 24/7 Check-In',
+        '✈️ Flight Status Monitor',
+      ],
+    description:
+      hotelMatch?.description ||
+      restaurantMatch?.description ||
+      spaMatch?.description ||
+      gamingMatch?.description ||
+      tourMatch?.description ||
+      'Premium stopover service designed for international transit travelers.',
+    image:
+      hotelMatch?.image ||
+      restaurantMatch?.image ||
+      spaMatch?.image ||
+      gamingMatch?.image ||
+      tourMatch?.image ||
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
+    type: matchedType,
   };
 
-  const handleReservePod = async () => {
-    setHoldingSlot(true);
-    setHoldError(null);
+  // Slot options based on category
+  const slotOptions =
+    service.type === 'Hotel'
+      ? [
+          { label: '3 Hours Micro-Stay', price: '₹3,499', hours: 3 },
+          { label: '6 Hours Micro-Stay', price: '₹5,299', hours: 6 },
+          { label: '12 Hours Full Stay', price: '₹8,999', hours: 12 },
+        ]
+      : service.type === 'Dining'
+      ? [
+          { label: '1.0 Hour Express Table', price: '₹1,299', hours: 1 },
+          { label: '1.5 Hours Buffet & Lounge', price: '₹1,800', hours: 1.5 },
+          { label: '2.0 Hours Chef Special Table', price: '₹2,400', hours: 2 },
+        ]
+      : service.type === 'Spa'
+      ? [
+          { label: '45 Mins Express Reflexology', price: '₹1,999', hours: 0.75 },
+          { label: '60 Mins Deep Tissue Massage', price: '₹2,600', hours: 1 },
+          { label: '90 Mins Full Body Therapy', price: '₹3,500', hours: 1.5 },
+        ]
+      : service.type === 'Gaming'
+      ? [
+          { label: '1 Hour VR & PS5 Station', price: '₹800', hours: 1 },
+          { label: '2 Hours Pro Gaming Station', price: '₹1,499', hours: 2 },
+          { label: '3 Hours VIP Lounge Access', price: '₹1,999', hours: 3 },
+        ]
+      : [
+          { label: '3 Hours Express Mumbai Tour', price: '₹2,499', hours: 3 },
+          { label: '5 Hours Gateway & Colaba Tour', price: '₹3,999', hours: 5 },
+          { label: '7 Hours Full Day City Tour', price: '₹5,499', hours: 7 },
+        ];
 
-    const userId = user?.id || 'usr_demo_123';
-    const serviceId = 'h1';
-    const slotId = 'slot_niranta_101';
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState(0);
+  const [checkInTime, setCheckInTime] = useState('2026-07-28T12:00');
+  const [travelersCount, setTravelersCount] = useState('1 Adult');
 
-    try {
-      const response = await holdSlot({ userId, serviceId, slotId });
-      // Start 10-minute countdown timer (600 seconds)
-      setHoldTimerSeconds(600);
-      
-      // Save lock details to localStorage
-      const draft = {
-        selectedHotelId: 'h1',
-        slotId,
-        serviceId,
-        bookingId: response.bookingId || `bk_${Date.now()}`,
-        totalPrice: 3919,
-        holdExpiry: Date.now() + 600 * 1000
-      };
-      localStorage.setItem('layoverx_draft', JSON.stringify(draft));
+  const selectedSlot = slotOptions[selectedSlotIndex] || slotOptions[0];
 
-      setTimeout(() => {
-        router.push('/my-itinerary');
-      }, 1000);
-    } catch (err: any) {
-      console.warn('[HoldSlot API Call Error]', err);
-      setHoldError(err.message || '⚠️ This slot is currently held or booked by another traveler. Please choose another time slot.');
-    } finally {
-      setHoldingSlot(false);
-    }
-  };
-
-  const [reviews, setReviews] = useState([
-    { name: 'Sarah M.', rating: 5, comment: 'Super convenient! Clean showers and extremely comfortable bed for a quick sleep between flights.' },
-    { name: 'Alex K.', rating: 4, comment: 'Right inside Terminal 2, no customs needed. A bit noisy near the entrance but rooms are fully soundproof.' },
-    { name: 'Rahul S.', rating: 5, comment: 'Amazing delay protection. My flight was late by 2 hours and they rescheduled my transit room stay for free.' }
-  ]);
-
-  const [newCommentName, setNewCommentName] = useState('');
-  const [newCommentText, setNewCommentText] = useState('');
-  const [newCommentRating, setNewCommentRating] = useState(5);
-
-  const [showToast, setShowToast] = useState(false);
-
-  const handlePostReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCommentName.trim() || !newCommentText.trim()) return;
-    setReviews([
-      ...reviews,
-      { name: newCommentName, rating: newCommentRating, comment: newCommentText }
-    ]);
-    setNewCommentName('');
-    setNewCommentText('');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const handleAddToItinerary = () => {
+    addItem({
+      title: service.name,
+      detail: `${selectedSlot.label} • ${service.location}`,
+      badge: service.type,
+      cost: selectedSlot.price,
+      durationHours: selectedSlot.hours,
+    });
   };
 
   return (
     <div className="min-h-screen pb-20 bg-slate-900 text-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        
+        {/* Back Link */}
+        <Link
+          href={
+            service.type === 'Hotel'
+              ? '/hotels'
+              : service.type === 'Dining'
+              ? '/restaurants'
+              : service.type === 'Spa'
+              ? '/spa-wellness'
+              : service.type === 'Gaming'
+              ? '/gaming-entertainment'
+              : '/experiences'
+          }
+          className="inline-flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-sky-300 transition"
+        >
+          <ArrowLeft size={14} /> Back to {service.type} Catalog
+        </Link>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="p-6 md:p-8 bg-slate-800/80 border border-slate-700/60 rounded-3xl shadow-xl">
-              <div className="relative h-72 w-full rounded-2xl overflow-hidden mb-6">
+            <div className="p-6 md:p-8 bg-slate-800/80 border border-slate-700/60 rounded-3xl shadow-xl space-y-6">
+              <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden">
                 <Image
-                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
-                  alt="Niranta Transit Hotel"
+                  src={service.image}
+                  alt={service.name}
                   fill
                   className="object-cover"
                 />
                 <span className="absolute top-4 left-4 px-3 py-1 bg-sky-500 text-white font-bold text-xs rounded-full shadow-md">
-                  Inside Airport Security (T2)
+                  {service.badge}
                 </span>
               </div>
 
-              <h1 className="text-3xl font-extrabold text-white mb-2">
-                Niranta Transit Hotel & Lounge
-              </h1>
-              <p className="text-xs text-slate-400 flex items-center gap-2 mb-4">
-                <MapPin className="w-4 h-4 text-sky-400" /> Mumbai CSMIA Terminal 2 (Level 2 & Level 1)
-              </p>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+                  {service.name}
+                </h1>
+                <p className="text-xs text-slate-400 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-sky-400 flex-shrink-0" /> {service.location} ({service.distance})
+                </p>
+              </div>
 
-              <div className="flex items-center gap-4 text-xs mb-6 border-y border-slate-700 py-3">
-                <button
-                  type="button"
-                  onClick={() => setShowReviews(true)}
-                  className="flex items-center gap-1 font-bold text-white hover:text-sky-400 transition"
-                  title="View guest reviews testimonials"
-                >
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> 4.8 / 5.0 (320 Reviews)
-                </button>
+              <div className="flex items-center gap-4 text-xs border-y border-slate-700 py-3">
+                <span className="flex items-center gap-1 font-bold text-white">
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {service.rating} / 5.0 ({service.reviews} reviews)
+                </span>
                 <span className="text-slate-600">|</span>
                 <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <ShieldCheck className="w-4 h-4" /> Flight Delay Protection Included
+                  <ShieldCheck className="w-4 h-4" /> Delay Protection Included
                 </span>
               </div>
 
-              <h2 className="text-xl font-bold text-white mb-3">Service Description</h2>
-              <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                Niranta Transit Hotel offers air-conditioned micro-stay rooms right inside Mumbai CSMIA Terminal 2. Perfect for international passengers with long layovers who wish to sleep, shower, and refresh without clearing customs or leaving the airport premises.
-              </p>
+              <div>
+                <h2 className="text-lg font-bold text-white mb-2">Service Overview</h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {service.description}
+                </p>
+              </div>
 
-              <h2 className="text-xl font-bold text-white mb-3">Included Amenities</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  'Rain Shower',
-                  'High-Speed Wi-Fi',
-                  'Express Check-In',
-                  'Flight Status Monitor',
-                  '24/7 Room Service',
-                  'Soundproof Windows',
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700"
-                  >
-                    <Check className="w-4 h-4 text-emerald-400" /> {item}
-                  </div>
-                ))}
+              <div>
+                <h2 className="text-lg font-bold text-white mb-3">Included Highlights & Amenities</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {service.amenities.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-slate-900/80 p-3 rounded-xl border border-slate-700"
+                    >
+                      <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" /> {item}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Booking Side Card */}
+          {/* Booking Side Card (Clean Add to Itinerary without screenshot 2 fee breakdown) */}
           <div>
             <div className="p-6 bg-slate-800/80 border border-slate-700/60 rounded-3xl sticky top-24 shadow-xl space-y-6">
-              <h3 className="text-xl font-bold text-white">Book Hourly Slot</h3>
+              <div className="border-b border-slate-700 pb-3">
+                <h3 className="text-lg font-bold text-white">Select {service.type} Slot</h3>
+                <p className="text-xs text-slate-400">Choose your duration and add directly to itinerary.</p>
+              </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
-                    Select Duration
+                    Select Duration Slot
                   </label>
-                  <select className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5">
-                    <option value="3">3 Hours Stay — ₹3,499</option>
-                    <option value="6">6 Hours Stay — ₹5,299</option>
-                    <option value="12">12 Hours Stay — ₹8,999</option>
+                  <select
+                    value={selectedSlotIndex}
+                    onChange={(e) => setSelectedSlotIndex(Number(e.target.value))}
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5 cursor-pointer"
+                  >
+                    {slotOptions.map((opt, idx) => (
+                      <option key={idx} value={idx}>
+                        {opt.label} — {opt.price}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
-                    Check-in Date & Time
+                    Preferred Time
                   </label>
                   <input
                     type="datetime-local"
+                    value={checkInTime}
+                    onChange={(e) => setCheckInTime(e.target.value)}
                     className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5"
-                    defaultValue="2026-07-28T12:00"
                   />
                 </div>
 
@@ -192,137 +276,48 @@ export default function ServiceDetailsPage() {
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
                     Travelers
                   </label>
-                  <select className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5">
+                  <select
+                    value={travelersCount}
+                    onChange={(e) => setTravelersCount(e.target.value)}
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5 cursor-pointer"
+                  >
                     <option>1 Adult</option>
                     <option>2 Adults</option>
+                    <option>3+ Passengers</option>
                   </select>
                 </div>
               </div>
 
-              <div className="border-t border-slate-700 pt-4 space-y-2 text-xs text-slate-300">
-                <div className="flex justify-between">
-                  <span>Slot Base Fee</span>
-                  <span className="font-semibold text-white">₹3,499</span>
+              <div className="bg-slate-900/90 border border-slate-700 p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Selected Rate</span>
+                  <span className="text-xl font-black text-sky-400">{selectedSlot.price}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>GST & Airport Taxes</span>
-                  <span className="font-semibold text-white">₹420</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-700 pt-2 text-sm font-bold text-white">
-                  <span>Total Amount</span>
-                  <span className="text-sky-400">₹3,919</span>
-                </div>
+                <span className="text-xs font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+                  {selectedSlot.hours} Hours
+                </span>
               </div>
-
-              {/* Live Hold Timer Banner */}
-              {holdTimerSeconds !== null && holdTimerSeconds > 0 && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs p-3 rounded-xl flex items-center justify-between font-mono font-bold animate-pulse">
-                  <span className="flex items-center gap-1.5"><Clock size={14} /> Slot Lock Active:</span>
-                  <span>{formatTimer(holdTimerSeconds)} min</span>
-                </div>
-              )}
-
-              {/* Conflict Error Notification Banner */}
-              {holdError && (
-                <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs p-3 rounded-xl flex items-start gap-2">
-                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <span>{holdError}</span>
-                </div>
-              )}
 
               <button
                 type="button"
-                onClick={handleReservePod}
-                disabled={holdingSlot}
-                className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 cursor-pointer"
+                onClick={handleAddToItinerary}
+                className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
               >
-                {holdingSlot ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" /> Holding Slot (10m Lock)...
-                  </>
-                ) : (
-                  <>
-                    Reserve Pod / Book Slot <ArrowRight size={14} />
-                  </>
-                )}
+                <Plus size={16} /> Add to Itinerary
               </button>
             </div>
           </div>
 
         </div>
       </div>
-
-      {/* Guest Reviews Modal Overlay */}
-      {showReviews && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-6 relative space-y-4 shadow-2xl">
-            <button
-              onClick={() => setShowReviews(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X size={18} />
-            </button>
-            <h3 className="text-lg font-bold text-white">Guest Reviews & Testimonials</h3>
-            <div className="space-y-3.5 max-h-56 overflow-y-auto pr-1">
-              {reviews.map((rev, idx) => (
-                <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-white">{rev.name}</span>
-                    <span className="flex gap-0.5 text-amber-400">
-                      {Array.from({ length: rev.rating }).map((_, i) => (
-                        <Star key={i} size={10} className="fill-current" />
-                      ))}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 italic">"{rev.comment}"</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Post review form */}
-            <form onSubmit={handlePostReview} className="border-t border-slate-700 pt-4 space-y-2 text-xs">
-              <div className="font-bold text-white text-xs">Post a Review</div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  value={newCommentName}
-                  onChange={(e) => setNewCommentName(e.target.value)}
-                  className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500"
-                />
-                <select
-                  value={newCommentRating}
-                  onChange={(e) => setNewCommentRating(parseInt(e.target.value))}
-                  className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500"
-                >
-                  <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
-                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
-                  <option value="3">⭐⭐⭐ 3 Stars</option>
-                </select>
-              </div>
-              <textarea
-                placeholder="Write your review comments here..."
-                value={newCommentText}
-                onChange={(e) => setNewCommentText(e.target.value)}
-                className="w-full h-12 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-sky-500 resize-none"
-              />
-              <button
-                type="submit"
-                className="w-full py-1.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition"
-              >
-                Submit Review
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Success Toast Alert */}
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-[2000] bg-emerald-600 text-white font-bold text-xs px-4.5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce border border-emerald-500">
-          <span>✓ Review posted successfully! Thank you for your feedback.</span>
-        </div>
-      )}
     </div>
+  );
+}
+
+export default function ServiceDetailsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 text-white p-12 text-center">Loading details...</div>}>
+      <ServiceDetailsContent />
+    </Suspense>
   );
 }

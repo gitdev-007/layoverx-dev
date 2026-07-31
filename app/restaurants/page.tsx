@@ -22,6 +22,8 @@ export default function RestaurantsPage() {
   const { addItem } = useItinerary();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [costFilter, setCostFilter] = useState<string[]>([]);
+  const [ratingFilter, setRatingFilter] = useState<string>('all');
+  const [distanceFilter, setDistanceFilter] = useState<string[]>([]);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [sortBy, setSortBy] = useState('popularity');
 
@@ -31,10 +33,44 @@ export default function RestaurantsPage() {
     );
   };
 
+  const toggleDistanceFilter = (val: string) => {
+    setDistanceFilter((prev) =>
+      prev.includes(val) ? prev.filter((i) => i !== val) : [...prev, val]
+    );
+  };
+
   const filteredRestaurants = RESTAURANTS_DATA.filter((res) => {
     if (selectedCategory !== 'all' && res.category !== selectedCategory) {
       return false;
     }
+
+    // Rating Filter
+    if (ratingFilter === '4.5' && res.rating < 4.5) return false;
+    if (ratingFilter === '4.0' && res.rating < 4.0) return false;
+
+    // Cost Filter
+    const priceNum = parseInt(res.avgCost.replace(/[^0-9]/g, '')) || 0;
+    if (costFilter.length > 0) {
+      const matchCost = costFilter.some((c) => {
+        if (c === 'under-1000') return priceNum < 1000;
+        if (c === '1000-2500') return priceNum >= 1000 && priceNum <= 2500;
+        if (c === 'above-2500') return priceNum > 2500;
+        return true;
+      });
+      if (!matchCost) return false;
+    }
+
+    // Distance Filter
+    const distNum = parseFloat(res.distance.replace(/[^0-9.]/g, '')) || 0;
+    if (distanceFilter.length > 0) {
+      const matchDist = distanceFilter.some((d) => {
+        if (d === 'under-2km') return distNum <= 2;
+        if (d === '2-6km') return distNum > 2 && distNum <= 6;
+        return true;
+      });
+      if (!matchDist) return false;
+    }
+
     return true;
   });
 
@@ -177,11 +213,38 @@ export default function RestaurantsPage() {
                     onClick={() => {
                       setSelectedCategory('all');
                       setCostFilter([]);
+                      setRatingFilter('all');
+                      setDistanceFilter([]);
                     }}
                     className="text-xs text-[#0369a1] font-bold hover:underline"
                   >
                     Clear All
                   </button>
+                </div>
+
+                {/* Rating Filter */}
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                    Guest Rating
+                  </h3>
+                  <div className="space-y-2 text-xs font-medium text-slate-700">
+                    {[
+                      { label: 'All Ratings', value: 'all' },
+                      { label: '⭐ 4.5+ Exceptional', value: '4.5' },
+                      { label: '⭐ 4.0+ Highly Rated', value: '4.0' },
+                    ].map((opt) => (
+                      <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="ratingFilter"
+                          checked={ratingFilter === opt.value}
+                          onChange={() => setRatingFilter(opt.value)}
+                          className="border-slate-300 text-[#0369a1] focus:ring-[#0369a1]"
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -213,10 +276,22 @@ export default function RestaurantsPage() {
                   </h3>
                   <div className="space-y-2.5 text-sm font-medium text-slate-700">
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="rounded border-slate-300 text-[#0369a1]" /> Under 2 km
+                      <input
+                        type="checkbox"
+                        checked={distanceFilter.includes('under-2km')}
+                        onChange={() => toggleDistanceFilter('under-2km')}
+                        className="rounded border-slate-300 text-[#0369a1]"
+                      />
+                      Under 2 km (In/Near Airport)
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="rounded border-slate-300 text-[#0369a1]" /> 2 km to 6 km
+                      <input
+                        type="checkbox"
+                        checked={distanceFilter.includes('2-6km')}
+                        onChange={() => toggleDistanceFilter('2-6km')}
+                        className="rounded border-slate-300 text-[#0369a1]"
+                      />
+                      2 km to 6 km (Express Ride)
                     </label>
                   </div>
                 </div>

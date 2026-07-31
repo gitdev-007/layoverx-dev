@@ -10,12 +10,19 @@ import { Gamepad2, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'l
 export default function GamingEntertainmentPage() {
   const { addItem } = useItinerary();
   const [activeCategory, setActiveCategory] = useState<'all' | 'gaming' | 'movie'>('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [sortBy, setSortBy] = useState('popularity');
 
-  const filteredGaming = activeCategory === 'all'
-    ? GAMING_DATA
-    : GAMING_DATA.filter((g) => g.category === activeCategory);
+  const filteredGaming = GAMING_DATA.filter((g) => {
+    if (activeCategory !== 'all' && g.category !== activeCategory) return false;
+    if (ratingFilter === '4.5' && g.rating < 4.5) return false;
+    const priceNum = parseInt(g.price.replace(/[^0-9]/g, '')) || 0;
+    if (priceFilter === 'under-1500' && priceNum >= 1500) return false;
+    if (priceFilter === 'above-1500' && priceNum < 1500) return false;
+    return true;
+  });
 
   const sortedGaming = [...filteredGaming].sort((a, b) => {
     if (sortBy === 'price-low') {
@@ -172,7 +179,26 @@ export default function GamingEntertainmentPage() {
                 <div className="text-sm font-medium text-slate-700">
                   Showing <strong className="text-slate-900">{filteredGaming.length}</strong> verified transit experiences
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <select 
+                    value={ratingFilter}
+                    onChange={(e) => setRatingFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="all">All Ratings</option>
+                    <option value="4.5">⭐ 4.5+ Rating</option>
+                  </select>
+
+                  <select 
+                    value={priceFilter}
+                    onChange={(e) => setPriceFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="all">All Prices</option>
+                    <option value="under-1500">Under ₹1,500</option>
+                    <option value="above-1500">Above ₹1,500</option>
+                  </select>
+
                   <span className="text-xs font-semibold text-slate-500 uppercase">Sort By:</span>
                   <select 
                     value={sortBy}

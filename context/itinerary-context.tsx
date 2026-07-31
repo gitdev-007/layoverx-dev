@@ -32,6 +32,7 @@ interface ItineraryContextType {
   toast: ToastNotice | null;
   addItem: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
   removeItem: (id: string) => void;
+  updateItemDuration: (id: string, durationHours: number, cost: string) => void;
   moveItemUp: (index: number) => void;
   moveItemDown: (index: number) => void;
   clearAllItems: () => void;
@@ -87,6 +88,15 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addItem = (itemData: Omit<ItineraryItem, 'id'>, usableHoursLimit = 10.5) => {
+    // Check for duplicate booking
+    const isDuplicate = items.some(
+      (item) => item.title.trim().toLowerCase() === itemData.title.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      showToast(`⚠️ "${itemData.title}" is already in your itinerary!`, 'warning');
+      return;
+    }
+
     // Check total duration limit
     const currentTotalHours = items.reduce((sum, item) => sum + (item.durationHours || 2), 0);
     const newItemHours = itemData.durationHours || 2;
@@ -108,10 +118,15 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     saveItemsToStorage([...items, newItem]);
   };
 
+  const updateItemDuration = (id: string, durationHours: number, cost: string) => {
+    const updated = items.map((item) => (item.id === id ? { ...item, durationHours, cost } : item));
+    saveItemsToStorage(updated);
+  };
+
   const removeItem = (id: string) => {
     const updated = items.filter((item) => item.id !== id);
     saveItemsToStorage(updated);
-    showToast('Removed item from itinerary', 'info');
+    // No popup on removal as requested
   };
 
   const moveItemUp = (index: number) => {
@@ -158,7 +173,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const deleteSavedPlan = (id: string) => {
     const updated = savedPlans.filter((p) => p.id !== id);
     savePlansToStorage(updated);
-    showToast('Deleted saved itinerary plan', 'info');
+    // No popup on removal as requested
   };
 
   const loadSavedPlan = (plan: SavedPlan) => {
@@ -174,6 +189,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
         toast,
         addItem,
         removeItem,
+        updateItemDuration,
         moveItemUp,
         moveItemDown,
         clearAllItems,

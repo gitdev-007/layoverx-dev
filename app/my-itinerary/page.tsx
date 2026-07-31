@@ -35,6 +35,7 @@ export default function MyItineraryPage() {
     saveCurrentPlan,
     deleteSavedPlan,
     loadSavedPlan,
+    updateItemDuration,
     moveItemUp,
     moveItemDown,
     removeItem,
@@ -274,11 +275,11 @@ export default function MyItineraryPage() {
                           ✓
                         </div>
 
-                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1 flex items-start justify-between gap-4">
-                          <div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                          <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-extrabold text-[#0369a1]">{item.time || 'Scheduled'}</span>
-                              <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">
+                              <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded uppercase">
                                 {item.badge}
                               </span>
                             </div>
@@ -286,10 +287,79 @@ export default function MyItineraryPage() {
                             <p className="text-xs text-slate-600 flex items-center gap-1.5 relative">
                               {item.detail}
                             </p>
+
+                            {/* Duration / Hour Slot Selector directly on timeline card */}
+                            <div className="pt-2">
+                              {item.badge === 'Cab' ? (
+                                <span className="inline-block text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2.5 py-1 rounded-lg border border-slate-300">
+                                  🔒 Fixed Calculated Transit ({item.durationHours || 0.75}h ride)
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold text-slate-500">Spend Slot:</span>
+                                  <select
+                                    value={item.durationHours || (item.badge === 'Hotel' ? 3 : item.badge === 'Dining' ? 1.5 : item.badge === 'Spa' ? 1 : item.badge === 'Gaming' ? 2 : 3)}
+                                    onChange={(e) => {
+                                      const newH = parseFloat(e.target.value);
+                                      let costStr = item.cost;
+                                      if (item.badge === 'Hotel') {
+                                        costStr = newH <= 3 ? '₹3,499' : newH <= 6 ? '₹5,299' : '₹8,999';
+                                      } else if (item.badge === 'Dining') {
+                                        costStr = newH <= 1 ? '₹1,299' : newH <= 1.5 ? '₹1,800' : '₹2,400';
+                                      } else if (item.badge === 'Spa') {
+                                        costStr = newH <= 0.75 ? '₹1,999' : newH <= 1 ? '₹2,600' : '₹3,500';
+                                      } else if (item.badge === 'Gaming') {
+                                        costStr = newH <= 1 ? '₹800' : newH <= 2 ? '₹1,499' : '₹1,999';
+                                      } else if (item.badge === 'Tour') {
+                                        costStr = newH <= 3 ? '₹2,499' : newH <= 5 ? '₹3,999' : '₹5,499';
+                                      }
+                                      updateItemDuration(item.id, newH, costStr);
+                                    }}
+                                    className="text-xs font-bold bg-white text-slate-900 border border-slate-300 rounded-lg px-2.5 py-1 shadow-sm cursor-pointer hover:border-sky-400 transition"
+                                  >
+                                    {item.badge === 'Hotel' && (
+                                      <>
+                                        <option value={3}>3 Hours Stay — ₹3,499</option>
+                                        <option value={6}>6 Hours Stay — ₹5,299</option>
+                                        <option value={12}>12 Hours Stay — ₹8,999</option>
+                                      </>
+                                    )}
+                                    {item.badge === 'Dining' && (
+                                      <>
+                                        <option value={1}>1.0 Hour Table — ₹1,299</option>
+                                        <option value={1.5}>1.5 Hours Table — ₹1,800</option>
+                                        <option value={2}>2.0 Hours Table — ₹2,400</option>
+                                      </>
+                                    )}
+                                    {item.badge === 'Spa' && (
+                                      <>
+                                        <option value={0.75}>45 Mins Therapy — ₹1,999</option>
+                                        <option value={1}>1.0 Hour Massage — ₹2,600</option>
+                                        <option value={1.5}>1.5 Hours Treatment — ₹3,500</option>
+                                      </>
+                                    )}
+                                    {item.badge === 'Gaming' && (
+                                      <>
+                                        <option value={1}>1.0 Hour Station — ₹800</option>
+                                        <option value={2}>2.0 Hours Station — ₹1,499</option>
+                                        <option value={3}>3.0 Hours Pass — ₹1,999</option>
+                                      </>
+                                    )}
+                                    {item.badge === 'Tour' && (
+                                      <>
+                                        <option value={3}>3.0 Hours Tour — ₹2,499</option>
+                                        <option value={5}>5.0 Hours Tour — ₹3,999</option>
+                                        <option value={7}>7.0 Hours Tour — ₹5,499</option>
+                                      </>
+                                    )}
+                                  </select>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex flex-col items-end gap-2">
-                            <span className="text-xs font-bold text-slate-900">{item.cost}</span>
+                          <div className="flex sm:flex-col items-end justify-between gap-2">
+                            <span className="text-sm font-black text-slate-900">{item.cost}</span>
                             
                             {/* Priority Shift & Action Controls */}
                             <div className="flex items-center gap-1.5 pt-1">
@@ -348,27 +418,27 @@ export default function MyItineraryPage() {
             {/* RIGHT COLUMN: Control Panel */}
             <div className="lg:col-span-4 space-y-6">
               
-              {/* Draft & Saved Plans Management Card */}
+              {/* Saved Itineraries Summary Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     My Saved Itineraries ({savedPlans.length})
                   </h3>
                   <button
                     onClick={() => saveCurrentPlan()}
                     disabled={items.length === 0}
-                    className="py-1.5 px-3 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
+                    className="py-1.5 px-3 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Save size={14} /> Save Current
                   </button>
                 </div>
 
                 {savedPlans.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic py-2">
+                  <p className="text-xs text-slate-500 italic py-2 text-center">
                     No saved itineraries. Build a plan and click "Save Current" above.
                   </p>
                 ) : (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-3">
                     {savedPlans.map((plan) => (
                       <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
                         <div className="flex items-center justify-between">
@@ -408,151 +478,6 @@ export default function MyItineraryPage() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* AI Co-Pilot Card */}
-              <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4 border border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-400" />
-                  <h3 className="font-extrabold text-base">AI Stopover Co-Pilot</h3>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Need an optimized plan? The co-pilot reads your layover window to auto-select recommendations.
-                </p>
-                <button className="w-full py-3 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
-                  ✨ Optimize Schedule With AI
-                </button>
-              </div>
-
-              {/* Dynamic Path Map Card */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-900">CSMIA Transfer Route Map</h3>
-                  <span className="bg-sky-50 text-[#0369a1] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                    Chauffeur Live
-                  </span>
-                </div>
-                <div className="relative w-full h-44 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 opacity-90"></div>
-                  
-                  <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <path 
-                      d={pathD} 
-                      fill="none" 
-                      stroke="#1e293b" 
-                      strokeWidth="2" 
-                      strokeDasharray="4 4"
-                    />
-                    <path 
-                      d={pathD} 
-                      fill="none" 
-                      stroke="#0284c7" 
-                      strokeWidth="2" 
-                      className="animate-dash"
-                      style={{
-                        strokeDasharray: '100',
-                        strokeDashoffset: '100',
-                      }}
-                    />
-                    
-                    <circle cx="10" cy="80" r="4" fill="#ef4444" className="animate-pulse" />
-                    <circle cx="90" cy="40" r="4" fill="#22c55e" className="animate-pulse" />
-
-                    {/* Animated Telemetry Car Indicator */}
-                    <g>
-                      <circle r="4" fill="#38bdf8" />
-                      <animateMotion 
-                        dur="6s" 
-                        repeatCount="indefinite" 
-                        path={pathD}
-                      />
-                    </g>
-                  </svg>
-                  
-                  {/* Tooltip Badges */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRouteNode('t2')}
-                    className="absolute bottom-8 left-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-pointer group z-10 transition hover:bg-slate-800"
-                    title="Click to view T2 GPS Coordinates"
-                  >
-                    📍 T2 Node
-                    <div className="hidden group-hover:block absolute left-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-rose-400 whitespace-nowrap">
-                      Start point (CSMIA Term 2)
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRouteNode('stay')}
-                    className="absolute top-8 right-4 bg-slate-900/90 text-white border border-slate-800 text-[10px] p-2 rounded-lg pointer-events-auto cursor-pointer group z-10 transition hover:bg-slate-800"
-                    title="Click to view Stay GPS Coordinates"
-                  >
-                    🏨 Stay Node
-                    <div className="hidden group-hover:block absolute right-0 bottom-full mb-1 bg-slate-950 border border-slate-800 p-1.5 rounded text-[9px] text-emerald-400 whitespace-nowrap">
-                      12m Chauffeur transfer distance
-                    </div>
-                  </button>
-
-                  {/* Map Controls */}
-                  <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-10">
-                    <button
-                      type="button"
-                      onClick={() => alert('Map Zoomed In')}
-                      className="w-5 h-5 bg-slate-900 border border-slate-800 text-white rounded flex items-center justify-center text-[10px] hover:bg-slate-800 transition"
-                      title="Zoom In"
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => alert('Map Zoomed Out')}
-                      className="w-5 h-5 bg-slate-900 border border-slate-800 text-white rounded flex items-center justify-center text-[10px] hover:bg-slate-800 transition"
-                      title="Zoom Out"
-                    >
-                      -
-                    </button>
-                  </div>
-
-                  {/* Traffic Level Selector */}
-                  <div className="absolute bottom-2 left-20 bg-slate-900/90 border border-slate-800 text-white rounded p-1 text-[9px] flex gap-1 z-10">
-                    <button
-                      type="button"
-                      onClick={() => setTrafficLevel('normal')}
-                      className={`px-1.5 py-0.5 rounded transition font-bold ${trafficLevel === 'normal' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                    >
-                      🟢 Normal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTrafficLevel('heavy')}
-                      className={`px-1.5 py-0.5 rounded transition font-bold ${trafficLevel === 'heavy' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                    >
-                      🔴 Heavy
-                    </button>
-                  </div>
-
-                  <span className="absolute bottom-2 left-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
-                    Terminal 2
-                  </span>
-                  <span className="absolute top-2 right-2 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
-                    Stay / Dining Node
-                  </span>
-                </div>
-
-                {/* Live Chauffeur Countdown Status */}
-                <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center flex items-center justify-between gap-3 text-xs text-white">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span className="font-bold">Live Chauffeur Status</span>
-                  </div>
-                  <div className="font-mono bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-sky-400 font-bold">
-                    🚗 Pickup in {countdown.min}:{countdown.sec < 10 ? `0${countdown.sec}` : countdown.sec}
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Estimated transit distance: 3.2 km. Route is calculated dynamically based on traffic. Current traffic mode: <strong className="text-slate-800 uppercase">{trafficLevel}</strong>. Est. travel duration: <strong className="text-slate-900">{trafficLevel === 'normal' ? '12 min' : '24 min'}</strong>.
-                </p>
               </div>
 
               {/* Checkout Card */}
