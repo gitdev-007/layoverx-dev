@@ -44,6 +44,45 @@ interface ItineraryContextType {
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(undefined);
 
+export function calculateDynamicCabDriveTime(itemsList: ItineraryItem[]): number {
+  const activities = itemsList.filter((i) => i.badge !== 'Cab' && i.badge !== 'Arrival' && i.badge !== 'Security' && i.badge !== 'Departure');
+  
+  if (activities.length === 0) {
+    return 0.0; // When empty, 0 driving time -> buffer is strictly 2.5h
+  }
+
+  // Check if all activities are in-terminal / airside
+  const allInTerminal = activities.every((i) => 
+    i.title.toLowerCase().includes('niranta') || 
+    i.title.toLowerCase().includes('pod') || 
+    i.title.toLowerCase().includes('airside') || 
+    i.detail.toLowerCase().includes('airside') ||
+    i.detail.toLowerCase().includes('inside t2')
+  );
+
+  if (allInTerminal) {
+    return 0.0; // In-terminal, 0 cab driving time
+  }
+
+  // Inspect location distance factors
+  let maxDriveTime = 0.5; // default 30 min roundtrip for near airport (Sahar/Andheri East)
+
+  for (const item of activities) {
+    const text = (item.title + ' ' + item.detail).toLowerCase();
+    if (text.includes('gateway') || text.includes('colaba') || text.includes('south mumbai') || text.includes('marine drive') || text.includes('highlights') || text.includes('city tour')) {
+      maxDriveTime = Math.max(maxDriveTime, 1.5); // 90 min roundtrip for South Mumbai
+    } else if (text.includes('bkc') || text.includes('bandra') || text.includes('juhu') || text.includes('maratha') || text.includes('peshawri')) {
+      maxDriveTime = Math.max(maxDriveTime, 0.75); // 45 min roundtrip for BKC/Juhu/Maratha
+    }
+  }
+
+  if (activities.length >= 2) {
+    maxDriveTime += 0.5; // add multi-stop transfer buffer if visiting multiple spots
+  }
+
+  return Math.min(maxDriveTime, 2.5);
+}
+
 export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
@@ -87,6 +126,8 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     }, 4500);
   };
 
+
+
   const addItem = (itemData: Omit<ItineraryItem, 'id'>, totalLayoverHours = 8.0) => {
     // Check for duplicate booking
     const isDuplicate = items.some(
@@ -119,14 +160,25 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     };
     updatedList.push(newItem);
 
-    // TIME FORMULA: Total Layover - 2.5h Transit - Cab Driving Time - 0.17h (10m extra) = Available Time
-    const landsideCount = updatedList.filter((i) => i.badge === 'Dining' || i.badge === 'Tour' || (i.badge === 'Hotel' && !i.title.toLowerCase().includes('pod'))).length;
-    const cabDrivingTime = landsideCount <= 1 ? 0.75 : landsideCount === 2 ? 1.5 : 2.0;
+    // TIME FORMULA: Total Layover - 2.5h Transit - Dynamic Cab Driving Time - 0.17h (10m extra) = Available Time
+    const cabDrivingTime = calculateDynamicCabDriveTime(updatedList);
     const transitBuffer = 2.5;
-    const extraTenMin = 0.17;
+    const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0;
     
     const availableTime = Math.max(0, totalLayoverHours - transitBuffer - cabDrivingTime - extraTenMin);
     const activitiesHours = updatedList.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+
+    // Update dynamic drive time on cab item
+    updatedList = updatedList.map((item) => {
+      if (item.badge === 'Cab') {
+        return {
+          ...item,
+          durationHours: cabDrivingTime,
+          detail: `Toyota Innova Crysta / Camry • Dynamic route transit (${cabDrivingTime.toFixed(2)}h ride)`,
+        };
+      }
+      return item;
+    });
 
     if (activitiesHours > availableTime) {
       showToast(

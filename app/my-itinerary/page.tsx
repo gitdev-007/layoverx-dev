@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { createRazorpayOrder } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { useItinerary } from '@/context/itinerary-context';
+import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
 import { calculateBookingTotal } from '@/lib/pricing';
 
 export default function MyItineraryPage() {
@@ -213,10 +213,9 @@ export default function MyItineraryPage() {
                 {/* Progress Bar Indicators & Formula Breakdown */}
                 {(() => {
                   const parseTotalH = parseFloat(totalHours) || 8.0;
-                  const landsideCount = items.filter((i) => i.badge === 'Dining' || i.badge === 'Tour' || (i.badge === 'Hotel' && !i.title.toLowerCase().includes('pod'))).length;
-                  const cabDrivingTime = landsideCount <= 1 ? 0.75 : landsideCount === 2 ? 1.5 : 2.0;
+                  const cabDrivingTime = calculateDynamicCabDriveTime(items);
                   const transitBuffer = 2.5; // Fixed 2.5h transit buffer requested
-                  const extraTenMin = 0.17; // 10 mins extra buffer
+                  const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0; // 10 mins extra buffer only when cab ride exists
                   const fixedBuffersTotal = transitBuffer + cabDrivingTime + extraTenMin;
 
                   const availableStopoverWindow = Math.max(0, parseTotalH - fixedBuffersTotal);
@@ -224,30 +223,41 @@ export default function MyItineraryPage() {
                   const remainingH = Math.max(0, availableStopoverWindow - usedActivitiesH);
                   const pctUsed = Math.min(100, Math.round((usedActivitiesH / Math.max(1, availableStopoverWindow)) * 100));
 
+                  const isTimeExceeded = usedActivitiesH > availableStopoverWindow && items.length > 0;
+
                   return (
                     <div className="space-y-4">
+                      {isTimeExceeded && (
+                        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-2xl flex items-center gap-2">
+                          <AlertCircle size={16} className="text-rose-600 flex-shrink-0" />
+                          <span>
+                            ⚠️ Time Limit Exceeded! Activities duration ({usedActivitiesH.toFixed(1)}h) exceeds available stopover window ({availableStopoverWindow.toFixed(1)}h). Reduce spend slot hours to proceed to checkout.
+                          </span>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-bold text-slate-700">
                         <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                           <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">Total Layover</span>
                           <strong className="text-sm font-extrabold text-slate-900">{parseTotalH.toFixed(1)} Hours</strong>
                         </div>
                         <div className="bg-amber-50 p-3 rounded-2xl border border-amber-100">
-                          <span className="text-amber-700 block text-[10px] uppercase tracking-wider mb-0.5">Buffers (2.5h + Drive)</span>
+                          <span className="text-amber-700 block text-[10px] uppercase tracking-wider mb-0.5">Buffers ({cabDrivingTime > 0 ? `2.5h + ${cabDrivingTime.toFixed(1)}h Drive` : '2.5h Transit'})</span>
                           <strong className="text-sm font-extrabold text-amber-900">{fixedBuffersTotal.toFixed(1)} Hours</strong>
                         </div>
                         <div className="bg-sky-50 p-3 rounded-2xl border border-sky-100">
                           <span className="text-[#0369a1] block text-[10px] uppercase tracking-wider mb-0.5">Used Activities</span>
                           <strong className="text-sm font-extrabold text-[#0369a1]">{usedActivitiesH.toFixed(1)} Hours</strong>
                         </div>
-                        <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
-                          <span className="text-indigo-600 block text-[10px] uppercase tracking-wider mb-0.5">Available Window</span>
-                          <strong className="text-sm font-extrabold text-indigo-900">{remainingH.toFixed(1)} Hours</strong>
+                        <div className={`p-3 rounded-2xl border ${isTimeExceeded ? 'bg-rose-50 border-rose-200' : 'bg-indigo-50 border-indigo-100'}`}>
+                          <span className={`block text-[10px] uppercase tracking-wider mb-0.5 ${isTimeExceeded ? 'text-rose-700' : 'text-indigo-600'}`}>Available Window</span>
+                          <strong className={`text-sm font-extrabold ${isTimeExceeded ? 'text-rose-900' : 'text-indigo-900'}`}>{remainingH.toFixed(1)} Hours</strong>
                         </div>
                       </div>
 
                       <div className="relative w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
                         <div 
-                          className="h-full bg-[#0369a1] transition-all duration-500" 
+                          className={`h-full transition-all duration-500 ${isTimeExceeded ? 'bg-rose-600' : 'bg-[#0369a1]'}`}
                           style={{ width: `${pctUsed}%` }}
                         ></div>
                         <div 
@@ -563,19 +573,47 @@ export default function MyItineraryPage() {
 
                 <button 
                   type="button"
-                  onClick={handleCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 text-center cursor-pointer"
+                  onClick={() => {
+                    const parseTotalH = parseFloat(totalHours) || 8.0;
+                    const cabDrivingTime = calculateDynamicCabDriveTime(items);
+                    const transitBuffer = 2.5;
+                    const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0;
+                    const availableStopoverWindow = Math.max(0, parseTotalH - transitBuffer - cabDrivingTime - extraTenMin);
+                    const usedActivitiesH = items.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+
+                    if (usedActivitiesH > availableStopoverWindow && items.length > 0) {
+                      setCheckoutError(`Cannot proceed: Total activity duration (${usedActivitiesH.toFixed(1)}h) exceeds your safe stopover window (${availableStopoverWindow.toFixed(1)}h). Please reduce spend hours.`);
+                      return;
+                    }
+                    handleCheckout();
+                  }}
+                  disabled={checkoutLoading || (() => {
+                    const parseTotalH = parseFloat(totalHours) || 8.0;
+                    const cabDrivingTime = calculateDynamicCabDriveTime(items);
+                    const transitBuffer = 2.5;
+                    const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0;
+                    const availableStopoverWindow = Math.max(0, parseTotalH - transitBuffer - cabDrivingTime - extraTenMin);
+                    const usedActivitiesH = items.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+                    return usedActivitiesH > availableStopoverWindow && items.length > 0;
+                  })()}
+                  className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] disabled:bg-slate-300 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 text-center cursor-pointer"
                 >
                   {checkoutLoading ? (
                     <>
                       <RefreshCw size={16} className="animate-spin" /> Creating Order & Launching Razorpay...
                     </>
-                  ) : (
-                    <>
-                      Proceed to Checkout &rarr;
-                    </>
-                  )}
+                  ) : (() => {
+                    const parseTotalH = parseFloat(totalHours) || 8.0;
+                    const cabDrivingTime = calculateDynamicCabDriveTime(items);
+                    const transitBuffer = 2.5;
+                    const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0;
+                    const availableStopoverWindow = Math.max(0, parseTotalH - transitBuffer - cabDrivingTime - extraTenMin);
+                    const usedActivitiesH = items.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+                    if (usedActivitiesH > availableStopoverWindow && items.length > 0) {
+                      return <span>⚠️ Time Window Exceeded — Reduce Hours to Book</span>;
+                    }
+                    return <span>Proceed to Checkout &rarr;</span>;
+                  })()}
                 </button>
               </div>
 

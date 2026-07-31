@@ -8,7 +8,7 @@ import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hote
 import { holdSlot, fetchServices } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
-import { useItinerary } from '@/context/itinerary-context';
+import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
 
 import {
   Plane,
@@ -426,6 +426,30 @@ export default function PlanMyLayoverPage() {
     }
     if (!emergencyContact.trim()) {
       setValidationError('Emergency Contact is required.');
+      return;
+    }
+
+    // Check available time limit vs activities duration
+    const arrDate = new Date(arrivalTime || Date.now());
+    const depDate = new Date(departureTime || Date.now() + 8 * 60 * 60 * 1000);
+    const layoverH = Math.max(1, (depDate.getTime() - arrDate.getTime()) / (1000 * 60 * 60));
+
+    const tempItems: any[] = [];
+    if (selectedCab) tempItems.push({ badge: 'Cab', title: 'Airport Cab Transfer', detail: 'Executive Sedan/SUV', cost: formatPrice(cabPrice), durationHours: 0.75 });
+    if (hotelObj) tempItems.push({ badge: 'Hotel', title: hotelObj.name, detail: hotelObj.terminal || hotelObj.name, cost: hotelObj.price6h, durationHours: 6 });
+    if (diningObj) tempItems.push({ badge: 'Dining', title: diningObj.name, detail: diningObj.cuisine || diningObj.name, cost: diningObj.avgCost, durationHours: 1.5 });
+    if (tourObj) tempItems.push({ badge: 'Tour', title: tourObj.name, detail: tourObj.name, cost: tourObj.price, durationHours: 3 });
+    if (spaObj) tempItems.push({ badge: 'Spa', title: spaObj.name, detail: spaObj.name, cost: spaObj.price, durationHours: 1 });
+    if (gamingObj) tempItems.push({ badge: 'Gaming', title: gamingObj.name, detail: gamingObj.name, cost: gamingObj.price, durationHours: 1 });
+
+    const cabDriveH = calculateDynamicCabDriveTime(tempItems);
+    const transitBuf = 2.5;
+    const extraTen = cabDriveH > 0 ? 0.17 : 0.0;
+    const availWindowH = Math.max(0, layoverH - transitBuf - cabDriveH - extraTen);
+    const activitiesSumH = tempItems.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+
+    if (activitiesSumH > availWindowH && tempItems.length > 0) {
+      setValidationError(`⚠️ Time Limit Exceeded! Selected activities (${activitiesSumH.toFixed(1)}h) exceeds available stopover window (${availWindowH.toFixed(1)}h). Please unselect an activity or select fewer hours.`);
       return;
     }
 
