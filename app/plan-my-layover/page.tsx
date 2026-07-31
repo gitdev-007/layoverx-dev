@@ -153,12 +153,46 @@ export default function PlanMyLayoverPage() {
   }, []);
 
   React.useEffect(() => {
-    const now = new Date();
-    const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
-    arr.setMinutes(0);
-    const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000); // 8 hours layover
-    setArrivalTime(arr.toISOString().slice(0, 16));
-    setDepartureTime(dep.toISOString().slice(0, 16));
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const paramDest = params.get('destinationArea');
+      const paramArr = params.get('arrivalTime');
+      const paramDep = params.get('departureTime');
+      const paramTrav = params.get('travelers');
+
+      let savedData: any = null;
+      try {
+        const stored = localStorage.getItem('layoverx_calculator_data');
+        if (stored) savedData = JSON.parse(stored);
+      } catch {}
+
+      const finalDest = paramDest || savedData?.destinationArea || 'csmia-t2';
+      const finalArr = paramArr || savedData?.arrivalTime;
+      const finalDep = paramDep || savedData?.departureTime;
+      const finalTrav = paramTrav || savedData?.travelers || '2 Passengers';
+
+      if (finalDest) setDestinationArea(finalDest);
+      if (finalTrav) setTravelers(finalTrav);
+
+      if (finalArr) {
+        setArrivalTime(finalArr);
+      } else {
+        const now = new Date();
+        const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        arr.setMinutes(0);
+        setArrivalTime(arr.toISOString().slice(0, 16));
+      }
+
+      if (finalDep) {
+        setDepartureTime(finalDep);
+      } else {
+        const now = new Date();
+        const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        arr.setMinutes(0);
+        const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000);
+        setDepartureTime(dep.toISOString().slice(0, 16));
+      }
+    }
   }, []);
 
   const handleSaveDraft = () => {
@@ -416,7 +450,15 @@ export default function PlanMyLayoverPage() {
           </nav>
 
           <LayoverCalculatorForm
+            hideHeader
+            hideSubmit
             initialValues={{ destinationArea, arrivalTime, departureTime, travelers }}
+            onChange={(data) => {
+              setDestinationArea(data.destinationArea);
+              setArrivalTime(data.arrivalTime);
+              setDepartureTime(data.departureTime);
+              setTravelers(data.travelers);
+            }}
             onSearch={(data) => {
               setDestinationArea(data.destinationArea);
               setArrivalTime(data.arrivalTime);
@@ -459,19 +501,6 @@ export default function PlanMyLayoverPage() {
             >
               Bandra Sea Link Day
             </button>
-          </div>
-
-          {/* Safe Window Banner */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-sky-950/40 border border-sky-900/50 p-3.5 rounded-xl text-sky-200 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-sky-400" />
-              <span>Calculated Transit window: <strong className="text-white">30h 30m</strong></span>
-              <span className="text-sky-700">|</span>
-              <span>Buffer allowance: <strong className="text-white">3h 30m</strong> (Immigration + Security check)</span>
-            </div>
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
-              🟢 Safe Window for Exits: 27.0 Hours
-            </div>
           </div>
 
         </div>

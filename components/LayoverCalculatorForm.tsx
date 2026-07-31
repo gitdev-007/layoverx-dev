@@ -15,14 +15,20 @@ interface LayoverCalculatorFormProps {
   initialValues?: Partial<LayoverFormData>;
   buttonText?: string;
   compact?: boolean;
+  hideHeader?: boolean;
+  hideSubmit?: boolean;
   onSearch?: (data: LayoverFormData) => void;
+  onChange?: (data: LayoverFormData) => void;
 }
 
 export default function LayoverCalculatorForm({
   initialValues,
   buttonText = 'Build My Stopover Plan',
   compact = false,
+  hideHeader = false,
+  hideSubmit = false,
   onSearch,
+  onChange,
 }: LayoverCalculatorFormProps) {
   const router = useRouter();
 
@@ -42,18 +48,75 @@ export default function LayoverCalculatorForm({
     return dep.toISOString().slice(0, 16);
   }, []);
 
-  const [destinationArea, setDestinationArea] = useState(
-    initialValues?.destinationArea || 'csmia-t2'
-  );
-  const [arrivalTime, setArrivalTime] = useState(
-    initialValues?.arrivalTime || defaultArr
-  );
-  const [departureTime, setDepartureTime] = useState(
-    initialValues?.departureTime || defaultDep
-  );
-  const [travelers, setTravelers] = useState(
-    initialValues?.travelers || '2 Passengers'
-  );
+  const [destinationArea, setDestinationArea] = useState<string>('csmia-t2');
+  const [arrivalTime, setArrivalTime] = useState<string>(defaultArr);
+  const [departureTime, setDepartureTime] = useState<string>(defaultDep);
+  const [travelers, setTravelers] = useState<string>('2 Passengers');
+
+  // Load initial values or persisted localStorage draft on mount & prop changes
+  React.useEffect(() => {
+    let saved: Partial<LayoverFormData> = {};
+    try {
+      const stored = localStorage.getItem('layoverx_calculator_data');
+      if (stored) saved = JSON.parse(stored);
+    } catch {}
+
+    const dest = initialValues?.destinationArea || saved?.destinationArea || 'csmia-t2';
+    const arr = initialValues?.arrivalTime || saved?.arrivalTime || defaultArr;
+    const dep = initialValues?.departureTime || saved?.departureTime || defaultDep;
+    const trav = initialValues?.travelers || saved?.travelers || '2 Passengers';
+
+    setDestinationArea(dest);
+    setArrivalTime(arr);
+    setDepartureTime(dep);
+    setTravelers(trav);
+  }, [
+    initialValues?.destinationArea,
+    initialValues?.arrivalTime,
+    initialValues?.departureTime,
+    initialValues?.travelers,
+    defaultArr,
+    defaultDep,
+  ]);
+
+  const updateField = (
+    field: 'destinationArea' | 'arrivalTime' | 'departureTime' | 'travelers',
+    value: string
+  ) => {
+    let nextDest = destinationArea;
+    let nextArr = arrivalTime;
+    let nextDep = departureTime;
+    let nextTrav = travelers;
+
+    if (field === 'destinationArea') {
+      setDestinationArea(value);
+      nextDest = value;
+    } else if (field === 'arrivalTime') {
+      setArrivalTime(value);
+      nextArr = value;
+    } else if (field === 'departureTime') {
+      setDepartureTime(value);
+      nextDep = value;
+    } else if (field === 'travelers') {
+      setTravelers(value);
+      nextTrav = value;
+    }
+
+    const updatedData: LayoverFormData = {
+      destinationArea: nextDest,
+      arrivalTime: nextArr,
+      departureTime: nextDep,
+      travelers: nextTrav,
+    };
+
+    try {
+      localStorage.setItem('layoverx_calculator_data', JSON.stringify(updatedData));
+    } catch (err) {}
+
+    if (onChange) {
+      onChange(updatedData);
+    }
+  };
 
   // Real-time Layover Calculation Engine
   const metrics = useMemo(() => {
@@ -134,34 +197,36 @@ export default function LayoverCalculatorForm({
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 text-slate-900 space-y-6">
       
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-        <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>✈️ Layover Safety &amp; Usable Time Calculator</span>
-          </h2>
-          <p className="text-xs text-slate-500 font-medium">
-            AI Itinerary Builder &amp; Real-Time Buffer Estimator
-          </p>
+      {/* Title Header (Conditional) */}
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <span>✈️ Layover Safety &amp; Usable Time Calculator</span>
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              AI Itinerary Builder &amp; Real-Time Buffer Estimator
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-extrabold rounded-full self-start sm:self-auto">
+            <CheckCircle2 size={13} />
+            ✓ Flight Delay Auto-Protection Included
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-extrabold rounded-full self-start sm:self-auto">
-          <CheckCircle2 size={13} />
-          ✓ Flight Delay Auto-Protection Included
-        </span>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Field 1: TERMINAL / DESTINATION AREA */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <MapPin size={13} className="text-sky-600" />
-              TERMINAL / DESTINATION
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider h-5 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              <MapPin size={13} className="text-sky-600 flex-shrink-0" />
+              <span className="truncate">TERMINAL / DESTINATION</span>
             </label>
             <select
               value={destinationArea}
-              onChange={(e) => setDestinationArea(e.target.value)}
+              onChange={(e) => updateField('destinationArea', e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
             >
               <option value="csmia-t2">CSMIA Terminal 2 (International)</option>
@@ -172,43 +237,43 @@ export default function LayoverCalculatorForm({
 
           {/* Field 2: LANDING FLIGHT ARRIVAL */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Calendar size={13} className="text-sky-600" />
-              LANDING FLIGHT ARRIVAL
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider h-5 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              <Calendar size={13} className="text-sky-600 flex-shrink-0" />
+              <span className="truncate">LANDING FLIGHT ARRIVAL</span>
             </label>
             <input
               type="datetime-local"
               required
               value={arrivalTime}
-              onChange={(e) => setArrivalTime(e.target.value)}
+              onChange={(e) => updateField('arrivalTime', e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
             />
           </div>
 
           {/* Field 3: BOARDING FLIGHT DEPARTURE */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock size={13} className="text-sky-600" />
-              BOARDING FLIGHT DEPARTURE
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider h-5 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              <Clock size={13} className="text-sky-600 flex-shrink-0" />
+              <span className="truncate">BOARDING FLIGHT DEPARTURE</span>
             </label>
             <input
               type="datetime-local"
               required
               value={departureTime}
-              onChange={(e) => setDepartureTime(e.target.value)}
+              onChange={(e) => updateField('departureTime', e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
             />
           </div>
 
           {/* Field 4: PASSENGERS / GUESTS COUNT */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Users size={13} className="text-sky-600" />
-              TRAVELERS COUNT
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider h-5 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              <Users size={13} className="text-sky-600 flex-shrink-0" />
+              <span className="truncate">TRAVELERS COUNT</span>
             </label>
             <select
               value={travelers}
-              onChange={(e) => setTravelers(e.target.value)}
+              onChange={(e) => updateField('travelers', e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
             >
               <option value="1 Passenger">1 Passenger</option>
@@ -256,14 +321,16 @@ export default function LayoverCalculatorForm({
           </div>
         </div>
 
-        {/* Submit Action Button */}
-        <button
-          type="submit"
-          className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 group"
-        >
-          <span>{buttonText}</span>
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-        </button>
+        {/* Submit Action Button (Conditional) */}
+        {!hideSubmit && (
+          <button
+            type="submit"
+            className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 group"
+          >
+            <span>{buttonText}</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+        )}
       </form>
     </div>
   );
