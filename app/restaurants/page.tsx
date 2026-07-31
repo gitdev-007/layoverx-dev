@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { RESTAURANTS_DATA, FAQS_DATA, REVIEWS_DATA } from '@/data/layover-data';
+import { RESTAURANTS_DATA, FAQS_DATA, REVIEWS_DATA, Restaurant } from '@/data/layover-data';
+import { useItinerary } from '@/context/itinerary-context';
 import {
   Utensils,
   MapPin,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function RestaurantsPage() {
+  const { addItem } = useItinerary();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [costFilter, setCostFilter] = useState<string[]>([]);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
@@ -308,12 +310,21 @@ export default function RestaurantsPage() {
                           >
                             View Details
                           </Link>
-                          <Link
-                            href="/my-itinerary"
-                            className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addItem({
+                                title: res.name,
+                                detail: `${res.cuisine} • ${res.location}`,
+                                badge: 'Dining',
+                                cost: res.avgCost,
+                                durationHours: 1.5,
+                              });
+                            }}
+                            className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
                           >
                             Reserve & Add
-                          </Link>
+                          </button>
                         </div>
                       </div>
 

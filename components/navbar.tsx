@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import { useItinerary } from '@/context/itinerary-context';
 import {
   Menu,
   X,
@@ -17,11 +18,14 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  AlertTriangle,
+  CheckCircle,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { user, isAdmin, setIsAdmin, signOut, openAuthModal } = useAuth();
+  const { items, toast } = useItinerary();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -133,14 +137,43 @@ export const Navbar: React.FC = () => {
               {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
             </button>
 
-            <Link
-              href="/my-itinerary"
-              className={`text-sm font-semibold transition-colors ${
-                pathname === '/my-itinerary' ? 'text-[#0369a1]' : 'text-[#64748B] hover:text-[#0369a1]'
-              }`}
-            >
-              My Itinerary
-            </Link>
+            <div className="relative">
+              <Link
+                href="/my-itinerary"
+                className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                  pathname === '/my-itinerary' ? 'text-[#0369a1]' : 'text-[#64748B] hover:text-[#0369a1]'
+                }`}
+              >
+                My Itinerary
+                {items.length > 0 && (
+                  <span className="w-5 h-5 bg-[#0369a1] text-white text-[11px] font-black rounded-full flex items-center justify-center animate-pulse">
+                    {items.length}
+                  </span>
+                )}
+              </Link>
+
+              {/* Toast Pop-Up Notification originating from My Itinerary navbar node */}
+              {toast && (
+                <div
+                  className={`absolute top-10 right-0 z-[2000] min-w-[280px] max-w-xs p-3.5 rounded-2xl shadow-2xl border text-xs font-bold transition-all duration-300 transform translate-y-0 animate-bounce ${
+                    toast.type === 'warning'
+                      ? 'bg-amber-950 text-amber-100 border-amber-500/50'
+                      : toast.type === 'info'
+                      ? 'bg-slate-900 text-slate-100 border-slate-700'
+                      : 'bg-emerald-950 text-emerald-100 border-emerald-500/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    {toast.type === 'warning' ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    )}
+                    <span className="leading-snug">{toast.message}</span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <Link
               href="/plan-my-layover"

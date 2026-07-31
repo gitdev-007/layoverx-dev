@@ -8,6 +8,7 @@ import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hote
 import { holdSlot, fetchServices } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
+import { useItinerary } from '@/context/itinerary-context';
 
 import {
   Plane,
@@ -210,7 +211,8 @@ export default function PlanMyLayoverPage() {
       totalPrice
     };
     localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
-    setSaveStatus('Draft saved successfully!');
+    saveCurrentPlan(`Mumbai Plan (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`);
+    setSaveStatus('Plan saved to My Saved Itineraries!');
     setTimeout(() => setSaveStatus(null), 3000);
   };
 
@@ -228,16 +230,17 @@ export default function PlanMyLayoverPage() {
     }
   };
   const router = useRouter();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast } = useItinerary();
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Step selections
-  const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv' | null>('sedan');
-  const [selectedHotelId, setSelectedHotelId] = useState<string | null>('h1');
-  const [selectedDiningId, setSelectedDiningId] = useState<string | null>('r1');
+  // Step selections (NO pre-selected defaults as requested)
+  const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv' | null>(null);
+  const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
+  const [selectedDiningId, setSelectedDiningId] = useState<string | null>(null);
   
   // Step 4 Experience Tab State
   const [expTab, setExpTab] = useState<'tours' | 'spa' | 'gaming'>('tours');
-  const [selectedTourId, setSelectedTourId] = useState<string | null>('t1');
+  const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
   const [selectedSpaId, setSelectedSpaId] = useState<string | null>(null);
   const [selectedGamingId, setSelectedGamingId] = useState<string | null>(null);
 
@@ -1156,35 +1159,50 @@ export default function PlanMyLayoverPage() {
                 )}
               </div>
 
-              {/* Your Smart AI Timeline */}
+              {/* Your Calculated Layover Timeline (Renamed from Smart AI Timeline as requested) */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <h2 className="text-sm font-bold text-gray-900">Your Smart AI Timeline</h2>
+                  <h2 className="text-sm font-bold text-gray-900">Your Calculated Layover Timeline</h2>
                   <span className="bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded">
                     CHECKED
                   </span>
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
-                    <div className="font-bold text-slate-900">02:55 PM • 🛫 Landing & Customs Exit</div>
-                    <div className="text-slate-500 text-[11px]">De-board and pass immigration (calculated wait buffer: 1.5h).</div>
-                  </div>
+                  {(() => {
+                    const arrDate = new Date(arrivalTime || Date.now());
+                    const depDate = new Date(departureTime || Date.now() + 8 * 60 * 60 * 1000);
+                    const formatT = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
-                    <div className="font-bold text-slate-900">04:25 PM • 🚖 Chauffeur Pickup</div>
-                    <div className="text-slate-500 text-[11px]">Meet your driver at Exit Gate 2. Board AC SEDAN.</div>
-                  </div>
+                    const tLanding = formatT(arrDate);
+                    const tPickup = formatT(new Date(arrDate.getTime() + 90 * 60 * 1000));
+                    const tDropoff = formatT(new Date(depDate.getTime() - 120 * 60 * 1000));
+                    const tTakeoff = formatT(depDate);
 
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
-                    <div className="font-bold text-slate-900">07:25 PM • 🚖 Airport Dropoff</div>
-                    <div className="text-slate-500 text-[11px]">Driver drops you directly at departure ramp T2.</div>
-                  </div>
+                    return (
+                      <>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
+                          <div className="font-bold text-slate-900">{tLanding} • 🛫 Landing & Customs Exit</div>
+                          <div className="text-slate-500 text-[11px]">De-board and pass immigration (calculated wait buffer: 1.5h).</div>
+                        </div>
 
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
-                    <div className="font-bold text-slate-900">09:25 PM • 🛫 Takeoff & Departure</div>
-                    <div className="text-slate-500 text-[11px]">Security cleared. Boarding at assigned gate. Safe travels!</div>
-                  </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
+                          <div className="font-bold text-slate-900">{tPickup} • {selectedCab ? '🚖 Chauffeur Pickup' : hotelObj ? '🏨 Hotel Check-In' : '⭐ Transit Activity'}</div>
+                          <div className="text-slate-500 text-[11px]">{selectedCab ? `Meet driver at Exit Gate 2 (${selectedCab.toUpperCase()}).` : hotelObj ? `Check-in at ${hotelObj.name}.` : 'Enjoy your scheduled transit window.'}</div>
+                        </div>
+
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
+                          <div className="font-bold text-slate-900">{tDropoff} • 🚖 Airport Dropoff</div>
+                          <div className="text-slate-500 text-[11px]">Driver drops you directly at departure ramp T2.</div>
+                        </div>
+
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
+                          <div className="font-bold text-slate-900">{tTakeoff} • 🛫 Takeoff & Departure</div>
+                          <div className="text-slate-500 text-[11px]">Security cleared. Boarding at assigned gate. Safe travels!</div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1208,12 +1226,54 @@ export default function PlanMyLayoverPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                   <h2 className="text-sm font-bold text-gray-900">My Saved Itineraries</h2>
                   <span className="w-5 h-5 bg-sky-50 text-sky-700 rounded-full flex items-center justify-center text-xs font-bold">
-                    0
+                    {savedPlans.length}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 italic text-center py-2">
-                  No saved itineraries. Build a plan and click "Save Plan" above.
-                </p>
+                {savedPlans.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic text-center py-2">
+                    No saved itineraries. Build a plan and click "Save Plan" above.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {savedPlans.map((plan) => (
+                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-900">{plan.name}</span>
+                          <span className="text-[10px] text-slate-500">{plan.createdAt}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-semibold">
+                          {plan.items.length} items • Total: ₹{plan.totalCost.toLocaleString()}
+                        </div>
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => loadSavedPlan(plan)}
+                            className="px-2.5 py-1 bg-[#0284C7] hover:bg-[#027ab1] text-white rounded-lg text-[11px] font-bold transition"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(window.location.href);
+                              showToast(`Share link for "${plan.name}" copied!`, 'success');
+                            }}
+                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition"
+                          >
+                            🔗 Share
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteSavedPlan(plan.id)}
+                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition ml-auto"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </aside>

@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GAMING_DATA, FAQS_DATA } from '@/data/layover-data';
-import { Gamepad2, MapPin, Star, ChevronDown } from 'lucide-react';
+import { useItinerary } from '@/context/itinerary-context';
+import { Gamepad2, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function GamingEntertainmentPage() {
+  const { addItem } = useItinerary();
   const [activeCategory, setActiveCategory] = useState<'all' | 'gaming' | 'movie'>('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [sortBy, setSortBy] = useState('popularity');
@@ -220,12 +222,21 @@ export default function GamingEntertainmentPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Link
-                          href="/plan-my-layover"
-                          className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addItem({
+                              title: g.name,
+                              detail: g.location,
+                              badge: 'Gaming',
+                              cost: g.price,
+                              durationHours: 2.0,
+                            });
+                          }}
+                          className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"
                         >
                           Add to Itinerary
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   </div>

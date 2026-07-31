@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { HOTELS_DATA, FAQS_DATA, REVIEWS_DATA, Hotel } from '@/data/layover-data';
 import { fetchServices } from '@/lib/api';
+import { useItinerary } from '@/context/itinerary-context';
 import {
   Hotel as HotelIcon,
   MapPin,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function HotelsPage() {
+  const { addItem } = useItinerary();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [stayDuration, setStayDuration] = useState('6');
   const [checkinTime, setCheckinTime] = useState('2026-07-28T12:00');
@@ -502,12 +504,21 @@ export default function HotelsPage() {
                           >
                             View Details
                           </Link>
-                          <Link
-                            href="/my-itinerary"
-                            className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addItem({
+                                title: hotel.name,
+                                detail: `${hotel.terminal} • ${stayDuration}h slot`,
+                                badge: 'Hotel',
+                                cost: stayDuration === '3' ? hotel.price3h : hotel.price6h,
+                                durationHours: parseInt(stayDuration) || 3,
+                              });
+                            }}
+                            className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
                           >
                             Add to Itinerary
-                          </Link>
+                          </button>
                         </div>
                       </div>
 

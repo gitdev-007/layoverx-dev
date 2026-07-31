@@ -23,11 +23,24 @@ import {
 } from 'lucide-react';
 import { createRazorpayOrder } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
+import { useItinerary } from '@/context/itinerary-context';
 import { calculateBookingTotal } from '@/lib/pricing';
 
 export default function MyItineraryPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const {
+    items,
+    savedPlans,
+    saveCurrentPlan,
+    deleteSavedPlan,
+    loadSavedPlan,
+    moveItemUp,
+    moveItemDown,
+    removeItem,
+    showToast,
+  } = useItinerary();
+
   const [totalHours, setTotalHours] = useState('8.0 Hours');
   const [usedHours, setUsedHours] = useState('4.5 Hours');
   const [remainingHours, setRemainingHours] = useState('3.5 Hours');
@@ -55,54 +68,10 @@ export default function MyItineraryPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const [items, setItems] = useState([
-    {
-      id: '1',
-      time: '10:00 AM',
-      title: 'Flight Arrival at CSMIA Terminal 2',
-      detail: 'Air India AI 102 from JFK. Flight status: On Time.',
-      badge: 'Arrival',
-      cost: '₹0',
-    },
-    {
-      id: '2',
-      time: '11:30 AM',
-      title: 'Immigration & Baggage Clearance',
-      detail: 'Estimated clearance time: 45 minutes.',
-      badge: 'Security',
-      cost: '₹0',
-    },
-    {
-      id: '3',
-      time: '12:00 PM',
-      title: 'Niranta Transit Hotel Micro-Stay Check-In',
-      detail: '3-Hour rest room booked. Booking #LX-BOM-88329.',
-      badge: 'Hotel',
-      cost: '₹3,499',
-    },
-    {
-      id: '4',
-      time: '03:30 PM',
-      title: 'Peshawri ITC Maratha Express Lunch',
-      detail: 'Table reserved for 2. 5 mins from Terminal 2.',
-      badge: 'Dining',
-      cost: '₹1,299',
-    },
-    {
-      id: '5',
-      time: '05:30 PM',
-      title: 'Return to Terminal 2 Departures',
-      detail: 'Clear security for outgoing flight UK 985 to Delhi.',
-      badge: 'Departure',
-      cost: '₹0',
-    },
-  ]);
-
+  // Compute total hours dynamically
   React.useEffect(() => {
     let arrivalTime = '';
     let departureTime = '';
-    let flightIn = '';
-    let travelers = '2';
 
     try {
       const calcData = localStorage.getItem('layoverx_calculator_data');
@@ -110,24 +79,8 @@ export default function MyItineraryPage() {
         const parsed = JSON.parse(calcData);
         if (parsed.arrivalTime) arrivalTime = parsed.arrivalTime;
         if (parsed.departureTime) departureTime = parsed.departureTime;
-        if (parsed.travelers) travelers = parsed.travelers;
       }
     } catch {}
-
-    try {
-      const saved = localStorage.getItem('layoverx_draft');
-      if (saved) {
-        const draft = JSON.parse(saved);
-        if (draft.passportCountry) setPassportCountry(draft.passportCountry);
-        if (draft.currency) setCurrency(draft.currency);
-        if (!arrivalTime && draft.arrivalTime) arrivalTime = draft.arrivalTime;
-        if (!departureTime && draft.departureTime) departureTime = draft.departureTime;
-        if (draft.flightIn) flightIn = draft.flightIn;
-        if (draft.travelers) travelers = draft.travelers;
-      }
-    } catch (e) {
-      console.warn('Failed to parse draft details:', e);
-    }
 
     if (arrivalTime && departureTime) {
       const arrDate = new Date(arrivalTime);
@@ -144,87 +97,12 @@ export default function MyItineraryPage() {
         setUsedHours(`${usedH.toFixed(1)} Hours`);
         setRemainingHours(`${remainingH.toFixed(1)} Hours`);
         setPercentUsed(Math.round((usedH / totalH) * 100));
-
-        const formatTime = (date: Date) => {
-          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        };
-
-        const t1 = formatTime(arrDate);
-        const t2 = formatTime(new Date(arrDate.getTime() + 45 * 60 * 1000));
-        const t3 = formatTime(new Date(arrDate.getTime() + 1.5 * 60 * 60 * 1000));
-        const t4 = formatTime(new Date(arrDate.getTime() + 5.0 * 60 * 60 * 1000));
-        const t5 = formatTime(new Date(depDate.getTime() - 2.5 * 60 * 60 * 1000));
-
-        setItems([
-          {
-            id: '1',
-            time: t1,
-            title: 'Flight Arrival at CSMIA Terminal 2',
-            detail: `Incoming Flight: ${flightIn || 'AI 102 from JFK'}. Flight status: On Time.`,
-            badge: 'Arrival',
-            cost: '₹0',
-          },
-          {
-            id: '2',
-            time: t2,
-            title: 'Immigration & Baggage Clearance',
-            detail: 'Estimated clearance time: 45 minutes.',
-            badge: 'Security',
-            cost: '₹0',
-          },
-          {
-            id: '3',
-            time: t3,
-            title: 'Niranta Transit Hotel Micro-Stay Check-In',
-            detail: '3-Hour rest room booked. Booking #LX-BOM-88329.',
-            badge: 'Hotel',
-            cost: '₹3,499',
-          },
-          {
-            id: '4',
-            time: t4,
-            title: 'Peshawri ITC Maratha Express Lunch',
-            detail: `Table reserved for ${travelers}. 5 mins from Terminal 2.`,
-            badge: 'Dining',
-            cost: '₹1,299',
-          },
-          {
-            id: '5',
-            time: t5,
-            title: 'Return to Terminal 2 Departures',
-            detail: 'Clear security for outgoing connection flight.',
-            badge: 'Departure',
-            cost: '₹0',
-          },
-        ]);
       }
     }
   }, []);
 
-  const moveItemUp = (index: number) => {
-    if (index <= 0) return;
-    const newItems = [...items];
-    const temp = newItems[index];
-    newItems[index] = newItems[index - 1];
-    newItems[index - 1] = temp;
-    setItems(newItems);
-  };
-
-  const moveItemDown = (index: number) => {
-    if (index >= items.length - 1) return;
-    const newItems = [...items];
-    const temp = newItems[index];
-    newItems[index] = newItems[index + 1];
-    newItems[index + 1] = temp;
-    setItems(newItems);
-  };
-
-  const removeItem = (id: string) => {
-    setItems(items.filter((i) => i.id !== id));
-  };
-
-  const rawBaseAmount = (items.some(i => i.badge === 'Hotel') ? 3499 : 0) + (items.some(i => i.badge === 'Dining') ? 1299 : 0);
-  const pricingBreakdown = calculateBookingTotal(rawBaseAmount || 3499);
+  const rawBaseAmount = items.reduce((acc, i) => acc + (parseInt(i.cost.replace(/[^0-9]/g, '')) || 0), 0);
+  const pricingBreakdown = calculateBookingTotal(rawBaseAmount || 0);
 
   const [passportCountry, setPassportCountry] = useState('India');
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('INR');
@@ -374,77 +252,80 @@ export default function MyItineraryPage() {
                   <span className="text-xs text-slate-500 font-semibold">{items.length} items</span>
                 </div>
 
-                <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">
-                  {items.map((item, idx) => (
-                    <div key={item.id} className="relative group">
-                      <div className="absolute -left-[41px] top-0 w-7 h-7 rounded-full bg-[#0369a1] text-white flex items-center justify-center text-xs font-bold shadow">
-                        ✓
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1 flex items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-extrabold text-[#0369a1]">{item.time}</span>
-                            <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">
-                              {item.badge}
-                            </span>
-                          </div>
-                          <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
-                          <p className="text-xs text-slate-600 flex items-center gap-1.5 relative">
-                            {item.detail}
-                            {item.cost !== '₹0' && (
-                              <span 
-                                className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-sky-100 text-sky-700 text-[9px] font-black cursor-help relative group/tooltip" 
-                                title="Package Details Summary"
-                              >
-                                ?
-                                <span className="hidden group-hover/tooltip:block absolute left-full ml-1 bottom-full bg-slate-900 text-white text-[9px] p-1.5 rounded border border-slate-800 shadow-xl whitespace-nowrap z-50">
-                                  Includes 24/7 terminal airport shuttle & baggage assistance.
-                                </span>
-                              </span>
-                            )}
-                          </p>
+                {items.length === 0 ? (
+                  <div className="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div className="text-3xl">🗺️</div>
+                    <h4 className="text-sm font-bold text-slate-900">Your itinerary is currently empty</h4>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Add transit hotels, dining, airport cabs, or sightseeing experiences to build your stopover schedule.
+                    </p>
+                    <Link
+                      href="/plan-my-layover"
+                      className="inline-block px-5 py-2.5 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition"
+                    >
+                      Build My Stopover Plan &rarr;
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">
+                    {items.map((item, idx) => (
+                      <div key={item.id} className="relative group">
+                        <div className="absolute -left-[41px] top-0 w-7 h-7 rounded-full bg-[#0369a1] text-white flex items-center justify-center text-xs font-bold shadow">
+                          ✓
                         </div>
 
-                        <div className="flex flex-col items-end gap-2">
-                          <span className="text-xs font-bold text-slate-900">{item.cost}</span>
-                          
-                          {/* Priority Shift & Action Controls */}
-                          <div className="flex items-center gap-1.5 pt-1">
-                            {/* Move Up */}
-                            <button
-                              type="button"
-                              onClick={() => moveItemUp(idx)}
-                              disabled={idx === 0}
-                              className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
-                              title="Increase Priority (Move Up)"
-                            >
-                              <ChevronUp size={14} />
-                            </button>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1 flex items-start justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-extrabold text-[#0369a1]">{item.time || 'Scheduled'}</span>
+                              <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">
+                                {item.badge}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+                            <p className="text-xs text-slate-600 flex items-center gap-1.5 relative">
+                              {item.detail}
+                            </p>
+                          </div>
 
-                            {/* Move Down */}
-                            <button
-                              type="button"
-                              onClick={() => moveItemDown(idx)}
-                              disabled={idx === items.length - 1}
-                              className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
-                              title="Decrease Priority (Move Down)"
-                            >
-                              <ChevronDown size={14} />
-                            </button>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs font-bold text-slate-900">{item.cost}</span>
+                            
+                            {/* Priority Shift & Action Controls */}
+                            <div className="flex items-center gap-1.5 pt-1">
+                              {/* Move Up */}
+                              <button
+                                type="button"
+                                onClick={() => moveItemUp(idx)}
+                                disabled={idx === 0}
+                                className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
+                                title="Increase Priority (Move Up)"
+                              >
+                                <ChevronUp size={14} />
+                              </button>
 
-                            {/* Replace Option */}
-                            <button
-                              type="button"
-                              onClick={() => router.push('/plan-my-layover')}
-                              className="px-2 py-0.5 rounded bg-sky-100 hover:bg-sky-200 text-[#0369a1] text-[11px] font-bold transition flex items-center gap-1"
-                              title="Replace with alternative stopover activity"
-                            >
-                              <RefreshCw size={11} /> Replace
-                            </button>
+                              {/* Move Down */}
+                              <button
+                                type="button"
+                                onClick={() => moveItemDown(idx)}
+                                disabled={idx === items.length - 1}
+                                className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
+                                title="Decrease Priority (Move Down)"
+                              >
+                                <ChevronDown size={14} />
+                              </button>
 
-                            {/* Delete Item */}
-                            {item.cost !== '₹0' && (
+                              {/* Replace Option */}
+                              <button
+                                type="button"
+                                onClick={() => router.push('/plan-my-layover')}
+                                className="px-2 py-0.5 rounded bg-sky-100 hover:bg-sky-200 text-[#0369a1] text-[11px] font-bold transition flex items-center gap-1"
+                                title="Replace with alternative stopover activity"
+                              >
+                                <RefreshCw size={11} /> Replace
+                              </button>
+
+                              {/* Delete Item */}
                               <button
                                 type="button"
                                 onClick={() => removeItem(item.id)}
@@ -453,13 +334,13 @@ export default function MyItineraryPage() {
                               >
                                 <Trash2 size={14} />
                               </button>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -467,19 +348,66 @@ export default function MyItineraryPage() {
             {/* RIGHT COLUMN: Control Panel */}
             <div className="lg:col-span-4 space-y-6">
               
-              {/* Draft Management Card */}
+              {/* Draft & Saved Plans Management Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Draft Management
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
-                    <Save size={14} /> Save Draft
-                  </button>
-                  <button className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition flex items-center justify-center gap-2">
-                    <Copy size={14} /> Duplicate
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    My Saved Itineraries ({savedPlans.length})
+                  </h3>
+                  <button
+                    onClick={() => saveCurrentPlan()}
+                    disabled={items.length === 0}
+                    className="py-1.5 px-3 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
+                  >
+                    <Save size={14} /> Save Current
                   </button>
                 </div>
+
+                {savedPlans.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2">
+                    No saved itineraries. Build a plan and click "Save Current" above.
+                  </p>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    {savedPlans.map((plan) => (
+                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <strong className="text-xs font-bold text-slate-900">{plan.name}</strong>
+                          <span className="text-[10px] text-slate-500">{plan.createdAt}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-semibold">
+                          {plan.items.length} items • ₹{plan.totalCost.toLocaleString()}
+                        </div>
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => loadSavedPlan(plan)}
+                            className="px-2.5 py-1 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(window.location.href);
+                              showToast(`Share link for "${plan.name}" copied!`, 'success');
+                            }}
+                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                          >
+                            🔗 Share
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteSavedPlan(plan.id)}
+                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ml-auto"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* AI Co-Pilot Card */}

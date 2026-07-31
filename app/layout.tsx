@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
+import { ItineraryProvider } from '@/context/itinerary-context';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { AuthModal } from '@/components/auth-modal';
@@ -60,17 +61,17 @@ export default function RootLayout({
     <html lang="en" className={`${jakarta.variable} scroll-smooth`}>
       <body className="font-sans bg-[#F8FAFC] text-[#0F172A] antialiased selection:bg-[#0369a1] selection:text-white min-h-screen flex flex-col pt-16">
         <AuthProvider>
-          <AuthGuard>
-            <Navbar />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-            <WhatsAppConcierge />
-          </AuthGuard>
+          <ItineraryProvider>
+            <AuthGuard>
+              <Navbar />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+              <WhatsAppConcierge />
+            </AuthGuard>
+          </ItineraryProvider>
         </AuthProvider>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );
 }
-
-
