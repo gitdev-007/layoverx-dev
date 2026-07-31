@@ -1244,13 +1244,14 @@ export default function PlanMyLayoverPage() {
                         <div className="text-[11px] text-slate-600 font-semibold">
                           {plan.items.length} items • Total: ₹{plan.totalCost.toLocaleString()}
                         </div>
-                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
+                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
                           <button
                             type="button"
                             onClick={() => loadSavedPlan(plan)}
-                            className="px-2.5 py-1 bg-[#0284C7] hover:bg-[#027ab1] text-white rounded-lg text-[11px] font-bold transition"
+                            className="px-2.5 py-1 bg-[#0284C7] hover:bg-[#027ab1] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                            title="Replace all active itinerary items with this saved plan"
                           >
-                            ✏️ Edit
+                            🔄 Replace Active
                           </button>
                           <button
                             type="button"
@@ -1258,14 +1259,14 @@ export default function PlanMyLayoverPage() {
                               navigator.clipboard?.writeText(window.location.href);
                               showToast(`Share link for "${plan.name}" copied!`, 'success');
                             }}
-                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition"
+                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
                           >
                             🔗 Share
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteSavedPlan(plan.id)}
-                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition ml-auto"
+                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ml-auto"
                           >
                             🗑️ Delete
                           </button>

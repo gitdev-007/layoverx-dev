@@ -87,7 +87,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     }, 4500);
   };
 
-  const addItem = (itemData: Omit<ItineraryItem, 'id'>, usableHoursLimit = 10.5) => {
+  const addItem = (itemData: Omit<ItineraryItem, 'id'>, totalLayoverHours = 8.0) => {
     // Check for duplicate booking
     const isDuplicate = items.some(
       (item) => item.title.trim().toLowerCase() === itemData.title.trim().toLowerCase()
@@ -97,25 +97,51 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check total duration limit
-    const currentTotalHours = items.reduce((sum, item) => sum + (item.durationHours || 2), 0);
-    const newItemHours = itemData.durationHours || 2;
+    let updatedList = [...items];
 
-    if (currentTotalHours + newItemHours > usableHoursLimit) {
-      showToast(
-        `⚠️ Time limit warning! Total itinerary duration (${(currentTotalHours + newItemHours).toFixed(1)}h) exceeds your safe usable transit window (${usableHoursLimit}h).`,
-        'warning'
-      );
-    } else {
-      showToast(`Added "${itemData.title}" to your itinerary!`, 'success');
+    // REQUIREMENT: Check if vehicle/cab is added first. If not present and adding an activity, auto-insert vehicle
+    const hasCab = updatedList.some((item) => item.badge === 'Cab');
+    if (!hasCab && itemData.badge !== 'Cab') {
+      const defaultCab: ItineraryItem = {
+        id: `cab_auto_${Date.now()}`,
+        title: 'Executive Sedan Airport Pickup & Return',
+        detail: 'Toyota Innova Crysta / Camry • Fixed rate transfer',
+        badge: 'Cab',
+        cost: '₹1,499',
+        durationHours: 0.75,
+      };
+      updatedList.push(defaultCab);
     }
 
     const newItem: ItineraryItem = {
       ...itemData,
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
     };
+    updatedList.push(newItem);
 
-    saveItemsToStorage([...items, newItem]);
+    // TIME FORMULA: Total Layover - 2.5h Transit - Cab Driving Time - 0.17h (10m extra) = Available Time
+    const landsideCount = updatedList.filter((i) => i.badge === 'Dining' || i.badge === 'Tour' || (i.badge === 'Hotel' && !i.title.toLowerCase().includes('pod'))).length;
+    const cabDrivingTime = landsideCount <= 1 ? 0.75 : landsideCount === 2 ? 1.5 : 2.0;
+    const transitBuffer = 2.5;
+    const extraTenMin = 0.17;
+    
+    const availableTime = Math.max(0, totalLayoverHours - transitBuffer - cabDrivingTime - extraTenMin);
+    const activitiesHours = updatedList.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+
+    if (activitiesHours > availableTime) {
+      showToast(
+        `⚠️ Time limit warning! Total activities (${activitiesHours.toFixed(1)}h) exceeds available stopover window (${availableTime.toFixed(1)}h).`,
+        'warning'
+      );
+    } else {
+      if (!hasCab && itemData.badge !== 'Cab') {
+        showToast(`🚗 Added Airport Cab & "${itemData.title}" to itinerary!`, 'success');
+      } else {
+        showToast(`Added "${itemData.title}" to your itinerary!`, 'success');
+      }
+    }
+
+    saveItemsToStorage(updatedList);
   };
 
   const updateItemDuration = (id: string, durationHours: number, cost: string) => {
@@ -177,8 +203,9 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loadSavedPlan = (plan: SavedPlan) => {
-    saveItemsToStorage(plan.items);
-    showToast(`Loaded saved plan "${plan.name}"`, 'success');
+    // REPLACES all existing active itinerary items with the saved itinerary
+    saveItemsToStorage([...plan.items]);
+    showToast(`🔄 Replaced active itinerary with saved plan "${plan.name}"!`, 'success');
   };
 
   return (

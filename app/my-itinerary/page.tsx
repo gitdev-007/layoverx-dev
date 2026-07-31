@@ -210,40 +210,60 @@ export default function MyItineraryPage() {
                   </Link>
                 </div>
 
-                {/* Progress Bar Indicators */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-xs font-bold text-slate-700">
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                      <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">Total Layover</span>
-                      <strong className="text-sm font-extrabold text-slate-900">{totalHours}</strong>
-                    </div>
-                    <div className="bg-sky-50 p-3 rounded-2xl border border-sky-100">
-                      <span className="text-[#0369a1] block text-[10px] uppercase tracking-wider mb-0.5">Used Hours</span>
-                      <strong className="text-sm font-extrabold text-[#0369a1]">{usedHours}</strong>
-                    </div>
-                    <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
-                      <span className="text-indigo-600 block text-[10px] uppercase tracking-wider mb-0.5">Remaining Window</span>
-                      <strong className="text-sm font-extrabold text-indigo-900">{remainingHours}</strong>
-                    </div>
-                  </div>
+                {/* Progress Bar Indicators & Formula Breakdown */}
+                {(() => {
+                  const parseTotalH = parseFloat(totalHours) || 8.0;
+                  const landsideCount = items.filter((i) => i.badge === 'Dining' || i.badge === 'Tour' || (i.badge === 'Hotel' && !i.title.toLowerCase().includes('pod'))).length;
+                  const cabDrivingTime = landsideCount <= 1 ? 0.75 : landsideCount === 2 ? 1.5 : 2.0;
+                  const transitBuffer = 2.5; // Fixed 2.5h transit buffer requested
+                  const extraTenMin = 0.17; // 10 mins extra buffer
+                  const fixedBuffersTotal = transitBuffer + cabDrivingTime + extraTenMin;
 
-                  <div className="relative w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
-                    <div 
-                      className="h-full bg-[#0369a1] transition-all duration-500" 
-                      style={{ width: `${percentUsed}%` }}
-                    ></div>
-                    <div 
-                      className="h-full bg-slate-300 transition-all duration-500"
-                      style={{ width: `${100 - percentUsed}%` }}
-                    ></div>
-                  </div>
+                  const availableStopoverWindow = Math.max(0, parseTotalH - fixedBuffersTotal);
+                  const usedActivitiesH = items.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+                  const remainingH = Math.max(0, availableStopoverWindow - usedActivitiesH);
+                  const pctUsed = Math.min(100, Math.round((usedActivitiesH / Math.max(1, availableStopoverWindow)) * 100));
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold uppercase tracking-wider px-1">
-                    <span>🛫 Landing</span>
-                    <span>Buffer (Immigration/Transit)</span>
-                    <span>🛬 Takeoff</span>
-                  </div>
-                </div>
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-bold text-slate-700">
+                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                          <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">Total Layover</span>
+                          <strong className="text-sm font-extrabold text-slate-900">{parseTotalH.toFixed(1)} Hours</strong>
+                        </div>
+                        <div className="bg-amber-50 p-3 rounded-2xl border border-amber-100">
+                          <span className="text-amber-700 block text-[10px] uppercase tracking-wider mb-0.5">Buffers (2.5h + Drive)</span>
+                          <strong className="text-sm font-extrabold text-amber-900">{fixedBuffersTotal.toFixed(1)} Hours</strong>
+                        </div>
+                        <div className="bg-sky-50 p-3 rounded-2xl border border-sky-100">
+                          <span className="text-[#0369a1] block text-[10px] uppercase tracking-wider mb-0.5">Used Activities</span>
+                          <strong className="text-sm font-extrabold text-[#0369a1]">{usedActivitiesH.toFixed(1)} Hours</strong>
+                        </div>
+                        <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
+                          <span className="text-indigo-600 block text-[10px] uppercase tracking-wider mb-0.5">Available Window</span>
+                          <strong className="text-sm font-extrabold text-indigo-900">{remainingH.toFixed(1)} Hours</strong>
+                        </div>
+                      </div>
+
+                      <div className="relative w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+                        <div 
+                          className="h-full bg-[#0369a1] transition-all duration-500" 
+                          style={{ width: `${pctUsed}%` }}
+                        ></div>
+                        <div 
+                          className="h-full bg-slate-300 transition-all duration-500"
+                          style={{ width: `${100 - pctUsed}%` }}
+                        ></div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold uppercase tracking-wider px-1">
+                        <span>🛫 Landing</span>
+                        <span>Formula: Total Layover - 2.5h Transit - Cab Drive - 10m = {availableStopoverWindow.toFixed(1)}h Available</span>
+                        <span>🛬 Takeoff</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Sequence List */}
@@ -453,8 +473,9 @@ export default function MyItineraryPage() {
                             type="button"
                             onClick={() => loadSavedPlan(plan)}
                             className="px-2.5 py-1 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                            title="Replace all active itinerary items with this saved plan"
                           >
-                            ✏️ Edit
+                            🔄 Replace Active
                           </button>
                           <button
                             type="button"
