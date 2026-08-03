@@ -82,18 +82,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (e) {}
 
-          const googleUser: User = {
-            id: 'usr_g_' + Date.now(),
-            email: 'google_user@layoverx.in',
-            user_metadata: { full_name: 'Google Traveler' },
-            app_metadata: { provider: 'google' },
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-          } as unknown as User;
-          handleAuthenticatedUser(googleUser);
+          try {
+            const { data: { session: sess } } = await supabase.auth.getSession();
+            if (sess?.user) {
+              setSession(sess);
+              handleAuthenticatedUser(sess.user);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {}
+
           window.history.replaceState({}, document.title, window.location.pathname);
-          setLoading(false);
-          return;
         }
       }
 

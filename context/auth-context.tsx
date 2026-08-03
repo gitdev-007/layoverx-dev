@@ -32,14 +32,15 @@ export function useAuth() {
   } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Traveler';
+  const emailStr = user?.email || '';
+  const emailUsername = emailStr.includes('@') ? emailStr.split('@')[0] : (emailStr || 'Traveler');
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || undefined;
 
   const userProfile: UserProfile | null = user
     ? {
         id: user.id,
         email: user.email || '',
-        name: fullName,
+        name: emailUsername,
         avatarUrl,
         role: isAdmin ? 'admin' : 'user',
       }
