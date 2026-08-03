@@ -14,6 +14,9 @@ export function createClient() {
     supabaseUrl,
     supabaseAnonKey,
     {
+      auth: {
+        detectSessionInUrl: false,
+      },
       cookieOptions: {
         name: 'sb-auth-token',
         maxAge: 60 * 60 * 24 * 7, // 7 days
