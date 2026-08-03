@@ -177,7 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return `${window.location.origin}/auth/callback`;
       }
     }
-    return 'https://layoverx.in/auth/callback';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+    return `${siteUrl}/auth/callback`;
   };
 
   const signInWithGoogle = async () => {

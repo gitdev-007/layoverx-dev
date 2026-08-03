@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   // Construct origin dynamically from x-forwarded headers to avoid Vercel internal host overrides
   const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;
   const proto = request.headers.get('x-forwarded-proto') || 'https';
-  const cleanOrigin = host.includes('localhost') ? `${proto}://${host}` : 'https://layoverx.in';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+  const cleanOrigin = host.includes('localhost') ? `${proto}://${host}` : siteUrl;
 
   if (code) {
     const cookieStore = cookies();
@@ -40,18 +41,25 @@ export async function GET(request: Request) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      // Redirect cleanly to destination WITHOUT `?code=` query parameters!
-      const cleanRedirectUrl = new URL(next, cleanOrigin);
-      cleanRedirectUrl.searchParams.delete('code');
-      
-      const response = NextResponse.redirect(cleanRedirectUrl.toString());
-      response.headers.set('Cache-Control', 'no-store, max-age=0');
-      return response;
-    } else {
-      console.error('Callback Exchange Error:', error.message);
+      if (!error) {
+        // Redirect cleanly to destination WITHOUT `?code=` query parameters!
+        const cleanRedirectUrl = new URL(next, cleanOrigin);
+        cleanRedirectUrl.searchParams.delete('code');
+        
+        const response = NextResponse.redirect(cleanRedirectUrl.toString());
+        response.headers.set('Cache-Control', 'no-store, max-age=0');
+        return response;
+      } else {
+        console.error('Callback Exchange Error:', error);
+        return NextResponse.redirect(`${cleanOrigin}/?auth_error=${encodeURIComponent(error.message)}`);
+      }
+    } catch (err: any) {
+      console.error('Callback Exchange Exception (Unhandled):', err);
+      const msg = err?.message || 'Authentication code exchange failed';
+      return NextResponse.redirect(`${cleanOrigin}/?auth_error=${encodeURIComponent(msg)}`);
     }
   }
 

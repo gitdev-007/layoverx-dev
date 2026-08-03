@@ -19,7 +19,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://layoverx-dev.vercel.app'),
+  metadataBase: new URL('https://www.layoverx.in'),
   title: 'Mumbai Travel & Layover Experience Platform | LayoverX',
   description:
     'Discover luxury transit hotels, authentic restaurants, spas, local city tours, and airport transfers near CSM International Airport Mumbai. Plan your perfect stopover.',
@@ -32,12 +32,12 @@ export const metadata: Metadata = {
     'Bombay Layover Guide',
   ],
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app',
+    canonical: 'https://www.layoverx.in',
   },
   openGraph: {
     title: 'LayoverX — Mumbai Airport Transit Platform',
     description: 'Book hourly hotel pods, spas, lounges & guided city tours near Mumbai CSMIA.',
-    url: 'https://layoverx-dev.vercel.app',
+    url: 'https://www.layoverx.in',
     siteName: 'LayoverX',
     images: [
       {
