@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth as useSupabaseAuth, AuthProvider as SupabaseAuthProvider } from '@/lib/auth-context';
+import { getUserDisplayName, getAvatarUrl } from '@/lib/utils';
 
 export type AuthMode = 'login' | 'signup' | 'reset-password';
 
@@ -32,17 +33,15 @@ export function useAuth() {
   } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  const emailStr = user?.email || user?.user_metadata?.email || '';
-  const emailUsername = emailStr.includes('@')
-    ? emailStr.split('@')[0]
-    : (user?.user_metadata?.full_name || user?.user_metadata?.name || 'Traveler');
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || undefined;
+  // Derive display name and avatar using shared utilities — consistent across the entire app
+  const displayName = getUserDisplayName(user);
+  const avatarUrl = getAvatarUrl(user);
 
   const userProfile: UserProfile | null = user
     ? {
         id: user.id,
         email: user.email || '',
-        name: emailUsername,
+        name: displayName,
         avatarUrl,
         role: isAdmin ? 'admin' : 'user',
       }

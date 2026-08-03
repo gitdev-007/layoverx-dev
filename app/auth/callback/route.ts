@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { getUserDisplayName } from '@/lib/utils';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -38,13 +39,10 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/?auth_error=${errorMsg}`);
     }
 
-    if (data?.session?.user) {
+    if (!error && data?.session?.user) {
       const u = data.session.user;
       const userEmail = u.email || '';
-      const fullName =
-        u.user_metadata?.full_name ||
-        u.user_metadata?.name ||
-        (userEmail ? userEmail.split('@')[0] : 'Traveler');
+      const fullName = getUserDisplayName(u);
 
       // Upsert into public.profiles so the record is always fresh
       try {

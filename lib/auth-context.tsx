@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { getUserDisplayName } from '@/lib/utils';
 
 interface AuthContextType {
   user: User | null;
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const syncUserProfileToDatabase = async (u: User) => {
     if (!u || !u.id) return;
     const userEmail = u.email || '';
-    const fullName = u.user_metadata?.full_name || u.user_metadata?.name || (userEmail ? userEmail.split('@')[0] : 'Traveler');
+    const fullName = getUserDisplayName(u);
     try {
       await supabase.from('profiles').upsert({
         id: u.id,
