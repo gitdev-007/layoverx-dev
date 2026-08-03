@@ -6,8 +6,6 @@ import { AuthProvider } from '@/context/auth-context';
 import { ItineraryProvider } from '@/context/itinerary-context';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { AuthModal } from '@/components/auth-modal';
-
 import AuthGuard from '@/components/auth/AuthGuard';
 import WhatsAppConcierge from '@/components/WhatsAppConcierge';
 

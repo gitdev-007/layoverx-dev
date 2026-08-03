@@ -29,43 +29,20 @@ export default function SavedItinerariesPage() {
       {/* MAIN CONTENT */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-3xl mx-auto space-y-4">
             
-            {/* Left Sidebar Navigation */}
-            <aside className="md:col-span-1 space-y-6">
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Navigation</h2>
-                <nav className="flex flex-col gap-1 text-sm font-semibold">
-                  <Link href="/my-profile" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
-                    👤 Profile Details
-                  </Link>
-                  <Link href="/my-trips" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
-                    ✈️ My Trips
-                  </Link>
-                  <Link href="/saved-itineraries" className="flex items-center gap-2 px-3 py-2.5 bg-sky-50 text-[#0284C7] rounded-xl font-bold transition">
-                    💾 Saved Plans
-                  </Link>
-                  <Link href="/account-settings" className="flex items-center gap-2 px-3 py-2.5 text-slate-700 hover:bg-slate-50 rounded-xl transition">
-                    ⚙️ Settings
-                  </Link>
-                </nav>
-              </div>
-            </aside>
-
             {/* Center Saved Itineraries List */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 space-y-3 shadow-sm">
-                <p className="font-bold text-lg text-slate-900">No saved itineraries found</p>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Configure timings and select custom day rooms, spas, or tours in the planner to save plans.
-                </p>
-                <Link
-                  href="/plan-my-layover"
-                  className="mt-2 inline-block px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition shadow"
-                >
-                  Open AI Planner
-                </Link>
-              </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 space-y-3 shadow-sm">
+              <p className="font-bold text-lg text-slate-900">No saved itineraries found</p>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Configure timings and select custom day rooms, spas, or tours in the planner to save plans.
+              </p>
+              <Link
+                href="/plan-my-layover"
+                className="mt-2 inline-block px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition shadow"
+              >
+                Open AI Planner
+              </Link>
             </div>
 
           </div>

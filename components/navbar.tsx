@@ -10,14 +10,9 @@ import { getUserHandle } from '@/lib/utils';
 import {
   Menu,
   X,
-  User,
-  LogOut,
-  Heart,
   Calendar,
-  Settings,
   Shield,
   Plane,
-  ChevronDown,
   Sun,
   Moon,
   AlertTriangle,
@@ -26,62 +21,14 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { isAdmin, setIsAdmin, openAuthModal } = useAuth();
+  const { isAdmin } = useAuth();
   const { items, toast } = useItinerary();
   
-  const supabase = createClient();
-  const [localUser, setLocalUser] = useState<any>(null);
-  const [localLoading, setLocalLoading] = useState(true);
-
-  useEffect(() => {
-    async function initSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setLocalUser(session?.user || null);
-      } catch (e) {
-        console.error('Navbar Session Init Error:', e);
-      } finally {
-        setLocalLoading(false);
-      }
-    }
-    
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setLocalUser(session?.user || null);
-      setLocalLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('layoverx_local_user');
-        localStorage.removeItem('layoverx_itinerary_items');
-        localStorage.removeItem('layoverx_saved_plans');
-        window.dispatchEvent(new Event('layoverx_logout'));
-      }
-    } catch (err) {
-      console.error('Navbar Sign Out Error:', err);
-    }
-  };
-
-  const handle = localUser?.user_metadata?.full_name 
-    || localUser?.user_metadata?.name 
-    || localUser?.email?.split('@')[0] 
-    || 'Traveler';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     setMobileMenuOpen(false);
-    setDropdownOpen(false);
     
     const active = localStorage.getItem('layoverx_dark_mode') === 'true';
     setDarkMode(active);
@@ -222,74 +169,7 @@ export const Navbar: React.FC = () => {
               Plan My Layover
             </Link>
 
-            {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Loading vs Logged Out */}
-            {localLoading ? (
-              /* Skeleton placeholder during session hydration */
-              <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-3.5 py-1.5 rounded-full animate-pulse">
-                <div className="w-6 h-6 rounded-full bg-slate-300 flex-shrink-0" />
-                <div className="w-20 h-3 bg-slate-300 rounded-full" />
-              </div>
-            ) : localUser ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
-                >
-                  {localUser?.user_metadata?.avatar_url || localUser?.user_metadata?.picture ? (
-                    <img
-                      src={localUser.user_metadata.avatar_url || localUser.user_metadata.picture}
-                      alt={handle}
-                      className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
-                      {handle.charAt(0)}
-                    </div>
-                  )}
-                  <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
-                    {handle}
-                  </span>
-                  <ChevronDown size={14} className="text-slate-400" />
-                </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-[1010] text-slate-800">
-                    <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Signed in as</p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{localUser?.email}</p>
-                    </div>
-                    <Link
-                      href="/my-itinerary"
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      <Calendar size={16} /> My Itinerary
-                    </Link>
-                    <Link
-                      href="/my-trips"
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      <Plane size={16} /> Bookings & Passes
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600 hover:bg-rose-50 border-t border-slate-100 mt-1"
-                    >
-                      <LogOut size={16} /> Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                <button
-                  onClick={() => openAuthModal('login')}
-                  className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm"
-                >
-                  Sign In / Register
-                </button>
-              </div>
-            )}
+            {/* Login and signup functionality removed */}
           </div>
 
           {/* Mobile Menu Toggle Button */}
@@ -337,69 +217,12 @@ export const Navbar: React.FC = () => {
               >
                 Plan My Layover
               </Link>
-              {localLoading ? (
-                <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-4 py-3 rounded-xl animate-pulse">
-                  <div className="w-9 h-9 rounded-full bg-slate-300 flex-shrink-0" />
-                  <div className="w-24 h-4 bg-slate-300 rounded-full" />
-                </div>
-              ) : localUser ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
-                    {localUser.user_metadata?.avatar_url || localUser.user_metadata?.picture ? (
-                      <img
-                        src={localUser.user_metadata.avatar_url || localUser.user_metadata.picture}
-                        alt={handle}
-                        className="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-sm uppercase shadow-sm">
-                        {handle.charAt(0)}
-                      </div>
-                    )}
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-[#0F172A] truncate">
-                        {localUser.user_metadata?.full_name || localUser.email}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-medium truncate">
-                        {`@${localUser.email?.split('@')[0]}`}
-                      </span>
-                    </div>
-                  </div>
-                  <Link
-                    href="/my-itinerary"
-                    className="block w-full text-center py-2.5 bg-sky-50 text-[#0369a1] font-bold text-sm rounded-xl border border-sky-100 hover:bg-sky-100 transition"
-                  >
-                    My Itinerary
-                  </Link>
-                  <Link
-                    href="/my-trips"
-                    className="block w-full text-center py-2.5 bg-slate-50 text-slate-700 font-bold text-sm rounded-xl border border-slate-200 hover:bg-slate-100 transition"
-                  >
-                    Bookings & Passes
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl border border-rose-200 transition"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    onClick={() => openAuthModal('login')}
-                    className="py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl border border-slate-200"
-                  >
-                    Log In
-                  </button>
-                  <button
-                    onClick={() => openAuthModal('signup')}
-                    className="py-2.5 bg-[#0F172A] text-white text-sm font-bold rounded-xl"
-                  >
-                    Sign Up
-                  </button>
-                </div>
-              )}
+              <Link
+                href="/my-itinerary"
+                className="block w-full text-center py-3 bg-sky-50 text-[#0369a1] font-bold text-sm rounded-xl border border-sky-100 hover:bg-sky-100 transition"
+              >
+                My Itinerary {items.length > 0 && `(${items.length})`}
+              </Link>
             </div>
           </div>
         )}
