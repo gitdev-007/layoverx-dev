@@ -188,12 +188,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const openAuthModal = (_mode?: string) => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
+  const getRedirectUrl = () => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return `${window.location.origin}/auth/callback`;
+    }
+    return process.env.NEXT_PUBLIC_SITE_URL
+      ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+      : 'https://layoverx.in/auth/callback';
+  };
+
   const signInWithGoogle = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: getRedirectUrl(),
       },
     });
     if (error) {
