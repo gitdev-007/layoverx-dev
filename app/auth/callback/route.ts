@@ -17,7 +17,19 @@ export async function GET(request: Request) {
         },
       }
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data } = await supabase.auth.exchangeCodeForSession(code);
+    if (data?.session?.user) {
+      const u = data.session.user;
+      const userEmail = u.email || '';
+      const fullName = u.user_metadata?.full_name || u.user_metadata?.name || (userEmail ? userEmail.split('@')[0] : 'Traveler');
+      try {
+        await supabase.from('profiles').upsert({
+          id: u.id,
+          email: userEmail,
+          full_name: fullName,
+        }, { onConflict: 'id' });
+      } catch (e) {}
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);

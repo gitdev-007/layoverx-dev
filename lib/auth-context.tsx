@@ -48,12 +48,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const syncUserProfileToDatabase = async (u: User) => {
+    if (!u || !u.id) return;
+    const userEmail = u.email || '';
+    const fullName = u.user_metadata?.full_name || u.user_metadata?.name || (userEmail ? userEmail.split('@')[0] : 'Traveler');
+    try {
+      await supabase.from('profiles').upsert({
+        id: u.id,
+        email: userEmail,
+        full_name: fullName,
+      }, { onConflict: 'id' });
+    } catch (e) {
+      console.warn('[Sync Profile Warning]', e);
+    }
+  };
+
   const handleAuthenticatedUser = (u: User) => {
     setUser(u);
     setIsAuthModalOpen(false);
     try {
       localStorage.setItem('layoverx_local_user', JSON.stringify(u));
     } catch (e) {}
+    
+    syncUserProfileToDatabase(u);
+
     if (pendingActionRef.current) {
       try {
         pendingActionRef.current();
@@ -103,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const parsed = JSON.parse(savedLocalUser);
             if (parsed?.email && !parsed.email.includes('google_user@layoverx.in') && !parsed.email.includes('placeholder')) {
-              setUser(parsed);
+              handleAuthenticatedUser(parsed);
             } else {
               localStorage.removeItem('layoverx_local_user');
               setUser(null);
@@ -119,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setSession(session);
-          setUser(session.user);
+          handleAuthenticatedUser(session.user);
         } else {
           sanitizeAndSetLocalUser();
         }
