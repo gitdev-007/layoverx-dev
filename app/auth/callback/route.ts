@@ -10,7 +10,10 @@ export async function GET(request: Request) {
   // Construct origin dynamically from x-forwarded headers to avoid Vercel internal host overrides
   const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;
   const proto = request.headers.get('x-forwarded-proto') || 'https';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+  if (siteUrl.includes('layoverx.in') && !siteUrl.includes('www.')) {
+    siteUrl = siteUrl.replace('layoverx.in', 'www.layoverx.in');
+  }
   const cleanOrigin = host.includes('localhost') ? `${proto}://${host}` : siteUrl;
 
   if (code) {
@@ -25,9 +28,13 @@ export async function GET(request: Request) {
           },
           setAll(cookiesToSet) {
             try {
+              const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;
+              const cookieDomain = host.endsWith('layoverx.in') ? '.layoverx.in' : undefined;
+
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, {
                   ...options,
+                  domain: cookieDomain,
                   sameSite: 'lax',
                   secure: true,
                   path: '/',

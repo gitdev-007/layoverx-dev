@@ -177,7 +177,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return `${window.location.origin}/auth/callback`;
       }
     }
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in';
+    if (siteUrl.includes('layoverx.in') && !siteUrl.includes('www.')) {
+      siteUrl = siteUrl.replace('layoverx.in', 'www.layoverx.in');
+    }
     return `${siteUrl}/auth/callback`;
   };
 
