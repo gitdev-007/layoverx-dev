@@ -8,19 +8,18 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://chskafikxskbiaalmiaw.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-
   const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           response = NextResponse.next({
             request,
           });
@@ -32,16 +31,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session cookie on every request
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Guard protected API endpoints
-  if (request.nextUrl.pathname.startsWith('/api/v1/protected') && !user) {
-    return NextResponse.json(
-      { status: 'error', code: 'UNAUTHORIZED', message: 'Authentication required to access protected endpoint.' },
-      { status: 401 }
-    );
-  }
+  // Refresh the session cookie on every server request so it stays valid
+  await supabase.auth.getUser();
 
   return response;
 }

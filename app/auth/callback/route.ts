@@ -10,8 +10,8 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://chskafikxskbiaalmiaw.supabase.co',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
                 cookieStore.set(name, value, options)
               );
             } catch {
-              // Handled in Server Component / Middleware
+              // Ignore if called from Server Component context
             }
           },
         },
@@ -31,22 +31,27 @@ export async function GET(request: Request) {
     );
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
     if (!error && data?.session?.user) {
       const u = data.session.user;
       const userEmail = u.email || '';
-      const fullName = u.user_metadata?.full_name || u.user_metadata?.name || (userEmail ? userEmail.split('@')[0] : 'Traveler');
+      const fullName =
+        u.user_metadata?.full_name ||
+        u.user_metadata?.name ||
+        (userEmail ? userEmail.split('@')[0] : 'Traveler');
+
+      // Upsert into public.profiles so the record is always fresh
       try {
-        await supabase.from('profiles').upsert({
-          id: u.id,
-          email: userEmail,
-          full_name: fullName,
-        }, { onConflict: 'id' });
-      } catch (e) {}
+        await supabase.from('profiles').upsert(
+          { id: u.id, email: userEmail, full_name: fullName },
+          { onConflict: 'id' }
+        );
+      } catch (_e) {}
 
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Return user to home page on error/fallback without ugly query params
+  // Fallback: redirect to homepage without query params
   return NextResponse.redirect(`${origin}/`);
 }

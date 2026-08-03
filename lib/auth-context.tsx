@@ -154,11 +154,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
-        if (currentSession?.user) {
-          setSession(currentSession);
-          handleAuthenticatedUser(currentSession.user);
+      (event, currentSession) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          if (currentSession?.user) {
+            setSession(currentSession);
+            handleAuthenticatedUser(currentSession.user);
+          }
         }
+        if (event === 'SIGNED_OUT') {
+          clearAllSessionData();
+        }
+        // Always strip ?code= from address bar if present
         if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
