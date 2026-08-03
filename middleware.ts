@@ -8,10 +8,16 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // If Supabase env vars are missing, skip session refresh and pass through
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return response;
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -20,19 +26,19 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          response = NextResponse.next({
-            request,
-          });
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
         },
       },
-    }
-  );
+    });
 
-  // Refresh the session cookie on every server request so it stays valid
-  await supabase.auth.getUser();
+    // Refresh the session cookie on every request
+    await supabase.auth.getUser();
+  } catch (_e) {
+    // Never let middleware crash the entire site — always pass through
+  }
 
   return response;
 }
