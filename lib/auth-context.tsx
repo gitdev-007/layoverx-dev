@@ -100,8 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    async function getInitialSession() {
-      // Handle OAuth redirect code parameter (e.g. ?code=...)
+    async function loadInitialSession() {
       if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -111,47 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (data?.session?.user) {
               setSession(data.session);
               handleAuthenticatedUser(data.session.user);
-              window.history.replaceState({}, document.title, window.location.pathname);
               setLoading(false);
               return;
             }
           } catch (e) {}
-
-          try {
-            const { data: { session: sess } } = await supabase.auth.getSession();
-            if (sess?.user) {
-              setSession(sess);
-              handleAuthenticatedUser(sess.user);
-              window.history.replaceState({}, document.title, window.location.pathname);
-              setLoading(false);
-              return;
-            }
-          } catch (e) {}
-
-          // PKCE code exchange failed — clean URL and fall through to getSession
-          window.history.replaceState({}, document.title, window.location.pathname);
-          setLoading(false);
-          return;
         }
       }
-
-      const sanitizeAndSetLocalUser = () => {
-        const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
-        if (savedLocalUser) {
-          try {
-            const parsed = JSON.parse(savedLocalUser);
-            if (parsed?.email && !parsed.email.includes('google_user@layoverx.in') && !parsed.email.includes('placeholder')) {
-              handleAuthenticatedUser(parsed);
-            } else {
-              localStorage.removeItem('layoverx_local_user');
-              setUser(null);
-            }
-          } catch (e) {
-            localStorage.removeItem('layoverx_local_user');
-            setUser(null);
-          }
-        }
-      };
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -159,35 +123,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           handleAuthenticatedUser(session.user);
         } else {
-          sanitizeAndSetLocalUser();
+          // Check local storage fallback
+          const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
+          if (savedLocalUser) {
+            try {
+              const parsed = JSON.parse(savedLocalUser);
+              if (parsed?.email && !parsed.email.includes('google_user@layoverx.in') && !parsed.email.includes('placeholder')) {
+                handleAuthenticatedUser(parsed);
+              }
+            } catch (e) {}
+          }
         }
       } catch (err) {
-        sanitizeAndSetLocalUser();
+        console.error('[Initial Session Error]', err);
       } finally {
         setLoading(false);
       }
     }
 
-    getInitialSession();
+    loadInitialSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-          if (currentSession?.user) {
-            setSession(currentSession);
-            handleAuthenticatedUser(currentSession.user);
+        if (currentSession?.user) {
+          setSession(currentSession);
+          handleAuthenticatedUser(currentSession.user);
+          setLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          clearAllSessionData();
+          setLoading(false);
+        } else {
+          setLoading(false);
+        }
+
+        // Clean query parameters code/event cleanly
+        if (typeof window !== 'undefined') {
+          const search = window.location.search;
+          if (search.includes('code=') || search.includes('event=')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
           }
         }
-        if (event === 'SIGNED_OUT') {
-          clearAllSessionData();
-        }
-        // Always strip ?code= from address bar if present
-        if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        setLoading(false);
       }
     );
+
+    // Initial check for query parameters to clear cleanly on mount
+    if (typeof window !== 'undefined') {
+      const search = window.location.search;
+      if (search.includes('code=') || search.includes('event=')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
 
     return () => {
       subscription.unsubscribe();

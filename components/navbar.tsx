@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useItinerary } from '@/context/itinerary-context';
+import { getUserHandle } from '@/lib/utils';
 import {
   Menu,
   X,
@@ -24,7 +25,7 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { user, isAdmin, setIsAdmin, signOut, openAuthModal, loading } = useAuth();
+  const { user, rawUser, isAdmin, setIsAdmin, signOut, openAuthModal, loading } = useAuth();
   const { items, toast } = useItinerary();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -187,19 +188,19 @@ export const Navbar: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  {user.avatarUrl ? (
+                  {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
                     <img
-                      src={user.avatarUrl}
-                      alt={user.name}
+                      src={rawUser.user_metadata.avatar_url || rawUser.user_metadata.picture}
+                      alt={getUserHandle(rawUser)}
                       className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
-                      {user.name ? user.name.charAt(0) : 'U'}
+                      {getUserHandle(rawUser).charAt(0)}
                     </div>
                   )}
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
-                    {user.name}
+                    {getUserHandle(rawUser)}
                   </span>
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
@@ -209,40 +210,20 @@ export const Navbar: React.FC = () => {
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-[1010] text-slate-800">
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-[10px] text-slate-400 font-bold uppercase">Signed in as</p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{user.email}</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{rawUser?.email}</p>
                     </div>
                     <Link
-                      href="/my-profile"
+                      href="/my-itinerary"
                       className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <User size={16} /> My Profile
+                      <Calendar size={16} /> My Itinerary
                     </Link>
                     <Link
                       href="/my-trips"
                       className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <Calendar size={16} /> My Trips
+                      <Plane size={16} /> Bookings & Passes
                     </Link>
-                    <Link
-                      href="/saved-itineraries"
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      <Heart size={16} /> Saved Itineraries
-                    </Link>
-                    <Link
-                      href="/account-settings"
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      <Settings size={16} /> Account Settings
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/revenue-admin"
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-bold text-[#0369a1] hover:bg-slate-50"
-                      >
-                        <Shield size={16} /> Admin Portal
-                      </Link>
-                    )}
                     <button
                       onClick={signOut}
                       className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600 hover:bg-rose-50 border-t border-slate-100 mt-1"
@@ -314,7 +295,7 @@ export const Navbar: React.FC = () => {
                   onClick={signOut}
                   className="w-full text-center py-2.5 bg-rose-50 text-rose-700 font-bold text-sm rounded-xl border border-rose-200"
                 >
-                  Sign Out ({user.name})
+                  Sign Out ({getUserHandle(rawUser)})
                 </button>
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">

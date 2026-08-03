@@ -36,3 +36,11 @@ export function getAvatarUrl(
     undefined
   );
 }
+
+export function getUserHandle(user: any): string {
+  if (!user) return 'Traveler';
+  if (user.user_metadata?.full_name) return user.user_metadata.full_name;
+  if (user.user_metadata?.name) return user.user_metadata.name;
+  if (user.email) return user.email.split('@')[0];
+  return 'Traveler';
+}
