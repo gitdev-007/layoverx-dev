@@ -97,22 +97,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      const sanitizeAndSetLocalUser = () => {
+        const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
+        if (savedLocalUser) {
+          try {
+            const parsed = JSON.parse(savedLocalUser);
+            if (parsed?.email && !parsed.email.includes('google_user@layoverx.in') && !parsed.email.includes('placeholder')) {
+              setUser(parsed);
+            } else {
+              localStorage.removeItem('layoverx_local_user');
+              setUser(null);
+            }
+          } catch (e) {
+            localStorage.removeItem('layoverx_local_user');
+            setUser(null);
+          }
+        }
+      };
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setSession(session);
           setUser(session.user);
         } else {
-          const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
-          if (savedLocalUser) {
-            setUser(JSON.parse(savedLocalUser));
-          }
+          sanitizeAndSetLocalUser();
         }
       } catch (err) {
-        const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
-        if (savedLocalUser) {
-          setUser(JSON.parse(savedLocalUser));
-        }
+        sanitizeAndSetLocalUser();
       } finally {
         setLoading(false);
       }
