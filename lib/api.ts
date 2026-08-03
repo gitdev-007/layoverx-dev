@@ -1,4 +1,14 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://layoverx-dev.onrender.com/api/v1';
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return `${window.location.origin}/api/v1`;
+  }
+  return 'https://layoverx-dev.onrender.com/api/v1';
+};
+
+const API_BASE = getApiBaseUrl();
 
 export interface ServiceItem {
   id: string;

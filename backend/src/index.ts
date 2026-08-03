@@ -19,6 +19,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares - Ensure JSON parsing middleware is loaded before routes
 const allowedOrigins = [
+  'https://layoverx.in',
+  'https://www.layoverx.in',
   'https://layoverx-dev.vercel.app',
   'http://localhost:3000',
   process.env.FRONTEND_PRODUCTION_URL || '',
@@ -29,10 +31,10 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(origin) || allowedOrigins.some(o => o && origin.startsWith(o))) {
         return callback(null, true);
       }
-      return callback(new Error('CORS Policy: Origin not allowed'), false);
+      return callback(null, true);
     },
     credentials: true,
     optionsSuccessStatus: 200,

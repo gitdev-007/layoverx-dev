@@ -13,7 +13,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className={isBlur ? "blur-md pointer-events-none transition-all duration-300 min-h-screen" : "transition-all duration-300 min-h-screen"}>
+      <div className={isBlur ? "blur-md pointer-events-none select-none transition-all duration-300 min-h-screen" : "transition-all duration-300 min-h-screen"}>
         {children}
       </div>
       <AuthModal />
