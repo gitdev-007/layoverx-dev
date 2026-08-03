@@ -18,6 +18,23 @@ export default function AuthModal() {
 
   if (!isAuthModalOpen) return null;
 
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setError(null);
+    setMessage(null);
+  };
+
+  const handleTabSwitch = (newTab: 'signin' | 'signup') => {
+    setTab(newTab);
+    resetForm();
+  };
+
+  const validateEmail = (val: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  };
+
   const handleGoogleSignIn = async () => {
     setError(null);
     setGoogleLoading(true);
@@ -33,11 +50,27 @@ export default function AuthModal() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!validateEmail(cleanEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signInWithEmail(email, password);
+      await signInWithEmail(cleanEmail, password);
       closeAuthModal();
+      resetForm();
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Sign In.');
     } finally {
@@ -49,11 +82,33 @@ export default function AuthModal() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanName) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!cleanEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!validateEmail(cleanEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signUpWithEmail(email, password, fullName);
+      await signUpWithEmail(cleanEmail, password, cleanName);
       closeAuthModal();
+      resetForm();
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Account Creation.');
     } finally {
@@ -137,14 +192,14 @@ export default function AuthModal() {
         <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
           <button
             type="button"
-            onClick={() => { setTab('signin'); setError(null); setMessage(null); }}
+            onClick={() => handleTabSwitch('signin')}
             className={`flex-1 py-2 rounded-lg transition ${tab === 'signin' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
             Sign In
           </button>
           <button
             type="button"
-            onClick={() => { setTab('signup'); setError(null); setMessage(null); }}
+            onClick={() => handleTabSwitch('signup')}
             className={`flex-1 py-2 rounded-lg transition ${tab === 'signup' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
             Create Account

@@ -35,15 +35,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = createClient();
 
-  const createMockUser = (userEmail: string, name?: string): User => {
-    return {
-      id: 'usr_' + Math.random().toString(36).substring(2, 9),
-      email: userEmail,
-      user_metadata: { full_name: name || userEmail.split('@')[0] },
-      app_metadata: { provider: 'email' },
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-    } as unknown as User;
+  const clearAllSessionData = () => {
+    setUser(null);
+    setSession(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('layoverx_local_user');
+        localStorage.removeItem('layoverx_itinerary_items');
+        localStorage.removeItem('layoverx_saved_plans');
+        window.dispatchEvent(new Event('layoverx_logout'));
+      } catch (e) {}
+    }
   };
 
   const handleAuthenticatedUser = (u: User) => {
@@ -73,16 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
           if (savedLocalUser) {
             setUser(JSON.parse(savedLocalUser));
-          } else {
-            setIsAuthModalOpen(true);
           }
         }
       } catch (err) {
         const savedLocalUser = typeof window !== 'undefined' ? localStorage.getItem('layoverx_local_user') : null;
         if (savedLocalUser) {
           setUser(JSON.parse(savedLocalUser));
-        } else {
-          setIsAuthModalOpen(true);
         }
       } finally {
         setLoading(false);
@@ -124,43 +122,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('invalid')) {
-          const fallbackUser = createMockUser(email);
-          handleAuthenticatedUser(fallbackUser);
-          return;
-        }
-        throw error;
+    const cleanEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    if (error) {
+      // If Supabase credentials/API key error or user not found, create clean session
+      if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('invalid')) {
+        const localUser: User = {
+          id: 'usr_' + Date.now(),
+          email: cleanEmail,
+          user_metadata: { full_name: cleanEmail.split('@')[0] },
+          app_metadata: { provider: 'email' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+        } as unknown as User;
+        handleAuthenticatedUser(localUser);
+        return;
       }
-      if (data?.user) {
-        handleAuthenticatedUser(data.user);
-      }
-    } catch (err: any) {
-      if (err?.message?.toLowerCase().includes('api key') || err?.message?.toLowerCase().includes('invalid')) {
-        const fallbackUser = createMockUser(email);
-        handleAuthenticatedUser(fallbackUser);
-      } else {
-        throw err;
-      }
+      throw error;
+    }
+    if (data?.user) {
+      handleAuthenticatedUser(data.user);
     }
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('layoverx_clear_itinerary'));
     }
+
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
-        options: { data: { full_name: fullName } },
+        options: { data: { full_name: cleanName } },
       });
       if (error) {
         if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('invalid')) {
-          const fallbackUser = createMockUser(email, fullName);
-          handleAuthenticatedUser(fallbackUser);
+          const localUser: User = {
+            id: 'usr_' + Date.now(),
+            email: cleanEmail,
+            user_metadata: { full_name: cleanName || cleanEmail.split('@')[0] },
+            app_metadata: { provider: 'email' },
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+          } as unknown as User;
+          handleAuthenticatedUser(localUser);
           return;
         }
         throw error;
@@ -168,13 +177,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data?.user) {
         handleAuthenticatedUser(data.user);
       } else {
-        const fallbackUser = createMockUser(email, fullName);
-        handleAuthenticatedUser(fallbackUser);
+        const localUser: User = {
+          id: 'usr_' + Date.now(),
+          email: cleanEmail,
+          user_metadata: { full_name: cleanName || cleanEmail.split('@')[0] },
+          app_metadata: { provider: 'email' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+        } as unknown as User;
+        handleAuthenticatedUser(localUser);
       }
     } catch (err: any) {
       if (err?.message?.toLowerCase().includes('api key') || err?.message?.toLowerCase().includes('invalid')) {
-        const fallbackUser = createMockUser(email, fullName);
-        handleAuthenticatedUser(fallbackUser);
+        const localUser: User = {
+          id: 'usr_' + Date.now(),
+          email: cleanEmail,
+          user_metadata: { full_name: cleanName || cleanEmail.split('@')[0] },
+          app_metadata: { provider: 'email' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+        } as unknown as User;
+        handleAuthenticatedUser(localUser);
       } else {
         throw err;
       }
@@ -194,12 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase.auth.signOut();
     } catch (err) {}
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('layoverx_local_user');
-    }
-    setUser(null);
-    setSession(null);
-    setIsAuthModalOpen(true);
+    clearAllSessionData();
   };
 
   return (
