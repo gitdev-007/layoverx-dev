@@ -11,32 +11,30 @@ import paymentsRouter from './routes/payments.js';
 import flightRouter from './routes/flight.js';
 import verifyRouter from './routes/verify.js';
 import opsRouter from './routes/ops.js';
+import userRouter from './routes/user.js';
 
 dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares - Ensure JSON parsing middleware is loaded before routes
 const allowedOrigins = [
   'https://layoverx.in',
   'https://www.layoverx.in',
-  'https://layoverx-dev.vercel.app',
   'http://localhost:3000',
-  process.env.FRONTEND_PRODUCTION_URL || '',
-  process.env.ALLOWED_ORIGIN || '',
-].filter((url) => url.trim() !== '');
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || allowedOrigins.some(o => o && origin.startsWith(o))) {
-        return callback(null, true);
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
       }
-      return callback(null, true);
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 200,
   })
 );
@@ -84,6 +82,7 @@ app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/flight', flightRouter);
 app.use('/api/v1/verify', verifyRouter);
 app.use('/api/v1/ops', opsRouter);
+app.use('/api/user', userRouter);
 
 
 

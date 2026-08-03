@@ -23,7 +23,8 @@ export function createClient() {
     supabaseAnonKey,
     {
       auth: {
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
+        persistSession: true,
       },
       cookieOptions: {
         name: 'sb-auth-token',

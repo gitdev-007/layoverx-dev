@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -7,7 +8,7 @@ const router = Router();
  * Passenger standing at CSMIA T2 Exit Gate 2 clicks "I AM HERE".
  * Updates booking status to PASSENGER_AT_GATE_2 and triggers immediate Founder Dispatch Alert.
  */
-router.post(['/dispatch-request', '/api/v1/ops/dispatch-request'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/dispatch-request', '/api/v1/ops/dispatch-request'], requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const { bookingId, token, passengerName, dropLocation } = req.body || {};
     const refCode = token || bookingId || 'LX-GATE2';

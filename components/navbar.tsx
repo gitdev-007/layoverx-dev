@@ -10,22 +10,40 @@ import { getUserHandle } from '@/lib/utils';
 import {
   Menu,
   X,
+  User,
+  LogOut,
   Calendar,
   Shield,
   Plane,
+  ChevronDown,
   Sun,
   Moon,
   AlertTriangle,
   CheckCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { isAdmin } = useAuth();
+  const { user, loading, logout, loginWithGoogle, openAuthModal } = useAuth();
   const { items, toast } = useItinerary();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  const isAdmin = user ? (user.role === 'admin' || user.email === 'founder@layoverx.in') : false;
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n.charAt(0))
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -169,7 +187,117 @@ export const Navbar: React.FC = () => {
               Plan My Layover
             </Link>
 
-            {/* Login and signup functionality removed */}
+            {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Loading vs Logged Out */}
+            {loading ? (
+              <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-3.5 py-1.5 rounded-full animate-pulse">
+                <div className="w-6 h-6 rounded-full bg-slate-300 flex-shrink-0" />
+                <div className="w-20 h-3 bg-slate-300 rounded-full" />
+              </div>
+            ) : user ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
+                >
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm border border-sky-200">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
+                    {user.name}
+                  </span>
+                  <ChevronDown size={14} className="text-slate-400" />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-72 bg-white border border-slate-100 rounded-2xl shadow-2xl py-4 px-4 z-[1010] text-slate-800 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    
+                    {/* User Profile Header */}
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                      {user.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.name}
+                          className="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-black text-lg uppercase flex-shrink-0 border border-sky-200 shadow-sm">
+                          {getInitials(user.name)}
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <p className="font-extrabold text-sm text-slate-900 truncate leading-snug">{user.name}</p>
+                        <p className="text-xs text-[#0284C7] font-semibold">@{user.usernamePrefix}</p>
+                      </div>
+                    </div>
+
+                    {/* Email Info */}
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email Address</p>
+                      <p className="text-xs font-semibold text-slate-700 truncate">{user.email}</p>
+                    </div>
+
+                    {/* User ID with Copy */}
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">User ID</p>
+                      <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1.5">
+                        <span className="text-[11px] font-mono text-slate-500 truncate select-all">
+                          {user.id.slice(0, 8)}...{user.id.slice(-8)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(user.id);
+                            setCopiedId(true);
+                            setTimeout(() => setCopiedId(false), 2000);
+                          }}
+                          className="text-slate-400 hover:text-[#0284C7] transition p-1 rounded-md hover:bg-slate-100"
+                          title="Copy User ID to Clipboard"
+                        >
+                          {copiedId ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Action Links */}
+                    <div className="flex flex-col gap-1 border-t border-slate-100 pt-3">
+                      <Link
+                        href="/my-itinerary"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-sky-50 hover:text-[#0284C7] rounded-xl transition"
+                      >
+                        <Calendar size={16} /> My Layover Itinerary
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setDropdownOpen(false);
+                        }}
+                        className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border-t border-slate-50 mt-1"
+                      >
+                        <LogOut size={16} /> Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                <button
+                  onClick={loginWithGoogle}
+                  className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm"
+                >
+                  Log In
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle Button */}
@@ -217,12 +345,95 @@ export const Navbar: React.FC = () => {
               >
                 Plan My Layover
               </Link>
-              <Link
-                href="/my-itinerary"
-                className="block w-full text-center py-3 bg-sky-50 text-[#0369a1] font-bold text-sm rounded-xl border border-sky-100 hover:bg-sky-100 transition"
-              >
-                My Itinerary {items.length > 0 && `(${items.length})`}
-              </Link>
+              {loading ? (
+                <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-4 py-3 rounded-xl animate-pulse">
+                  <div className="w-9 h-9 rounded-full bg-slate-300 flex-shrink-0" />
+                  <div className="w-24 h-4 bg-slate-300 rounded-full" />
+                </div>
+              ) : user ? (
+                <div className="space-y-3 p-2 bg-slate-50 border border-slate-100 rounded-2xl">
+                  
+                  {/* Profile Header */}
+                  <div className="flex items-center gap-3 px-2 py-1">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-black text-md uppercase border border-sky-200 shadow-sm">
+                        {getInitials(user.name)}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-extrabold text-[#0F172A] truncate">
+                        {user.name}
+                      </span>
+                      <span className="text-[10px] text-[#0284C7] font-bold truncate">
+                        @{user.usernamePrefix}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Email & ID */}
+                  <div className="px-2 space-y-1.5">
+                    <p className="text-[11px] text-slate-600 truncate">
+                      <span className="font-bold text-slate-400 text-[9px] uppercase tracking-wider">Email:</span> {user.email}
+                    </p>
+                    <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1">
+                      <span className="text-[10px] font-mono text-slate-500 truncate">
+                        {user.id.slice(0, 8)}...{user.id.slice(-8)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(user.id);
+                          setCopiedId(true);
+                          setTimeout(() => setCopiedId(false), 2000);
+                        }}
+                        className="text-slate-400 hover:text-[#0284C7] transition p-1"
+                      >
+                        {copiedId ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action Links */}
+                  <div className="space-y-1 pt-1.5 border-t border-slate-200/60">
+                    <Link
+                      href="/my-itinerary"
+                      className="block w-full text-center py-2.5 bg-sky-50 text-[#0284C7] font-bold text-xs rounded-xl border border-sky-100"
+                    >
+                      My Layover Itinerary
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={loginWithGoogle}
+                    className="py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl border border-slate-200"
+                  >
+                    Log In
+                  </button>
+                  <button
+                    onClick={loginWithGoogle}
+                    className="py-2.5 bg-[#0F172A] text-white text-sm font-bold rounded-xl"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
