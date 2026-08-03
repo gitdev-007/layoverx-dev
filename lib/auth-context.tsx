@@ -27,6 +27,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Detect ?auth_error= query param from OAuth callback redirect and show toast
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('auth_error');
+    if (err) {
+      setAuthError(decodeURIComponent(err));
+      // Auto-clear after 7 seconds
+      const t = setTimeout(() => setAuthError(null), 7000);
+      // Strip ?auth_error= from URL without a page reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   const pendingActionRef = React.useRef<(() => void) | null>(null);
   useEffect(() => {
@@ -201,8 +217,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) {
-      console.error('[Google OAuth Error]', error.message);
-      throw error;
+      const msg = error.message || 'Google sign-in failed. Please try again.';
+      console.error('[Google OAuth Error]', msg);
+      throw new Error(msg);
     }
   };
 
@@ -312,7 +329,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
       }}
     >
-      {children}
+      <>
+        {children}
+        {/* OAuth Error Toast — shown when ?auth_error= is detected on redirect */}
+        {authError && (
+          <div
+            role="alert"
+            style={{ position: 'fixed', top: '80px', right: '16px', zIndex: 9999, maxWidth: '380px', width: 'calc(100vw - 32px)' }}
+            className="bg-rose-950 border border-rose-500/50 text-rose-100 rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-3 animate-in slide-in-from-top-2 duration-300"
+          >
+            <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold text-sm text-rose-200 mb-0.5">Google Sign-In Failed</p>
+              <p className="text-xs text-rose-300 leading-snug break-words">{authError}</p>
+            </div>
+            <button
+              onClick={() => setAuthError(null)}
+              className="text-rose-400 hover:text-rose-200 flex-shrink-0 ml-1 mt-0.5 transition"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </>
     </AuthContext.Provider>
   );
 }

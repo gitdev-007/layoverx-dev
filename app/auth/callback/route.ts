@@ -32,7 +32,13 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error && data?.session?.user) {
+    if (error) {
+      // Redirect with an error message visible to the client-side toast handler
+      const errorMsg = encodeURIComponent(error.message || 'Google sign-in failed. Please try again.');
+      return NextResponse.redirect(`${origin}/?auth_error=${errorMsg}`);
+    }
+
+    if (data?.session?.user) {
       const u = data.session.user;
       const userEmail = u.email || '';
       const fullName =
@@ -52,6 +58,8 @@ export async function GET(request: Request) {
     }
   }
 
-  // Fallback: redirect to homepage without query params
-  return NextResponse.redirect(`${origin}/`);
+  // No code param or exchange failed without error — redirect cleanly
+  return NextResponse.redirect(
+    `${origin}/?auth_error=${encodeURIComponent('Sign-in could not be completed. Please try again.')}`
+  );
 }
