@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Lock, Mail, User as UserIcon, X, Loader2, KeyRound } from 'lucide-react';
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, signInWithGoogle } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,8 +17,6 @@ export default function AuthModal() {
   const [message, setMessage] = useState<string | null>(null);
 
   if (!isAuthModalOpen) return null;
-
-  const supabase = createClient();
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -38,16 +36,8 @@ export default function AuthModal() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        closeAuthModal();
-      }
+      await signInWithEmail(email, password);
+      closeAuthModal();
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Sign In.');
     } finally {
@@ -62,25 +52,8 @@ export default function AuthModal() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        if (data.session) {
-          closeAuthModal();
-        } else {
-          setMessage('Account created! Please check your email for confirmation link or sign in.');
-        }
-      }
+      await signUpWithEmail(email, password, fullName);
+      closeAuthModal();
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Account Creation.');
     } finally {
@@ -303,10 +276,6 @@ export default function AuthModal() {
             </button>
           </form>
         )}
-
-        <div className="text-center pt-2 text-[11px] text-slate-500">
-          🔒 Secure 256-bit encrypted authentication by Supabase Auth
-        </div>
       </div>
     </div>
   );
