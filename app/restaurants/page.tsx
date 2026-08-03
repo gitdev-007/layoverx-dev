@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RESTAURANTS_DATA, FAQS_DATA, REVIEWS_DATA, Restaurant } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
+
 import {
   Utensils,
   MapPin,
@@ -20,6 +22,7 @@ import {
 
 export default function RestaurantsPage() {
   const { addItem } = useItinerary();
+  const { requireAuth } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [costFilter, setCostFilter] = useState<string[]>([]);
   const [ratingFilter, setRatingFilter] = useState<string>('all');
@@ -388,17 +391,19 @@ export default function RestaurantsPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              addItem({
-                                title: res.name,
-                                detail: `${res.cuisine} • ${res.location}`,
-                                badge: 'Dining',
-                                cost: res.avgCost,
-                                durationHours: 1.5,
+                              requireAuth(() => {
+                                addItem({
+                                  title: res.name,
+                                  detail: `${res.cuisine} • ${res.location}`,
+                                  badge: 'Dining',
+                                  cost: res.avgCost,
+                                  durationHours: 1.5,
+                                });
                               });
                             }}
                             className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
                           >
-                            Reserve & Add
+                            Add to Itinerary
                           </button>
                         </div>
                       </div>

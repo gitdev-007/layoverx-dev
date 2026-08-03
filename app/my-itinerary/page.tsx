@@ -28,7 +28,7 @@ import { calculateBookingTotal } from '@/lib/pricing';
 
 export default function MyItineraryPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const {
     items,
     savedPlans,
@@ -455,7 +455,7 @@ export default function MyItineraryPage() {
                     My Saved Itineraries ({savedPlans.length})
                   </h3>
                   <button
-                    onClick={() => saveCurrentPlan()}
+                    onClick={() => requireAuth(() => saveCurrentPlan())}
                     disabled={items.length === 0}
                     className="py-1.5 px-3 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
@@ -524,22 +524,24 @@ export default function MyItineraryPage() {
 
 
                 <div className="space-y-3 text-xs sm:text-sm text-slate-700">
-                  {items.some(i => i.badge === 'Hotel') && (
-                    <div className="flex justify-between">
-                      <span>Niranta Transit Hotel:</span>
-                      <strong className="text-slate-900">₹3,499</strong>
-                    </div>
-                  )}
-                  {items.some(i => i.badge === 'Dining') && (
-                    <div className="flex justify-between">
-                      <span>Peshawri Lunch Table:</span>
-                      <strong className="text-slate-900">₹1,299</strong>
-                    </div>
-                  )}
-                  {!items.some(i => i.badge === 'Hotel' || i.badge === 'Dining') && (
+                  {items.length === 0 ? (
                     <div className="text-slate-500 italic text-center py-2">
                       No services selected.
                     </div>
+                  ) : (
+                    items.map((item) => (
+                      <div key={item.id} className="flex justify-between items-center">
+                        <span className="truncate max-w-[200px]">
+                          {item.badge === 'Cab' ? '🚗' :
+                           item.badge === 'Hotel' ? '🏨' :
+                           item.badge === 'Dining' ? '🍽️' :
+                           item.badge === 'Spa' ? '💆' :
+                           item.badge === 'Gaming' ? '🎮' :
+                           item.badge === 'Tour' ? '🌆' : '📌'} {item.title}:
+                        </span>
+                        <strong className="text-slate-900">{item.cost}</strong>
+                      </div>
+                    ))
                   )}
 
                   <div className="border-t border-slate-100 pt-3 space-y-2">
@@ -585,7 +587,9 @@ export default function MyItineraryPage() {
                       setCheckoutError(`Cannot proceed: Total activity duration (${usedActivitiesH.toFixed(1)}h) exceeds your safe stopover window (${availableStopoverWindow.toFixed(1)}h). Please reduce spend hours.`);
                       return;
                     }
-                    handleCheckout();
+                    requireAuth(() => {
+                      router.push('/plan-my-layover#step-5-registration');
+                    });
                   }}
                   disabled={checkoutLoading || (() => {
                     const parseTotalH = parseFloat(totalHours) || 8.0;

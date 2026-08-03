@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { TRANSFERS_DATA, FAQS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
 import { Car, MapPin, ShieldCheck, ChevronDown, CheckCircle2, Star } from 'lucide-react';
 
 export default function AirportTransfersPage() {
   const { addItem } = useItinerary();
+  const { requireAuth } = useAuth();
   const [pickup, setPickup] = useState('t2');
   const [drop, setDrop] = useState('bandra');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
@@ -204,12 +206,14 @@ export default function AirportTransfersPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            addItem({
-                              title: c.name,
-                              detail: `${c.vehicle} • Fixed rate transfer`,
-                              badge: 'Cab',
-                              cost: c.price,
-                              durationHours: 1.0,
+                            requireAuth(() => {
+                              addItem({
+                                title: c.name,
+                                detail: `${c.vehicle} • Fixed rate transfer`,
+                                badge: 'Cab',
+                                cost: c.price,
+                                durationHours: 1.0,
+                              });
                             });
                           }}
                           className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"

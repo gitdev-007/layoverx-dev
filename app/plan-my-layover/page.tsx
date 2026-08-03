@@ -9,6 +9,7 @@ import { holdSlot, fetchServices } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
 import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
 
 import {
   Plane,
@@ -193,6 +194,15 @@ export default function PlanMyLayoverPage() {
         const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000);
         setDepartureTime(dep.toISOString().slice(0, 16));
       }
+
+      if (typeof window !== 'undefined' && window.location.hash.includes('step-5')) {
+        setTimeout(() => {
+          const step5El = document.getElementById('step-5-registration');
+          if (step5El) {
+            step5El.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 400);
+      }
     }
   }, []);
 
@@ -230,8 +240,16 @@ export default function PlanMyLayoverPage() {
     }
   };
   const router = useRouter();
-  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast } = useItinerary();
+  const { requireAuth } = useAuth();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem } = useItinerary();
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const scrollToStep5 = () => {
+    const step5El = document.getElementById('step-5-registration');
+    if (step5El) {
+      step5El.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Step selections (NO pre-selected defaults as requested)
   const [selectedCab, setSelectedCab] = useState<'sedan' | 'suv' | null>(null);
@@ -257,6 +275,182 @@ export default function PlanMyLayoverPage() {
   const [selectedEsim, setSelectedEsim] = useState(false);
   const [selectedVipBuggy, setSelectedVipBuggy] = useState(false);
 
+  // Bi-Directional Synchronization Engine: Sync selection highlights when contextItems updates
+  useEffect(() => {
+    // Hotel
+    const hotelItem = contextItems.find((i) => i.badge === 'Hotel');
+    if (hotelItem) {
+      const match = hotelsList.find(
+        (h) =>
+          h.name.toLowerCase() === hotelItem.title.toLowerCase() ||
+          hotelItem.title.toLowerCase().includes(h.name.toLowerCase()) ||
+          h.name.toLowerCase().includes(hotelItem.title.toLowerCase())
+      );
+      setSelectedHotelId(match ? match.id : null);
+    } else {
+      setSelectedHotelId(null);
+    }
+
+    // Dining
+    const diningItem = contextItems.find((i) => i.badge === 'Dining');
+    if (diningItem) {
+      const match = diningList.find(
+        (r) =>
+          r.name.toLowerCase() === diningItem.title.toLowerCase() ||
+          diningItem.title.toLowerCase().includes(r.name.toLowerCase()) ||
+          r.name.toLowerCase().includes(diningItem.title.toLowerCase())
+      );
+      setSelectedDiningId(match ? match.id : null);
+    } else {
+      setSelectedDiningId(null);
+    }
+
+    // Tour
+    const tourItem = contextItems.find((i) => i.badge === 'Tour');
+    if (tourItem) {
+      const match = toursList.find(
+        (t) =>
+          t.name.toLowerCase() === tourItem.title.toLowerCase() ||
+          tourItem.title.toLowerCase().includes(t.name.toLowerCase()) ||
+          t.name.toLowerCase().includes(tourItem.title.toLowerCase())
+      );
+      setSelectedTourId(match ? match.id : null);
+    } else {
+      setSelectedTourId(null);
+    }
+
+    // Spa
+    const spaItem = contextItems.find((i) => i.badge === 'Spa');
+    if (spaItem) {
+      const match = spasList.find(
+        (s) =>
+          s.name.toLowerCase() === spaItem.title.toLowerCase() ||
+          spaItem.title.toLowerCase().includes(s.name.toLowerCase()) ||
+          s.name.toLowerCase().includes(spaItem.title.toLowerCase())
+      );
+      setSelectedSpaId(match ? match.id : null);
+    } else {
+      setSelectedSpaId(null);
+    }
+
+    // Gaming
+    const gamingItem = contextItems.find((i) => i.badge === 'Gaming');
+    if (gamingItem) {
+      const match = gamingList.find(
+        (g) =>
+          g.name.toLowerCase() === gamingItem.title.toLowerCase() ||
+          gamingItem.title.toLowerCase().includes(g.name.toLowerCase()) ||
+          g.name.toLowerCase().includes(gamingItem.title.toLowerCase())
+      );
+      setSelectedGamingId(match ? match.id : null);
+    } else {
+      setSelectedGamingId(null);
+    }
+
+    // Cab
+    const cabItem = contextItems.find((i) => i.badge === 'Cab');
+    if (cabItem) {
+      if (cabItem.title.toLowerCase().includes('suv')) {
+        setSelectedCab('suv');
+      } else {
+        setSelectedCab('sedan');
+      }
+    } else {
+      setSelectedCab(null);
+    }
+  }, [contextItems]);
+
+  // Click handlers that mutate contextItems to ensure simultaneous 2-way sync
+  const handleCabClick = (type: 'sedan' | 'suv') => {
+    const isCurrentlySelected = selectedCab === type;
+    contextItems.filter((i) => i.badge === 'Cab').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Cab',
+        title: type === 'sedan' ? 'AC Sedan Transfer (Toyota Etios)' : 'AC SUV Transfer (Innova Crysta)',
+        detail: type === 'sedan' ? 'Fits 4 Passengers, 2 Standard Bags. Verified Driver.' : 'Fits 6 Passengers, 4 Standard Bags. Extra comfort.',
+        cost: type === 'sedan' ? '₹899' : '₹1,499',
+        durationHours: 0.75,
+      });
+    }
+  };
+
+  const handleHotelClick = (hotel: HotelItem) => {
+    const isCurrentlySelected = selectedHotelId === hotel.id;
+    contextItems.filter((i) => i.badge === 'Hotel').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Hotel',
+        title: hotel.name,
+        detail: `${hotel.terminal} • 6h slot`,
+        cost: hotel.price6h,
+        durationHours: 6.0,
+      });
+    }
+  };
+
+  const handleDiningClick = (restaurant: Restaurant) => {
+    const isCurrentlySelected = selectedDiningId === restaurant.id;
+    contextItems.filter((i) => i.badge === 'Dining').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Dining',
+        title: restaurant.name,
+        detail: `${restaurant.cuisine} • ${restaurant.location}`,
+        cost: restaurant.avgCost,
+        durationHours: 1.5,
+      });
+    }
+  };
+
+  const handleTourClick = (tour: Tour) => {
+    const isCurrentlySelected = selectedTourId === tour.id;
+    contextItems.filter((i) => i.badge === 'Tour').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Tour',
+        title: tour.name,
+        detail: tour.duration,
+        cost: tour.price,
+        durationHours: 4.0,
+      });
+    }
+  };
+
+  const handleSpaClick = (spa: Spa) => {
+    const isCurrentlySelected = selectedSpaId === spa.id;
+    contextItems.filter((i) => i.badge === 'Spa').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Spa',
+        title: spa.name,
+        detail: spa.treatment,
+        cost: spa.price,
+        durationHours: 1.0,
+      });
+    }
+  };
+
+  const handleGamingClick = (gaming: GamingLounge) => {
+    const isCurrentlySelected = selectedGamingId === gaming.id;
+    contextItems.filter((i) => i.badge === 'Gaming').forEach((i) => removeItem(i.id));
+
+    if (!isCurrentlySelected) {
+      addItem({
+        badge: 'Gaming',
+        title: gaming.name,
+        detail: gaming.location,
+        cost: gaming.price,
+        durationHours: 2.0,
+      });
+    }
+  };
+
   // Currency & Cost calculations & 18% GST Engine
   const currencyRates = {
     INR: 1,
@@ -278,27 +472,19 @@ export default function PlanMyLayoverPage() {
     return `${symbol}${Math.round(val * rate).toLocaleString()}`;
   };
 
-  const cabPrice = selectedCab === 'sedan' ? 899 : selectedCab === 'suv' ? 1499 : 0;
-  const hotelObj = hotelsList.find((h) => h.id === selectedHotelId);
-  const hotelPrice = hotelObj ? parseInt(hotelObj.price6h.replace(/[^0-9]/g, '')) || 3499 : 0;
-  
-  const diningObj = diningList.find((r) => r.id === selectedDiningId);
-  const diningPrice = diningObj ? parseInt(diningObj.avgCost.replace(/[^0-9]/g, '')) || 1800 : 0;
-
-  const tourObj = toursList.find((t) => t.id === selectedTourId);
-  const tourPrice = tourObj ? parseInt(tourObj.price.replace(/[^0-9]/g, '')) || 2899 : 0;
-
-  const spaObj = spasList.find((s) => s.id === selectedSpaId);
-  const spaPrice = spaObj ? parseInt(spaObj.price.replace(/[^0-9]/g, '')) || 1800 : 0;
-
-  const gamingObj = gamingList.find((g) => g.id === selectedGamingId);
-  const gamingPrice = gamingObj ? parseInt(gamingObj.price.replace(/[^0-9]/g, '')) || 1200 : 0;
-
   const esimPrice = selectedEsim ? 400 : 0;
   const vipBuggyPrice = selectedVipBuggy ? 1999 : 0;
-  const interTerminalCabPrice = (onwardTerminal === 'T1' && interTerminalCabAddon) ? 699 : 0;
+  const interTerminalCabPrice = onwardTerminal === 'T1' && interTerminalCabAddon ? 699 : 0;
 
-  const baseSubtotalINR = cabPrice + hotelPrice + diningPrice + tourPrice + spaPrice + gamingPrice + esimPrice + vipBuggyPrice + interTerminalCabPrice;
+  const baseSubtotalINR =
+    contextItems.reduce((sum, item) => {
+      const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
+      return sum + numCost;
+    }, 0) +
+    esimPrice +
+    vipBuggyPrice +
+    interTerminalCabPrice;
+
   const pricingBreakdown = calculateBookingTotal(baseSubtotalINR, currency);
   const totalPrice = pricingBreakdown.grandTotalINR;
 
@@ -653,7 +839,7 @@ export default function PlanMyLayoverPage() {
 
                 <div className="space-y-4">
                   <label
-                    onClick={() => setSelectedCab('sedan')}
+                    onClick={() => handleCabClick('sedan')}
                     className={`relative border rounded-xl p-4 flex items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                       selectedCab === 'sedan' ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                     }`}
@@ -669,7 +855,7 @@ export default function PlanMyLayoverPage() {
                   </label>
 
                   <label
-                    onClick={() => setSelectedCab('suv')}
+                    onClick={() => handleCabClick('suv')}
                     className={`relative border rounded-xl p-4 flex items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                       selectedCab === 'suv' ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                     }`}
@@ -700,7 +886,7 @@ export default function PlanMyLayoverPage() {
                   {hotelsList.slice(0, 2).map((h) => (
                     <div
                       key={h.id}
-                      onClick={() => setSelectedHotelId(selectedHotelId === h.id ? null : h.id)}
+                      onClick={() => handleHotelClick(h)}
                       className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                         selectedHotelId === h.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                       }`}
@@ -739,7 +925,7 @@ export default function PlanMyLayoverPage() {
                   {diningList.slice(0, 2).map((r) => (
                     <div
                       key={r.id}
-                      onClick={() => setSelectedDiningId(selectedDiningId === r.id ? null : r.id)}
+                      onClick={() => handleDiningClick(r)}
                       className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                         selectedDiningId === r.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                       }`}
@@ -804,7 +990,7 @@ export default function PlanMyLayoverPage() {
                     {toursList.slice(0, 2).map((t) => (
                       <div
                         key={t.id}
-                        onClick={() => setSelectedTourId(selectedTourId === t.id ? null : t.id)}
+                        onClick={() => handleTourClick(t)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                           selectedTourId === t.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                         }`}
@@ -830,7 +1016,7 @@ export default function PlanMyLayoverPage() {
                     {spasList.slice(0, 2).map((s) => (
                       <div
                         key={s.id}
-                        onClick={() => setSelectedSpaId(selectedSpaId === s.id ? null : s.id)}
+                        onClick={() => handleSpaClick(s)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                           selectedSpaId === s.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                         }`}
@@ -856,7 +1042,7 @@ export default function PlanMyLayoverPage() {
                     {gamingList.slice(0, 2).map((g) => (
                       <div
                         key={g.id}
-                        onClick={() => setSelectedGamingId(selectedGamingId === g.id ? null : g.id)}
+                        onClick={() => handleGamingClick(g)}
                         className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
                           selectedGamingId === g.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
                         }`}
@@ -878,7 +1064,7 @@ export default function PlanMyLayoverPage() {
               </div>
 
               {/* Step 5: Passenger Registration */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
+              <div id="step-5-registration" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-3">
                     <span className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs">5</span>
@@ -1094,32 +1280,54 @@ export default function PlanMyLayoverPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 text-xs text-gray-800">
-                  <div className="flex justify-between items-center">
-                    <span>🚗 Airport Cabs (Return)</span>
-                    <strong className="text-gray-900">{formatPrice(cabPrice)}</strong>
-                  </div>
+                <div className="space-y-2.5 text-xs text-gray-800">
+                  {contextItems.length === 0 ? (
+                    <div className="text-slate-400 text-xs italic py-1 text-center">
+                      No items selected. Choose options from steps on left.
+                    </div>
+                  ) : (
+                    contextItems.map((item) => {
+                      const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
+                      const badgeIcon =
+                        item.badge === 'Cab' ? '🚗' :
+                        item.badge === 'Hotel' ? '🏨' :
+                        item.badge === 'Dining' ? '🍽️' :
+                        item.badge === 'Spa' ? '💆' :
+                        item.badge === 'Gaming' ? '🎮' :
+                        item.badge === 'Tour' ? '🌆' : '📌';
 
-                  {hotelObj && (
-                    <div className="flex justify-between items-center text-sky-800 font-medium">
-                      <span className="truncate max-w-[180px]">🏨 {hotelObj.name}</span>
-                      <strong>{formatPrice(hotelPrice)}</strong>
+                      return (
+                        <div key={item.id} className="flex justify-between items-center text-slate-800 font-medium">
+                          <span className="truncate max-w-[190px]">
+                            {badgeIcon} {item.title}
+                          </span>
+                          <strong className="text-slate-900">{formatPrice(numCost)}</strong>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {selectedEsim && (
+                    <div className="flex justify-between items-center text-sky-700 font-medium">
+                      <span className="truncate max-w-[190px]">🇮🇳 Indian Tourist eSIM</span>
+                      <strong>{formatPrice(400)}</strong>
                     </div>
                   )}
 
-                  {diningObj && (
-                    <div className="flex justify-between items-center text-orange-800 font-medium">
-                      <span className="truncate max-w-[180px]">🍽️ {diningObj.name}</span>
-                      <strong>{formatPrice(diningPrice)}</strong>
+                  {selectedVipBuggy && (
+                    <div className="flex justify-between items-center text-amber-700 font-medium">
+                      <span className="truncate max-w-[190px]">⚡ VIP Aerobridge Escort &amp; Buggy</span>
+                      <strong>{formatPrice(1999)}</strong>
                     </div>
                   )}
 
-                  {tourObj && (
-                    <div className="flex justify-between items-center text-rose-800 font-medium">
-                      <span className="truncate max-w-[180px]">🌆 {tourObj.name}</span>
-                      <strong>{formatPrice(tourPrice)}</strong>
+                  {onwardTerminal === 'T1' && interTerminalCabAddon && (
+                    <div className="flex justify-between items-center text-indigo-700 font-medium">
+                      <span className="truncate max-w-[190px]">🚕 T2 to T1 Private Transfer</span>
+                      <strong>{formatPrice(699)}</strong>
                     </div>
                   )}
+                </div>
 
                   <div className="border-t border-gray-100 pt-2 space-y-1.5 text-xs text-gray-600">
                     <div className="flex justify-between items-center">
@@ -1146,7 +1354,7 @@ export default function PlanMyLayoverPage() {
                 <button
                   type="button"
                   disabled={isHolding}
-                  onClick={handleProceedCheckout}
+                  onClick={() => requireAuth(() => scrollToStep5())}
                   className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-md transition w-full"
                 >
                   {isHolding ? (
@@ -1161,7 +1369,7 @@ export default function PlanMyLayoverPage() {
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button 
-                    onClick={handleSaveDraft}
+                    onClick={() => requireAuth(() => handleSaveDraft())}
                     type="button"
                     className="h-10 flex items-center justify-center bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-sm transition gap-1.5"
                   >

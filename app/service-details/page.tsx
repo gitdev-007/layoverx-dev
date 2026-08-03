@@ -14,7 +14,7 @@ function ServiceDetailsContent() {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('id') || 'h1';
   const { addItem } = useItinerary();
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
 
   // Look up item across catalogs
   const hotelMatch = HOTELS_DATA.find((h) => h.id === serviceId);
@@ -144,12 +144,14 @@ function ServiceDetailsContent() {
   const selectedSlot = slotOptions[selectedSlotIndex] || slotOptions[0];
 
   const handleAddToItinerary = () => {
-    addItem({
-      title: service.name,
-      detail: `${selectedSlot.label} • ${service.location}`,
-      badge: service.type,
-      cost: selectedSlot.price,
-      durationHours: selectedSlot.hours,
+    requireAuth(() => {
+      addItem({
+        title: service.name,
+        detail: `${selectedSlot.label} • ${service.location}`,
+        badge: service.type,
+        cost: selectedSlot.price,
+        durationHours: selectedSlot.hours,
+      });
     });
   };
 

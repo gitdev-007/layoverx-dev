@@ -128,15 +128,6 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Buttons - Single Auth State */}
           <div className="hidden lg:flex items-center gap-3.5">
-            <button
-              onClick={toggleDarkMode}
-              type="button"
-              className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition text-[#64748B] hover:text-[#0369a1]"
-              title="Toggle Aesthetics Mode"
-            >
-              {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-            </button>
-
             <div className="relative">
               <Link
                 href="/my-itinerary"
@@ -182,7 +173,7 @@ export const Navbar: React.FC = () => {
               Plan My Layover
             </Link>
 
-            {/* Clean Auth Switch: Either Logged In OR Logged Out */}
+            {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Logged Out (Sign In / Register) */}
             {user ? (
               <div className="relative">
                 <button
@@ -190,9 +181,17 @@ export const Navbar: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
-                    {user.name ? user.name.charAt(0) : 'U'}
-                  </div>
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
+                      {user.name ? user.name.charAt(0) : 'U'}
+                    </div>
+                  )}
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
                     {user.name}
                   </span>
@@ -251,15 +250,9 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                 <button
                   onClick={() => openAuthModal('login')}
-                  className="text-xs sm:text-sm font-bold text-[#64748B] hover:text-[#0369a1] px-2.5 py-1.5"
+                  className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm"
                 >
-                  Log In
-                </button>
-                <button
-                  onClick={() => openAuthModal('signup')}
-                  className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition"
-                >
-                  Sign Up
+                  Sign In / Register
                 </button>
               </div>
             )}

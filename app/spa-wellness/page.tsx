@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SPAS_DATA, FAQS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
 import { Sparkles, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function SpaWellnessPage() {
   const { addItem } = useItinerary();
+  const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'massage' | 'express' | 'full-day'>('all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
@@ -269,12 +271,14 @@ export default function SpaWellnessPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            addItem({
-                              title: s.name,
-                              detail: `${s.treatment} (${s.duration})`,
-                              badge: 'Spa',
-                              cost: s.price,
-                              durationHours: 1.0,
+                            requireAuth(() => {
+                              addItem({
+                                title: s.name,
+                                detail: `${s.treatment} (${s.duration})`,
+                                badge: 'Spa',
+                                cost: s.price,
+                                durationHours: 1.0,
+                              });
                             });
                           }}
                           className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"

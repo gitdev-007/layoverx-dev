@@ -9,6 +9,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string;
   role: 'user' | 'admin';
 }
 
@@ -17,16 +18,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const { user, session, loading, isAuthModalOpen, openAuthModal, closeAuthModal, setAuthModalOpen, signOut } = useSupabaseAuth();
+  const {
+    user,
+    session,
+    loading,
+    isAuthModalOpen,
+    openAuthModal,
+    closeAuthModal,
+    setAuthModalOpen,
+    signInWithGoogle,
+    requireAuth,
+    signOut,
+  } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler';
+  const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Traveler';
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || undefined;
 
   const userProfile: UserProfile | null = user
     ? {
         id: user.id,
         email: user.email || '',
         name: fullName,
+        avatarUrl,
         role: isAdmin ? 'admin' : 'user',
       }
     : null;
@@ -38,11 +52,14 @@ export function useAuth() {
     loading,
     isAdmin,
     setIsAdmin,
+    isAuthModalOpen,
     authModalOpen: isAuthModalOpen,
     authModalMode: 'login' as AuthMode,
     openAuthModal,
     closeAuthModal,
     setAuthModalOpen,
+    signInWithGoogle,
+    requireAuth,
     signIn: openAuthModal,
     signOut,
   };

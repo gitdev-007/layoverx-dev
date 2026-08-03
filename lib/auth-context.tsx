@@ -12,6 +12,8 @@ interface AuthContextType {
   openAuthModal: (mode?: 'login' | 'signup' | 'reset-password' | string) => void;
   closeAuthModal: () => void;
   setAuthModalOpen: (open: boolean) => void;
+  signInWithGoogle: () => Promise<void>;
+  requireAuth: (actionCallback: () => void) => void;
   signOut: () => Promise<void>;
 }
 
@@ -22,6 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const pendingActionRef = React.useRef<(() => void) | null>(null);
+  useEffect(() => {
+    pendingActionRef.current = pendingAction;
+  }, [pendingAction]);
 
   const supabase = createClient();
 
@@ -31,8 +39,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+        if (!session?.user) {
+          setIsAuthModalOpen(true);
+        }
       } catch (err) {
         console.warn('[AuthContext] Failed to retrieve session:', err);
+        setIsAuthModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -47,6 +59,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         if (currentSession?.user) {
           setIsAuthModalOpen(false);
+          if (pendingActionRef.current) {
+            try {
+              pendingActionRef.current();
+            } catch (e) {
+              console.error('[AuthContext] Error running pending action:', e);
+            }
+            setPendingAction(null);
+          }
         }
       }
     );
@@ -59,11 +79,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const openAuthModal = (_mode?: string) => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
+  const signInWithGoogle = async () => {
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+      },
+    });
+    if (error) {
+      console.error('[Google OAuth Error]', error.message);
+      throw error;
+    }
+  };
+
+  const requireAuth = (actionCallback: () => void) => {
+    if (user) {
+      actionCallback();
+    } else {
+      setPendingAction(() => actionCallback);
+      setIsAuthModalOpen(true);
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      setIsAuthModalOpen(true);
     } catch (err) {
       console.error('[AuthContext] Error signing out:', err);
     }
@@ -79,6 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         openAuthModal,
         closeAuthModal,
         setAuthModalOpen: setIsAuthModalOpen,
+        signInWithGoogle,
+        requireAuth,
         signOut,
       }}
     >

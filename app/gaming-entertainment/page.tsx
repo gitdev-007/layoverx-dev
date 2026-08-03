@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { GAMING_DATA, FAQS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
 import { Gamepad2, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function GamingEntertainmentPage() {
   const { addItem } = useItinerary();
+  const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'gaming' | 'movie'>('all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
@@ -251,12 +253,14 @@ export default function GamingEntertainmentPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            addItem({
-                              title: g.name,
-                              detail: g.location,
-                              badge: 'Gaming',
-                              cost: g.price,
-                              durationHours: 2.0,
+                            requireAuth(() => {
+                              addItem({
+                                title: g.name,
+                                detail: g.location,
+                                badge: 'Gaming',
+                                cost: g.price,
+                                durationHours: 2.0,
+                              });
                             });
                           }}
                           className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"

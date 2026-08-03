@@ -19,9 +19,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isLocked = !user;
+
   return (
     <>
-      {children}
+      <div className={isLocked ? "blur-md select-none pointer-events-none transition-all duration-300 min-h-screen" : "transition-all duration-300 min-h-screen"}>
+        {children}
+      </div>
       <AuthModal />
     </>
   );

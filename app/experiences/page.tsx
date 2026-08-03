@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { TOURS_DATA, FAQS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
+import { useAuth } from '@/context/auth-context';
 import { Compass, MapPin, Clock, Star, ShieldCheck, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export default function ExperiencesPage() {
   const { addItem } = useItinerary();
+  const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'sightseeing' | 'culture' | 'shopping' | 'food' | 'nightlife'>('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
 
@@ -196,12 +198,14 @@ export default function ExperiencesPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            addItem({
-                              title: t.name,
-                              detail: `Duration: ${t.duration} (${t.safeWindow})`,
-                              badge: 'Tour',
-                              cost: t.price,
-                              durationHours: 4.0,
+                            requireAuth(() => {
+                              addItem({
+                                title: t.name,
+                                detail: `Duration: ${t.duration} (${t.safeWindow})`,
+                                badge: 'Tour',
+                                cost: t.price,
+                                durationHours: 4.0,
+                              });
                             });
                           }}
                           className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"
