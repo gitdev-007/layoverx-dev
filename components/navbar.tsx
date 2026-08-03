@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useItinerary } from '@/context/itinerary-context';
+import { createClient } from '@/lib/supabase/client';
 import { getUserHandle } from '@/lib/utils';
 import {
   Menu,
@@ -25,12 +26,55 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { user, rawUser, isAdmin, setIsAdmin, signOut, openAuthModal, loading } = useAuth();
-  const handle = rawUser?.user_metadata?.full_name 
-    || rawUser?.user_metadata?.name 
-    || rawUser?.email?.split('@')[0] 
-    || 'Traveler';
+  const { isAdmin, setIsAdmin, openAuthModal } = useAuth();
   const { items, toast } = useItinerary();
+  
+  const supabase = createClient();
+  const [localUser, setLocalUser] = useState<any>(null);
+  const [localLoading, setLocalLoading] = useState(true);
+
+  useEffect(() => {
+    async function initSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setLocalUser(session?.user || null);
+      } catch (e) {
+        console.error('Navbar Session Init Error:', e);
+      } finally {
+        setLocalLoading(false);
+      }
+    }
+    
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setLocalUser(session?.user || null);
+      setLocalLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('layoverx_local_user');
+        localStorage.removeItem('layoverx_itinerary_items');
+        localStorage.removeItem('layoverx_saved_plans');
+        window.dispatchEvent(new Event('layoverx_logout'));
+      }
+    } catch (err) {
+      console.error('Navbar Sign Out Error:', err);
+    }
+  };
+
+  const handle = localUser?.user_metadata?.full_name 
+    || localUser?.user_metadata?.name 
+    || localUser?.email?.split('@')[0] 
+    || 'Traveler';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -179,22 +223,22 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Loading vs Logged Out */}
-            {loading ? (
+            {localLoading ? (
               /* Skeleton placeholder during session hydration */
               <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-3.5 py-1.5 rounded-full animate-pulse">
                 <div className="w-6 h-6 rounded-full bg-slate-300 flex-shrink-0" />
                 <div className="w-20 h-3 bg-slate-300 rounded-full" />
               </div>
-            ) : user ? (
+            ) : localUser ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
+                  {localUser?.user_metadata?.avatar_url || localUser?.user_metadata?.picture ? (
                     <img
-                      src={rawUser.user_metadata.avatar_url || rawUser.user_metadata.picture}
+                      src={localUser.user_metadata.avatar_url || localUser.user_metadata.picture}
                       alt={handle}
                       className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
                     />
@@ -209,12 +253,11 @@ export const Navbar: React.FC = () => {
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
 
-
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-[1010] text-slate-800">
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-[10px] text-slate-400 font-bold uppercase">Signed in as</p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{rawUser?.email}</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{localUser?.email}</p>
                     </div>
                     <Link
                       href="/my-itinerary"
@@ -229,7 +272,7 @@ export const Navbar: React.FC = () => {
                       <Plane size={16} /> Bookings & Passes
                     </Link>
                     <button
-                      onClick={signOut}
+                      onClick={handleSignOut}
                       className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600 hover:bg-rose-50 border-t border-slate-100 mt-1"
                     >
                       <LogOut size={16} /> Sign Out
@@ -294,12 +337,17 @@ export const Navbar: React.FC = () => {
               >
                 Plan My Layover
               </Link>
-              {user ? (
+              {localLoading ? (
+                <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-4 py-3 rounded-xl animate-pulse">
+                  <div className="w-9 h-9 rounded-full bg-slate-300 flex-shrink-0" />
+                  <div className="w-24 h-4 bg-slate-300 rounded-full" />
+                </div>
+              ) : localUser ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
-                    {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
+                    {localUser.user_metadata?.avatar_url || localUser.user_metadata?.picture ? (
                       <img
-                        src={rawUser.user_metadata.avatar_url || rawUser.user_metadata.picture}
+                        src={localUser.user_metadata.avatar_url || localUser.user_metadata.picture}
                         alt={handle}
                         className="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200"
                       />
@@ -310,10 +358,10 @@ export const Navbar: React.FC = () => {
                     )}
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-bold text-[#0F172A] truncate">
-                        {handle}
+                        {localUser.user_metadata?.full_name || localUser.email}
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium truncate">
-                        {rawUser?.email}
+                        {`@${localUser.email?.split('@')[0]}`}
                       </span>
                     </div>
                   </div>
@@ -330,7 +378,7 @@ export const Navbar: React.FC = () => {
                     Bookings & Passes
                   </Link>
                   <button
-                    onClick={signOut}
+                    onClick={handleSignOut}
                     className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl border border-rose-200 transition"
                   >
                     Sign Out
