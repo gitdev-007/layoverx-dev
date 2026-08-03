@@ -148,6 +148,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('layoverx_clear_itinerary'));
+    }
     try {
       const { data, error } = await supabase.auth.signUp({
         email,

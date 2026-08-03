@@ -102,6 +102,18 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.warn('[ItineraryContext] Failed to load local storage:', e);
     }
+
+    const handleClear = () => {
+      setItems([]);
+      try {
+        localStorage.setItem('layoverx_itinerary_items', JSON.stringify([]));
+      } catch {}
+    };
+
+    window.addEventListener('layoverx_clear_itinerary', handleClear);
+    return () => {
+      window.removeEventListener('layoverx_clear_itinerary', handleClear);
+    };
   }, []);
 
   const saveItemsToStorage = (newItems: ItineraryItem[]) => {
