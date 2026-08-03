@@ -620,21 +620,13 @@ export default function PlanMyLayoverPage() {
     const depDate = new Date(departureTime || Date.now() + 8 * 60 * 60 * 1000);
     const layoverH = Math.max(1, (depDate.getTime() - arrDate.getTime()) / (1000 * 60 * 60));
 
-    const tempItems: any[] = [];
-    if (selectedCab) tempItems.push({ badge: 'Cab', title: 'Airport Cab Transfer', detail: 'Executive Sedan/SUV', cost: formatPrice(cabPrice), durationHours: 0.75 });
-    if (hotelObj) tempItems.push({ badge: 'Hotel', title: hotelObj.name, detail: hotelObj.terminal || hotelObj.name, cost: hotelObj.price6h, durationHours: 6 });
-    if (diningObj) tempItems.push({ badge: 'Dining', title: diningObj.name, detail: diningObj.cuisine || diningObj.name, cost: diningObj.avgCost, durationHours: 1.5 });
-    if (tourObj) tempItems.push({ badge: 'Tour', title: tourObj.name, detail: tourObj.name, cost: tourObj.price, durationHours: 3 });
-    if (spaObj) tempItems.push({ badge: 'Spa', title: spaObj.name, detail: spaObj.name, cost: spaObj.price, durationHours: 1 });
-    if (gamingObj) tempItems.push({ badge: 'Gaming', title: gamingObj.name, detail: gamingObj.name, cost: gamingObj.price, durationHours: 1 });
-
-    const cabDriveH = calculateDynamicCabDriveTime(tempItems);
+    const cabDriveH = calculateDynamicCabDriveTime(contextItems);
     const transitBuf = 2.5;
     const extraTen = cabDriveH > 0 ? 0.17 : 0.0;
     const availWindowH = Math.max(0, layoverH - transitBuf - cabDriveH - extraTen);
-    const activitiesSumH = tempItems.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
+    const activitiesSumH = contextItems.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
 
-    if (activitiesSumH > availWindowH && tempItems.length > 0) {
+    if (activitiesSumH > availWindowH && contextItems.length > 0) {
       setValidationError(`⚠️ Time Limit Exceeded! Selected activities (${activitiesSumH.toFixed(1)}h) exceeds available stopover window (${availWindowH.toFixed(1)}h). Please unselect an activity or select fewer hours.`);
       return;
     }
@@ -1328,7 +1320,6 @@ export default function PlanMyLayoverPage() {
                     </div>
                   )}
                 </div>
-
                   <div className="border-t border-gray-100 pt-2 space-y-1.5 text-xs text-gray-600">
                     <div className="flex justify-between items-center">
                       <span>Subtotal (Base Price):</span>
@@ -1339,7 +1330,6 @@ export default function PlanMyLayoverPage() {
                       <strong className="text-gray-900">{formatPrice(pricingBreakdown.gstAmountINR)}</strong>
                     </div>
                   </div>
-                </div>
 
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-end justify-between mb-1">
@@ -1419,8 +1409,12 @@ export default function PlanMyLayoverPage() {
                         </div>
 
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
-                          <div className="font-bold text-slate-900">{tPickup} • {selectedCab ? '🚖 Chauffeur Pickup' : hotelObj ? '🏨 Hotel Check-In' : '⭐ Transit Activity'}</div>
-                          <div className="text-slate-500 text-[11px]">{selectedCab ? `Meet driver at Exit Gate 2 (${selectedCab.toUpperCase()}).` : hotelObj ? `Check-in at ${hotelObj.name}.` : 'Enjoy your scheduled transit window.'}</div>
+                          <div className="font-bold text-slate-900">
+                            {tPickup} • {selectedCab ? '🚖 Chauffeur Pickup' : contextItems.length > 0 ? `⭐ ${contextItems[0].title}` : '⭐ Transit Activity'}
+                          </div>
+                          <div className="text-slate-500 text-[11px]">
+                            {selectedCab ? `Meet driver at Exit Gate 2 (${selectedCab.toUpperCase()}).` : contextItems.length > 0 ? `Enjoy ${contextItems[0].title}.` : 'Enjoy your scheduled transit window.'}
+                          </div>
                         </div>
 
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-0.5">
