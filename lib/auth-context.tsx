@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     if (error) {
-      // If Supabase credentials/API key error or user not found, create clean session
-      if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('invalid')) {
+      // ONLY bypass if environment API key is unconfigured or rejected by host
+      if (error.message.toLowerCase().includes('api key') && !error.message.toLowerCase().includes('credentials')) {
         const localUser: User = {
           id: 'usr_' + Date.now(),
           email: cleanEmail,
@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: { data: { full_name: cleanName } },
       });
       if (error) {
-        if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('invalid')) {
+        if (error.message.toLowerCase().includes('api key') && !error.message.toLowerCase().includes('already registered')) {
           const localUser: User = {
             id: 'usr_' + Date.now(),
             email: cleanEmail,
@@ -176,19 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       if (data?.user) {
         handleAuthenticatedUser(data.user);
-      } else {
-        const localUser: User = {
-          id: 'usr_' + Date.now(),
-          email: cleanEmail,
-          user_metadata: { full_name: cleanName || cleanEmail.split('@')[0] },
-          app_metadata: { provider: 'email' },
-          aud: 'authenticated',
-          created_at: new Date().toISOString(),
-        } as unknown as User;
-        handleAuthenticatedUser(localUser);
       }
     } catch (err: any) {
-      if (err?.message?.toLowerCase().includes('api key') || err?.message?.toLowerCase().includes('invalid')) {
+      if (err?.message?.toLowerCase().includes('api key') && !err?.message?.toLowerCase().includes('already registered')) {
         const localUser: User = {
           id: 'usr_' + Date.now(),
           email: cleanEmail,
