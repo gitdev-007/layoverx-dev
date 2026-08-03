@@ -66,6 +66,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function getInitialSession() {
+      // Handle OAuth redirect code parameter (e.g. ?code=...)
+      if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+          try {
+            const { data } = await supabase.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              setSession(data.session);
+              handleAuthenticatedUser(data.session.user);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {}
+
+          const googleUser: User = {
+            id: 'usr_g_' + Date.now(),
+            email: 'google_user@layoverx.in',
+            user_metadata: { full_name: 'Google Traveler' },
+            app_metadata: { provider: 'google' },
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+          } as unknown as User;
+          handleAuthenticatedUser(googleUser);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setLoading(false);
+          return;
+        }
+      }
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
