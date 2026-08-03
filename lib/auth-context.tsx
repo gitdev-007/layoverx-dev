@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { getUserDisplayName } from '@/lib/utils';
@@ -23,6 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,9 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(currentSession);
           handleAuthenticatedUser(currentSession.user);
           setLoading(false);
+          router.refresh();
         } else if (event === 'SIGNED_OUT') {
           clearAllSessionData();
           setLoading(false);
+          router.refresh();
         } else {
           setLoading(false);
         }
@@ -167,12 +171,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const getRedirectUrl = () => {
-    if (typeof window !== 'undefined' && window.location.origin) {
-      return `${window.location.origin}/auth/callback`;
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${window.location.origin}/auth/callback`;
+      }
     }
-    return process.env.NEXT_PUBLIC_SITE_URL
-      ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-      : 'https://layoverx.in/auth/callback';
+    return 'https://layoverx.in/auth/callback';
   };
 
   const signInWithGoogle = async () => {

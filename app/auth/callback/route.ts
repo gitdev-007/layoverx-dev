@@ -3,9 +3,14 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/';
+
+  // Construct origin dynamically from x-forwarded headers to avoid Vercel internal host overrides
+  const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const cleanOrigin = host.includes('localhost') ? `${proto}://${host}` : 'https://layoverx.in';
 
   if (code) {
     const cookieStore = cookies();
@@ -39,7 +44,7 @@ export async function GET(request: Request) {
 
     if (!error) {
       // Redirect cleanly to destination WITHOUT `?code=` query parameters!
-      const cleanRedirectUrl = new URL(next, origin);
+      const cleanRedirectUrl = new URL(next, cleanOrigin);
       cleanRedirectUrl.searchParams.delete('code');
       
       const response = NextResponse.redirect(cleanRedirectUrl.toString());
@@ -51,5 +56,5 @@ export async function GET(request: Request) {
   }
 
   // Fallback clean redirect
-  return NextResponse.redirect(`${origin}/`);
+  return NextResponse.redirect(`${cleanOrigin}/`);
 }

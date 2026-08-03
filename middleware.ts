@@ -8,6 +8,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
+  // Bypass session refresh for the oauth callback route to prevent double token exchange or race conditions
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
