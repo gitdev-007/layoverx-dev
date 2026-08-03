@@ -173,6 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(currentSession);
           handleAuthenticatedUser(currentSession.user);
         }
+        if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
         setLoading(false);
       }
     );
@@ -186,11 +189,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const signInWithGoogle = async () => {
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: `${origin}/auth/callback`,
       },
     });
     if (error) {
