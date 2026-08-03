@@ -16,6 +16,14 @@ export async function GET(request: Request) {
   }
   const cleanOrigin = host.includes('localhost') ? `${proto}://${host}` : siteUrl;
 
+  // Prepare redirect response early
+  const cleanRedirectUrl = new URL(next, cleanOrigin);
+  if (code) {
+    cleanRedirectUrl.searchParams.delete('code');
+  }
+  const response = NextResponse.redirect(cleanRedirectUrl.toString());
+  response.headers.set('Cache-Control', 'no-store, max-age=0');
+
   if (code) {
     const cookieStore = cookies();
     const hostHeader = request.headers.get('x-forwarded-host') || new URL(request.url).host;
@@ -31,15 +39,22 @@ export async function GET(request: Request) {
           },
           setAll(cookiesToSet) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) =>
+              cookiesToSet.forEach(({ name, value, options }) => {
                 cookieStore.set(name, value, {
                   ...options,
                   domain: cookieDomain,
                   sameSite: 'lax',
                   secure: true,
                   path: '/',
-                })
-              );
+                });
+                response.cookies.set(name, value, {
+                  ...options,
+                  domain: cookieDomain,
+                  sameSite: 'lax',
+                  secure: true,
+                  path: '/',
+                });
+              });
             } catch {
               // Server Component Context
             }
@@ -60,12 +75,6 @@ export async function GET(request: Request) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error) {
-        // Redirect cleanly to destination WITHOUT `?code=` query parameters!
-        const cleanRedirectUrl = new URL(next, cleanOrigin);
-        cleanRedirectUrl.searchParams.delete('code');
-        
-        const response = NextResponse.redirect(cleanRedirectUrl.toString());
-        response.headers.set('Cache-Control', 'no-store, max-age=0');
         return response;
       } else {
         console.error('Callback Exchange Error:', error);
