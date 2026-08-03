@@ -24,7 +24,7 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { user, isAdmin, setIsAdmin, signOut, openAuthModal } = useAuth();
+  const { user, isAdmin, setIsAdmin, signOut, openAuthModal, loading } = useAuth();
   const { items, toast } = useItinerary();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -173,8 +173,14 @@ export const Navbar: React.FC = () => {
               Plan My Layover
             </Link>
 
-            {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Logged Out (Sign In / Register) */}
-            {user ? (
+            {/* Dynamic Auth State: Logged In (Avatar/Profile) vs Loading vs Logged Out */}
+            {loading ? (
+              /* Skeleton placeholder during session hydration */
+              <div className="flex items-center gap-2 border border-slate-200 bg-slate-100 px-3.5 py-1.5 rounded-full animate-pulse">
+                <div className="w-6 h-6 rounded-full bg-slate-300 flex-shrink-0" />
+                <div className="w-20 h-3 bg-slate-300 rounded-full" />
+              </div>
+            ) : user ? (
               <div className="relative">
                 <button
                   type="button"
