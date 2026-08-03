@@ -28,7 +28,7 @@ export async function GET(request: Request) {
                 })
               );
             } catch {
-              // Ignore if called from Server Component context
+              // Server Component Context
             }
           },
         },
@@ -36,14 +36,20 @@ export async function GET(request: Request) {
     );
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+
     if (!error) {
-      const response = NextResponse.redirect(`${origin}${next}`);
+      // Redirect cleanly to destination WITHOUT `?code=` query parameters!
+      const cleanRedirectUrl = new URL(next, origin);
+      cleanRedirectUrl.searchParams.delete('code');
+      
+      const response = NextResponse.redirect(cleanRedirectUrl.toString());
       response.headers.set('Cache-Control', 'no-store, max-age=0');
       return response;
     } else {
-      console.error('PKCE Exchange Error:', error.message);
+      console.error('Callback Exchange Error:', error.message);
     }
   }
 
+  // Fallback clean redirect
   return NextResponse.redirect(`${origin}/`);
 }

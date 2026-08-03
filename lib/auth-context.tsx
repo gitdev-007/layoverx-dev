@@ -100,23 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    async function loadInitialSession() {
-      if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        if (code) {
-          try {
-            const { data } = await supabase.auth.exchangeCodeForSession(code);
-            if (data?.session?.user) {
-              setSession(data.session);
-              handleAuthenticatedUser(data.session.user);
-              setLoading(false);
-              return;
-            }
-          } catch (e) {}
-        }
+    // Immediately strip ?code= or ?event= on client-side mount before any fetches occur
+    if (typeof window !== 'undefined') {
+      const search = window.location.search;
+      if (search.includes('code=') || search.includes('event=')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
+    }
 
+    async function loadInitialSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -165,14 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     );
-
-    // Initial check for query parameters to clear cleanly on mount
-    if (typeof window !== 'undefined') {
-      const search = window.location.search;
-      if (search.includes('code=') || search.includes('event=')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
 
     return () => {
       subscription.unsubscribe();

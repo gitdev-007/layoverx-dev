@@ -295,7 +295,7 @@ export const Navbar: React.FC = () => {
                 Plan My Layover
               </Link>
               {user ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
                     {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
                       <img
@@ -317,6 +317,18 @@ export const Navbar: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  <Link
+                    href="/my-itinerary"
+                    className="block w-full text-center py-2.5 bg-sky-50 text-[#0369a1] font-bold text-sm rounded-xl border border-sky-100 hover:bg-sky-100 transition"
+                  >
+                    My Itinerary
+                  </Link>
+                  <Link
+                    href="/my-trips"
+                    className="block w-full text-center py-2.5 bg-slate-50 text-slate-700 font-bold text-sm rounded-xl border border-slate-200 hover:bg-slate-100 transition"
+                  >
+                    Bookings & Passes
+                  </Link>
                   <button
                     onClick={signOut}
                     className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl border border-rose-200 transition"
