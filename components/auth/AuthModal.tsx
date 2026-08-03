@@ -278,7 +278,7 @@ export default function AuthModal() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Alex Traveler"
+                  placeholder="Your Full Name"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>

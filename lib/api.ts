@@ -8,7 +8,6 @@ const getApiBaseUrl = () => {
   return 'https://layoverx-dev.onrender.com/api/v1';
 };
 
-const API_BASE = getApiBaseUrl();
 
 export interface ServiceItem {
   id: string;
@@ -86,7 +85,7 @@ export async function fetchServices(category?: string, usableMinutes?: number, t
     if (usableMinutes) params.append('usableMinutes', usableMinutes.toString());
     if (terminal) params.append('terminal', terminal);
 
-    const res = await fetch(`${API_BASE}/services?${params.toString()}`);
+    const res = await fetch(`${getApiBaseUrl()}/services?${params.toString()}`);
     if (!res.ok) throw new Error(`Failed to fetch services: ${res.statusText}`);
     const json = await res.json();
     return json.data || [];
@@ -97,7 +96,7 @@ export async function fetchServices(category?: string, usableMinutes?: number, t
 }
 
 export async function holdSlot(payload: HoldSlotPayload): Promise<HoldSlotResponse> {
-  const res = await fetch(`${API_BASE}/booking/hold-slot`, {
+  const res = await fetch(`${getApiBaseUrl()}/booking/hold-slot`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -110,7 +109,7 @@ export async function holdSlot(payload: HoldSlotPayload): Promise<HoldSlotRespon
 }
 
 export async function createRazorpayOrder(payload: CreateOrderPayload): Promise<CreateOrderResponse> {
-  const res = await fetch(`${API_BASE}/booking/create-order`, {
+  const res = await fetch(`${getApiBaseUrl()}/booking/create-order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -123,7 +122,7 @@ export async function createRazorpayOrder(payload: CreateOrderPayload): Promise<
 }
 
 export async function trackFlight(payload: TrackFlightPayload): Promise<TrackFlightResponse> {
-  const res = await fetch(`${API_BASE}/flight/track`, {
+  const res = await fetch(`${getApiBaseUrl()}/flight/track`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -159,7 +158,7 @@ export interface VerifyVoucherResponse {
 }
 
 export async function verifyVoucher(payload: VerifyVoucherPayload): Promise<VerifyVoucherResponse> {
-  const res = await fetch(`${API_BASE}/booking/verify`, {
+  const res = await fetch(`${getApiBaseUrl()}/booking/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -190,7 +189,7 @@ export interface DispatchRequestResponse {
 }
 
 export async function requestGateDispatch(payload: DispatchRequestPayload): Promise<DispatchRequestResponse> {
-  const res = await fetch(`${API_BASE}/ops/dispatch-request`, {
+  const res = await fetch(`${getApiBaseUrl()}/ops/dispatch-request`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

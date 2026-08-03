@@ -111,21 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (e) {}
 
-          // Fallback if PKCE code exchange is unhandled by remote Supabase host
-          const pendingEmail = typeof window !== 'undefined'
-            ? (localStorage.getItem('layoverx_pending_google_email') || 'devtinker007@gmail.com')
-            : 'devtinker007@gmail.com';
-
-          const fallbackOAuthUser: User = {
-            id: 'usr_g_' + Date.now(),
-            email: pendingEmail,
-            user_metadata: { full_name: pendingEmail.split('@')[0] },
-            app_metadata: { provider: 'google' },
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-          } as unknown as User;
-
-          handleAuthenticatedUser(fallbackOAuthUser);
+          // PKCE code exchange failed — clean URL and fall through to getSession
           window.history.replaceState({}, document.title, window.location.pathname);
           setLoading(false);
           return;
@@ -202,6 +188,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: getRedirectUrl(),
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline',
+        },
       },
     });
     if (error) {
