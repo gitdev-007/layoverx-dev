@@ -12,10 +12,10 @@ export function getUserDisplayName(
   user?: { email?: string; user_metadata?: { full_name?: string; name?: string } } | null,
   profile?: { full_name?: string } | null
 ): string {
+  if (user?.email?.includes('@')) return user.email.split('@')[0];
   if (profile?.full_name?.trim()) return profile.full_name.trim();
   if (user?.user_metadata?.full_name?.trim()) return user.user_metadata.full_name.trim();
   if (user?.user_metadata?.name?.trim()) return user.user_metadata.name.trim();
-  if (user?.email?.includes('@')) return user.email.split('@')[0];
   return 'Traveler';
 }
 

@@ -1,13 +1,76 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/auth-context';
+import { User, CheckCircle2 } from 'lucide-react';
 
 export default function AccountSettingsPage() {
+  const { user, loading, openAuthModal } = useAuth();
   const [currency, setCurrency] = useState('INR');
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(true);
   const [emailPromo, setEmailPromo] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const savedCurrency = localStorage.getItem(`layoverx_currency_${user.id}`);
+      if (savedCurrency) setCurrency(savedCurrency);
+      const savedWhatsapp = localStorage.getItem(`layoverx_whatsapp_${user.id}`);
+      if (savedWhatsapp) setWhatsappAlerts(savedWhatsapp === 'true');
+      const savedSMS = localStorage.getItem(`layoverx_sms_${user.id}`);
+      if (savedSMS) setSmsAlerts(savedSMS === 'true');
+      const savedPromo = localStorage.getItem(`layoverx_promo_${user.id}`);
+      if (savedPromo) setEmailPromo(savedPromo === 'true');
+    }
+  }, [user]);
+
+  const handleUpdateSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    localStorage.setItem(`layoverx_currency_${user.id}`, currency);
+    localStorage.setItem(`layoverx_whatsapp_${user.id}`, String(whatsappAlerts));
+    localStorage.setItem(`layoverx_sms_${user.id}`, String(smsAlerts));
+    localStorage.setItem(`layoverx_promo_${user.id}`, String(emailPromo));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-semibold text-sm">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mx-auto">
+            <User size={32} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-slate-900">Sign In Required</h2>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Please sign in or register to view and customize your account preferences.
+            </p>
+          </div>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="w-full py-3.5 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md shadow-sky-500/10"
+          >
+            Sign In / Register
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
@@ -16,13 +79,21 @@ export default function AccountSettingsPage() {
       <section className="relative bg-slate-900 text-white pt-24 pb-16 overflow-hidden border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#0284C7] to-sky-600 flex items-center justify-center text-4xl font-extrabold text-white shadow-lg shadow-sky-500/20 uppercase">
-              T
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name || 'Traveler'}
+                className="w-24 h-24 rounded-2xl object-cover shadow-lg shadow-sky-500/20 border border-slate-700"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#0284C7] to-sky-600 flex items-center justify-center text-4xl font-extrabold text-white shadow-lg shadow-sky-500/20 uppercase">
+                {(user.name || 'Traveler').charAt(0)}
+              </div>
+            )}
             <div className="space-y-2">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Account Settings</h1>
-              <p className="text-sm text-sky-200 font-semibold">Traveler</p>
-              <p className="text-xs text-slate-400">traveler@layoverx.com</p>
+              <p className="text-sm text-sky-200 font-semibold">{user.name || 'Traveler'}</p>
+              <p className="text-xs text-slate-400">{user.email}</p>
             </div>
           </div>
         </div>
@@ -59,7 +130,14 @@ export default function AccountSettingsPage() {
               <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">⚙️ Account Preferences</h2>
                 
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+                {isSaved && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 flex items-center gap-3 text-sm font-semibold animate-in fade-in duration-300 mb-4">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    <span>Account preferences updated successfully!</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleUpdateSettings} className="space-y-6">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Default Booking Currency</label>
                     <select

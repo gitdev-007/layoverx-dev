@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/auth-context';
 import {
   User,
   Plane,
@@ -17,11 +18,73 @@ import {
 } from 'lucide-react';
 
 export default function MyProfilePage() {
+  const { user, loading, openAuthModal } = useAuth();
   const [fullName, setFullName] = useState('Traveler');
   const [phone, setPhone] = useState('+1 (555) 019-2834');
   const [nationality, setNationality] = useState('United States');
   const [loungeStyle, setLoungeStyle] = useState('Activity & City Tours');
   const [baggagePref, setBaggagePref] = useState('Use Left-Luggage Airport service');
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.name || 'Traveler');
+      const savedPhone = localStorage.getItem(`layoverx_phone_${user.id}`);
+      if (savedPhone) setPhone(savedPhone);
+      const savedNat = localStorage.getItem(`layoverx_nationality_${user.id}`);
+      if (savedNat) setNationality(savedNat);
+      const savedLounge = localStorage.getItem(`layoverx_lounge_${user.id}`);
+      if (savedLounge) setLoungeStyle(savedLounge);
+      const savedBaggage = localStorage.getItem(`layoverx_baggage_${user.id}`);
+      if (savedBaggage) setBaggagePref(savedBaggage);
+    }
+  }, [user]);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    localStorage.setItem(`layoverx_phone_${user.id}`, phone);
+    localStorage.setItem(`layoverx_nationality_${user.id}`, nationality);
+    localStorage.setItem(`layoverx_lounge_${user.id}`, loungeStyle);
+    localStorage.setItem(`layoverx_baggage_${user.id}`, baggagePref);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-semibold text-sm">Loading traveler profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mx-auto">
+            <User size={32} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-slate-900">Sign In Required</h2>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Please sign in or register to view and manage your traveler profile settings.
+            </p>
+          </div>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="w-full py-3.5 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-md shadow-sky-500/10"
+          >
+            Sign In / Register
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 bg-[#F8FAFC] text-[#0F172A]">
@@ -30,15 +93,23 @@ export default function MyProfilePage() {
       <section className="relative bg-slate-900 text-white pt-24 pb-16 overflow-hidden border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#0284C7] to-sky-600 flex items-center justify-center text-4xl font-extrabold text-white shadow-lg shadow-sky-500/20 uppercase">
-              {fullName.charAt(0) || 'U'}
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={fullName}
+                className="w-24 h-24 rounded-2xl object-cover shadow-lg shadow-sky-500/20 border border-slate-700"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#0284C7] to-sky-600 flex items-center justify-center text-4xl font-extrabold text-white shadow-lg shadow-sky-500/20 uppercase">
+                {fullName.charAt(0) || 'U'}
+              </div>
+            )}
             <div className="space-y-2">
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{fullName}</h1>
               <p className="text-sm text-sky-300 font-semibold flex items-center gap-2 justify-center md:justify-start">
                 <span className="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> Verified Transit Passenger
               </p>
-              <p className="text-xs text-slate-400">traveler@layoverx.com</p>
+              <p className="text-xs text-slate-400">{user.email}</p>
             </div>
           </div>
         </div>
@@ -89,7 +160,14 @@ export default function MyProfilePage() {
               <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">👤 Personal Information</h2>
                 
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                {isSaved && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 flex items-center gap-3 text-sm font-semibold animate-in fade-in duration-300">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    <span>Traveler profile details saved successfully!</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSave} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
@@ -104,7 +182,7 @@ export default function MyProfilePage() {
                       <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
                       <input
                         type="email"
-                        value="traveler@layoverx.com"
+                        value={user.email}
                         readOnly
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-500 cursor-not-allowed"
                       />
