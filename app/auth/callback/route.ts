@@ -18,6 +18,9 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = cookies();
+    const hostHeader = request.headers.get('x-forwarded-host') || new URL(request.url).host;
+    const cookieDomain = hostHeader.endsWith('layoverx.in') ? '.layoverx.in' : undefined;
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -28,9 +31,6 @@ export async function GET(request: Request) {
           },
           setAll(cookiesToSet) {
             try {
-              const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;
-              const cookieDomain = host.endsWith('layoverx.in') ? '.layoverx.in' : undefined;
-
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, {
                   ...options,
@@ -45,6 +45,14 @@ export async function GET(request: Request) {
             }
           },
         },
+        cookieOptions: {
+          name: 'sb-auth-token',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          domain: cookieDomain,
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+        }
       }
     );
 

@@ -21,6 +21,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  const host = request.headers.get('x-forwarded-host') || request.nextUrl.host;
+  const cookieDomain = host.endsWith('layoverx.in') ? '.layoverx.in' : undefined;
+
   try {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -33,10 +36,24 @@ export async function middleware(request: NextRequest) {
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, {
+              ...options,
+              domain: cookieDomain,
+              sameSite: 'lax',
+              secure: true,
+              path: '/',
+            })
           );
         },
       },
+      cookieOptions: {
+        name: 'sb-auth-token',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        domain: cookieDomain,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      }
     });
 
     // Refresh the session cookie on every request
