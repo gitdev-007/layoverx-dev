@@ -26,6 +26,10 @@ import {
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { user, rawUser, isAdmin, setIsAdmin, signOut, openAuthModal, loading } = useAuth();
+  const handle = rawUser?.user_metadata?.full_name 
+    || rawUser?.user_metadata?.name 
+    || rawUser?.email?.split('@')[0] 
+    || 'Traveler';
   const { items, toast } = useItinerary();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -191,16 +195,16 @@ export const Navbar: React.FC = () => {
                   {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
                     <img
                       src={rawUser.user_metadata.avatar_url || rawUser.user_metadata.picture}
-                      alt={getUserHandle(rawUser)}
+                      alt={handle}
                       className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm">
-                      {getUserHandle(rawUser).charAt(0)}
+                      {handle.charAt(0)}
                     </div>
                   )}
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
-                    {getUserHandle(rawUser)}
+                    {handle}
                   </span>
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
@@ -291,12 +295,35 @@ export const Navbar: React.FC = () => {
                 Plan My Layover
               </Link>
               {user ? (
-                <button
-                  onClick={signOut}
-                  className="w-full text-center py-2.5 bg-rose-50 text-rose-700 font-bold text-sm rounded-xl border border-rose-200"
-                >
-                  Sign Out ({getUserHandle(rawUser)})
-                </button>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
+                    {rawUser?.user_metadata?.avatar_url || rawUser?.user_metadata?.picture ? (
+                      <img
+                        src={rawUser.user_metadata.avatar_url || rawUser.user_metadata.picture}
+                        alt={handle}
+                        className="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-[#0369a1] text-white flex items-center justify-center font-extrabold text-sm uppercase shadow-sm">
+                        {handle.charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-[#0F172A] truncate">
+                        {handle}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium truncate">
+                        {rawUser?.email}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={signOut}
+                    className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl border border-rose-200 transition"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button

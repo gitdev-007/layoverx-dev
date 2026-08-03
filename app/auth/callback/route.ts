@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { getUserDisplayName } from '@/lib/utils';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -21,7 +20,12 @@ export async function GET(request: Request) {
           setAll(cookiesToSet) {
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
+                cookieStore.set(name, value, {
+                  ...options,
+                  sameSite: 'lax',
+                  secure: true,
+                  path: '/',
+                })
               );
             } catch {
               // Ignore if called from Server Component context
@@ -31,33 +35,15 @@ export async function GET(request: Request) {
       }
     );
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (error) {
-      // Redirect with an error message visible to the client-side toast handler
-      const errorMsg = encodeURIComponent(error.message || 'Google sign-in failed. Please try again.');
-      return NextResponse.redirect(`${origin}/?auth_error=${errorMsg}`);
-    }
-
-    if (!error && data?.session?.user) {
-      const u = data.session.user;
-      const userEmail = u.email || '';
-      const fullName = getUserDisplayName(u);
-
-      // Upsert into public.profiles so the record is always fresh
-      try {
-        await supabase.from('profiles').upsert(
-          { id: u.id, email: userEmail, full_name: fullName },
-          { onConflict: 'id' }
-        );
-      } catch (_e) {}
-
-      return NextResponse.redirect(`${origin}${next}`);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      const response = NextResponse.redirect(`${origin}${next}`);
+      response.headers.set('Cache-Control', 'no-store, max-age=0');
+      return response;
+    } else {
+      console.error('PKCE Exchange Error:', error.message);
     }
   }
 
-  // No code param or exchange failed without error — redirect cleanly
-  return NextResponse.redirect(
-    `${origin}/?auth_error=${encodeURIComponent('Sign-in could not be completed. Please try again.')}`
-  );
+  return NextResponse.redirect(`${origin}/`);
 }
