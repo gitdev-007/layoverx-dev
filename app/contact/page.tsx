@@ -64,11 +64,11 @@ export default function ContactPage() {
             </div>
 
             <div className="lg:col-span-5 relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 aspect-[4/3]">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 aspect-[4/3]">
                 <img
-                  src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80"
+                  src="/images/contact-assistance-desk.jpg"
                   alt="Customer Service Desk"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-2xl"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs text-white font-semibold flex items-center gap-2 border border-white/10">
