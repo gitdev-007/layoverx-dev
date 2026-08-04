@@ -362,7 +362,6 @@ export default function PlanMyLayoverPage() {
   const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
   const [isDpdpConsented, setIsDpdpConsented] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [showManualFields, setShowManualFields] = useState(false);
   const [emergencyContact, setEmergencyContact] = useState('');
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('INR');
 
@@ -748,17 +747,16 @@ export default function PlanMyLayoverPage() {
 
   const handleProceedCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    const hasTicketOrManual = !!(uploadedDocument || (leadPassengerName.trim() && pnr.trim().length === 6));
-    if (!hasTicketOrManual) {
-      showToast('Please upload your e-ticket or enter your passenger name and valid 6-character PNR manually.', 'warning');
+    if (!uploadedDocument) {
+      showToast('Please upload your e-ticket or boarding pass to proceed.', 'warning');
       return;
     }
     if (emergencyContact.trim().length < 8) {
-      showToast('WhatsApp / Emergency Contact Phone is required (at least 8 characters).', 'warning');
+      showToast('WhatsApp / Contact Phone is required (at least 8 characters).', 'warning');
       return;
     }
     if (!isDpdpConsented) {
-      showToast('Please review and check the DPDP Act 2023 consent box to proceed.', 'warning');
+      showToast('Please agree to allow LayoverX to process your e-ticket.', 'warning');
       return;
     }
 
@@ -778,7 +776,7 @@ export default function PlanMyLayoverPage() {
   };
 
   const isFormValid = !!(
-    (uploadedDocument || (leadPassengerName.trim() && pnr.trim().length === 6)) &&
+    uploadedDocument &&
     emergencyContact.trim().length >= 8 &&
     isDpdpConsented
   );
@@ -1224,7 +1222,7 @@ export default function PlanMyLayoverPage() {
               <div id="review-and-passenger-registration">
                 <div id="step-5-registration" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 text-slate-900">
                   
-                  {/* Step Header */}
+                  {/* Header */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-bold text-sm">
@@ -1233,17 +1231,17 @@ export default function PlanMyLayoverPage() {
                       <h3 className="text-xl font-bold text-slate-900">Review &amp; Passenger Verification</h3>
                     </div>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      DPDP Compliant
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600"/>
+                      Verified Safe
                     </span>
                   </div>
 
-                  {/* PRIMARY UPLOAD ZONE */}
-                  <div className="space-y-3">
+                  {/* 1. PRIMARY E-TICKET UPLOAD ZONE */}
+                  <div className="space-y-2">
                     <label className="block text-sm font-semibold text-slate-800">
                       Upload E-Ticket or Boarding Pass <span className="text-sky-600">*</span>
                       <span className="block text-xs font-normal text-slate-500 mt-0.5">
-                        Upload your flight confirmation (PDF or photo). Your name, flight numbers, PNR, and times will be automatically extracted.
+                        Upload your PDF or ticket screenshot. Your flight numbers, PNR, and connection schedule will be synced automatically.
                       </span>
                     </label>
 
@@ -1258,7 +1256,7 @@ export default function PlanMyLayoverPage() {
                         className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all group ${
                           dragActive 
                             ? 'border-sky-500 bg-sky-50/50' 
-                            : 'border-slate-300 bg-slate-50/80 hover:border-sky-500 hover:bg-sky-50/40'
+                            : 'border-slate-300 bg-slate-50 hover:bg-sky-50/40'
                         }`}
                         onClick={() => document.getElementById('ticket-upload-input')?.click()}
                       >
@@ -1285,7 +1283,7 @@ export default function PlanMyLayoverPage() {
                           <FileText className="w-8 h-8 text-emerald-600"/>
                           <div>
                             <p className="text-sm font-semibold text-emerald-900">{uploadedDocument.name}</p>
-                            <p className="text-xs text-emerald-700">{(uploadedDocument.size / (1024 * 1024)).toFixed(2)} MB • Verified Format</p>
+                            <p className="text-xs text-emerald-700">{(uploadedDocument.size / (1024 * 1024)).toFixed(2)} MB • Attached</p>
                           </div>
                         </div>
                         <button
@@ -1293,18 +1291,18 @@ export default function PlanMyLayoverPage() {
                           onClick={() => setUploadedDocument(null)}
                           className="text-xs text-rose-600 hover:text-rose-700 font-semibold underline px-2 py-1"
                         >
-                          Remove / Change
+                          Remove
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* ESSENTIAL DISPATCH CONTACT */}
+                  {/* 2. WHATSAPP / EMERGENCY CONTACT */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-800 mb-1">
-                      WhatsApp / Emergency Contact Phone <span className="text-sky-600">*</span>
+                      WhatsApp / Contact Phone <span className="text-sky-600">*</span>
                       <span className="block text-xs font-normal text-slate-500">
-                        Used exclusively by your chauffeur &amp; LayoverX concierge for airport pickup dispatch.
+                        Used strictly by your driver &amp; concierge for airport arrival coordination.
                       </span>
                     </label>
                     <input
@@ -1316,141 +1314,39 @@ export default function PlanMyLayoverPage() {
                     />
                   </div>
 
-                  {/* OPTIONAL MANUAL FIELD OVERRIDE ACCORDION */}
-                  <div className="border-t border-slate-100 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowManualFields(!showManualFields)}
-                      className="flex items-center justify-between w-full text-xs font-medium text-slate-600 hover:text-slate-900 py-1"
-                    >
-                      <span>Don&apos;t have your e-ticket file handy? Enter flight details manually</span>
-                      {showManualFields ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
-                    </button>
-
-                    {showManualFields && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                        <div>
-                          <label className="font-semibold text-slate-700">Passenger Full Name</label>
-                          <input
-                            type="text"
-                            placeholder="John Doe"
-                            value={leadPassengerName}
-                            onChange={(e) => setLeadPassengerName(e.target.value)}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700">PNR / Booking Reference</label>
-                          <input
-                            type="text"
-                            maxLength={6}
-                            placeholder="AB12CD"
-                            value={pnr}
-                            onChange={(e) => setPnr(e.target.value.toUpperCase())}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 uppercase"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700">Passport / ID Number</label>
-                          <input
-                            type="text"
-                            placeholder="Enter passport number"
-                            value={passportNumber}
-                            onChange={(e) => setPassportNumber(e.target.value)}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700">Passport Issuing Country</label>
-                          <select
-                            value={passportCountry}
-                            onChange={(e) => handleCountryChange(e.target.value)}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
-                          >
-                            {PASSPORT_COUNTRIES.map((c) => (
-                              <option key={c} value={c}>
-                                {c} {c === 'India' ? '(Domestic)' : '(International)'}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700">Inbound Flight Number</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. EK-504"
-                            value={flightIn}
-                            onChange={(e) => setFlightIn(e.target.value)}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700">Outbound Flight Number</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. AI-102"
-                            value={flightOut}
-                            onChange={(e) => setFlightOut(e.target.value)}
-                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* STATUTORY DPDP ACT 2023 CONSENT BOX */}
-                  <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 space-y-3">
+                  {/* 3. REASSURING PRIVACY & CONSENT BOX */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                     <div className="flex items-start gap-2.5">
-                      <ShieldCheck className="w-5 h-5 text-amber-700 shrink-0 mt-0.5"/>
-                      <div className="text-xs text-amber-900 space-y-1">
-                        <p className="font-bold text-amber-950 uppercase tracking-wider">
-                          Data Privacy &amp; DPDP Act 2023 Statutory Protection
-                        </p>
-                        <p className="leading-relaxed">
-                          LayoverX processes your uploaded e-ticket strictly for verifying connection times and arranging chauffeur airport pickup. In accordance with Section 8(7) of India&apos;s Digital Personal Data Protection (DPDP) Act 2023, your uploaded ticket documents are encrypted at rest and will be <strong>permanently erased from our servers 48 hours post-flight departure</strong>.
+                      <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5"/>
+                      <div className="text-xs text-slate-600 leading-relaxed space-y-1">
+                        <p className="font-semibold text-slate-800">Your privacy is fully protected</p>
+                        <p>
+                          We process your e-ticket strictly to verify flight timing and arrange your airport pickup. Uploaded documents are encrypted at rest and automatically deleted 48 hours after your trip.{' '}
+                          <a href="/privacy" target="_blank" className="text-sky-600 underline font-medium hover:text-sky-700">
+                            Privacy Policy
+                          </a>
                         </p>
                       </div>
                     </div>
 
-                    <label className="flex items-start gap-3 pt-2 border-t border-amber-200/60 cursor-pointer select-none">
+                    <label className="flex items-center gap-3 pt-2 border-t border-slate-200 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isDpdpConsented}
                         onChange={(e) => setIsDpdpConsented(e.target.checked)}
-                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-amber-400 mt-0.5 cursor-pointer"
+                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-amber-950 leading-tight">
-                        I explicitly consent to LayoverX processing my e-ticket file solely for flight verification and ground pickup dispatch under the terms of the DPDP Act 2023.
+                      <span className="text-xs font-medium text-slate-800">
+                        I agree to allow LayoverX to process my e-ticket for trip coordination.
                       </span>
                     </label>
                   </div>
 
-                  {/* Terminal Mismatch Warning Card */}
-                  {onwardTerminal === 'T1' && (
-                    <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-2 text-xs text-amber-950">
-                      <div className="font-extrabold flex items-center gap-1.5 text-amber-900 text-sm">
-                        <span>⚠️ TERMINAL CHANGE DETECTED</span>
-                      </div>
-                      <p className="leading-relaxed">
-                        Your onward flight departs from <strong>Terminal 1 (Santacruz - 5 km from T2)</strong>. A 45-minute inter-terminal road transfer buffer is required.
-                      </p>
-                      <label className="flex items-center gap-2 pt-1 cursor-pointer font-bold text-amber-950">
-                        <input
-                          type="checkbox"
-                          checked={interTerminalCabAddon}
-                          onChange={(e) => setInterTerminalCabAddon(e.target.checked)}
-                          className="rounded border-amber-400 text-amber-700 focus:ring-amber-500"
-                        />
-                        <span>T2 to T1 Private Inter-Terminal Transfer (Cab) — ₹699</span>
-                      </label>
-                    </div>
-                  )}
-
-                  {/* LANDSIDE VISA WARNING */}
-                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-sky-700 shrink-0 mt-0.5"/>
+                  {/* 4. LANDSIDE VISA WARNING */}
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-sky-700 shrink-0 mt-0.5"/>
                     <p className="text-xs text-sky-900 leading-relaxed">
-                      <strong>Landside Notice:</strong> Exiting CSMIA airport terminals requires valid Indian immigration clearance (e-Visa, Tourist Visa, Transit Visa, or OCI Card).
+                      <strong>Landside Notice:</strong> Exiting CSMIA terminals requires valid Indian immigration permission (e-Visa, Tourist Visa, Transit Visa, or OCI Card).
                     </p>
                   </div>
 
@@ -1460,7 +1356,7 @@ export default function PlanMyLayoverPage() {
                     </div>
                   )}
 
-                  {/* PROCEED TO CHECKOUT BUTTON */}
+                  {/* 5. SUBMIT / CHECKOUT BUTTON */}
                   <button
                     type="button"
                     disabled={!isFormValid || isHolding || availableWindowHours < 0}
@@ -1494,8 +1390,8 @@ export default function PlanMyLayoverPage() {
                   </button>
 
                   {!isFormValid && (
-                    <p className="text-center text-xs text-slate-500">
-                      Please attach your e-ticket, enter your WhatsApp contact number, and check the DPDP consent box to proceed.
+                    <p className="text-center text-xs text-slate-400">
+                      Please attach your e-ticket, enter your contact number, and check the privacy box to continue.
                     </p>
                   )}
                 </div>
