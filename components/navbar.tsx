@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useItinerary } from '@/context/itinerary-context';
 import { supabaseClient } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/auth-context';
 import AuthModal from '@/components/AuthModal';
 import { getUserHandle } from '@/lib/utils';
 import {
@@ -29,9 +30,15 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { items, toast } = useItinerary();
   
-  const [user, setUser] = useState<any>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { 
+    user, 
+    logout, 
+    loading,
+    isAuthModalOpen, 
+    openAuthModal, 
+    closeAuthModal 
+  } = useAuth();
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
@@ -40,94 +47,22 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     setMounted(true);
-    async function getSession() {
-      try {
-        if (typeof window !== 'undefined') {
-          const searchParams = new URLSearchParams(window.location.search);
-          const code = searchParams.get('code');
-          if (code) {
-            // Remove code parameter immediately to prevent duplicate exchanges
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('code');
-            window.history.replaceState({}, '', newUrl.toString());
-
-            const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
-            if (!error && data.session) {
-              setUser(data.session.user);
-              window.history.replaceState({}, document.title, window.location.pathname);
-              setLoading(false);
-              return;
-            }
-          }
-        }
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        setUser(session?.user || null);
-        
-        // Error URL sanitization: If session is valid, clear error parameters
-        if (session?.user && typeof window !== 'undefined') {
-          if (
-            window.location.search.includes('error=') ||
-            window.location.search.includes('otp_expired')
-          ) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        }
-      } catch (err) {
-        console.error('[Navbar Auth] Error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    getSession();
-
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        
-        // Clean up error/code parameters from browser URL bar after successful auth
-        if (
-          typeof window !== 'undefined' && (
-            window.location.search.includes('code=') || 
-            window.location.hash.includes('access_token=') || 
-            window.location.search.includes('error=') ||
-            window.location.search.includes('otp_expired')
-          )
-        ) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const handleSignOut = async () => {
-    await supabaseClient.auth.signOut();
-    setUser(null);
+    await logout();
     setDropdownOpen(false);
   };
 
-  const name = user?.user_metadata?.full_name 
-    || user?.user_metadata?.name 
-    || user?.email?.split('@')[0] 
-    || 'Traveler';
+  const name = user?.name || 'Traveler';
 
-  const avatarUrl = user?.user_metadata?.avatar_url 
-    || user?.user_metadata?.picture 
-    || '';
+  const avatarUrl = user?.avatarUrl || '';
 
-  const usernamePrefix = user?.user_metadata?.username 
-    || user?.email?.split('@')[0] 
-    || 'traveler';
+  const usernamePrefix = user?.usernamePrefix || 'traveler';
 
   const userId = user?.id || '';
 
-  const isAdmin = user ? (user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin' || user.email === 'founder@layoverx.in') : false;
+  const isAdmin = user?.role === 'admin';
 
   const getInitials = (name: string) => {
     return name
@@ -361,7 +296,7 @@ export const Navbar: React.FC = () => {
             ) : (
               <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                 <button
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={openAuthModal}
                   className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm"
                 >
                   Sign In / Register
@@ -472,13 +407,13 @@ export const Navbar: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={openAuthModal}
                     className="py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl border border-slate-200"
                   >
                     Log In
                   </button>
                   <button
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={openAuthModal}
                     className="py-2.5 bg-[#0F172A] text-white text-sm font-bold rounded-xl"
                   >
                     Sign Up
@@ -490,7 +425,7 @@ export const Navbar: React.FC = () => {
         )}
       </div>
       {mounted && createPortal(
-        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />,
+        <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />,
         document.body
       )}
     </nav>
