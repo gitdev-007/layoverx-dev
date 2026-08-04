@@ -1,9 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { Lock, Mail, User as UserIcon, X, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { z } from 'zod';
+import { Turnstile } from '@marsidev/react-turnstile';
+
+const registerSchema = z.object({
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters long')
+    .max(20, 'Username cannot exceed 20 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  email: z.string()
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address format'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(/[0-9]/, 'Password must contain at least 1 number')
+    .regex(/[^a-zA-Z0-9]/, 'Password must contain at least 1 special character')
+});
+
+const loginSchema = z.object({
+  email: z.string()
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address format'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters long')
+});
 
 export default function AuthModal() {
   const { 
@@ -22,6 +48,8 @@ export default function AuthModal() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<any>(null);
 
   React.useEffect(() => {
     if (isAuthModalOpen && authModalMessage) {
@@ -39,15 +67,13 @@ export default function AuthModal() {
     setError(null);
     setMessage(null);
     setShowPassword(false);
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
   };
 
   const handleTabSwitch = (newTab: 'signin' | 'signup') => {
     setTab(newTab);
     resetForm();
-  };
-
-  const validateEmail = (val: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
   };
 
   const handleGoogleSignIn = async () => {
@@ -66,17 +92,19 @@ export default function AuthModal() {
     setError(null);
     setMessage(null);
 
-    const cleanEmail = email.trim();
-    if (!cleanEmail) {
-      setError('Please enter your email address.');
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Zod validation check
+    const validation = loginSchema.safeParse({ email: cleanEmail, password });
+    if (!validation.success) {
+      setError(validation.error.errors[0].message);
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       return;
     }
-    if (!validateEmail(cleanEmail)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password.');
+
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA check.');
       return;
     }
 
@@ -86,16 +114,23 @@ export default function AuthModal() {
       const { error: signInError } = await supabaseClient.auth.signInWithPassword({
         email: cleanEmail,
         password,
+        options: {
+          captchaToken,
+        },
       });
 
       if (signInError) {
         setError(signInError.message);
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
       } else {
         closeAuthModal();
         resetForm();
       }
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Sign In.');
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -107,22 +142,23 @@ export default function AuthModal() {
     setMessage(null);
 
     const cleanUsername = username.trim();
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanUsername) {
-      setError('Please enter a username.');
+    // Zod validation check
+    const validation = registerSchema.safeParse({
+      username: cleanUsername,
+      email: cleanEmail,
+      password,
+    });
+    if (!validation.success) {
+      setError(validation.error.errors[0].message);
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       return;
     }
-    if (!cleanEmail) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (!validateEmail(cleanEmail)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA check.');
       return;
     }
 
@@ -134,6 +170,7 @@ export default function AuthModal() {
         password,
         options: {
           emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+          captchaToken,
           data: {
             username: cleanUsername,
             full_name: cleanUsername,
@@ -143,11 +180,20 @@ export default function AuthModal() {
 
       if (signUpError) {
         setError(signUpError.message);
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
       } else {
         setMessage('Check your email to confirm registration');
+        setEmail('');
+        setPassword('');
+        setUsername('');
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
       }
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred during Account Creation.');
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -257,6 +303,16 @@ export default function AuthModal() {
               </div>
             </div>
 
+            <div className="flex justify-center py-1">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => setCaptchaToken(null)}
+                onExpire={() => setCaptchaToken(null)}
+              />
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -327,6 +383,16 @@ export default function AuthModal() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-center py-1">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => setCaptchaToken(null)}
+                onExpire={() => setCaptchaToken(null)}
+              />
             </div>
 
             <button
