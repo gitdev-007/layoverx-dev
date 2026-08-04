@@ -85,7 +85,7 @@ export function calculateDynamicCabDriveTime(itemsList: ItineraryItem[]): number
 }
 
 export function ItineraryProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [toast, setToast] = useState<ToastNotice | null>(null);
@@ -164,6 +164,12 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
 
   const addItem = (itemData: Omit<ItineraryItem, 'id'>, totalLayoverHours = 8.0) => {
+    if (!user) {
+      openAuthModal();
+      showToast('Please sign in or create an account to build your itinerary.', 'warning');
+      return;
+    }
+
     // Check for duplicate booking
     const isDuplicate = items.some(
       (item) => item.title.trim().toLowerCase() === itemData.title.trim().toLowerCase()
