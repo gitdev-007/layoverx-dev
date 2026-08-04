@@ -1267,38 +1267,7 @@ export default function PlanMyLayoverPage() {
                   </div>
                 )}
 
-                {/* VIP Services & Connectivity Add-ons */}
-                <div className="bg-slate-50 border border-gray-200 p-4 rounded-xl space-y-3 text-xs">
-                  <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
-                    <span>⚡ Hyper-Local VIP Services &amp; Connectivity Add-ons</span>
-                  </h3>
 
-                  <label className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-sky-300 transition">
-                    <input
-                      type="checkbox"
-                      checked={selectedEsim}
-                      onChange={(e) => setSelectedEsim(e.target.checked)}
-                      className="mt-0.5 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
-                    />
-                    <div className="space-y-0.5">
-                      <span className="font-extrabold text-slate-900 block">🇮🇳 Indian Tourist eSIM (1GB / High-Speed 5G) — ₹400 / $5 USD</span>
-                      <p className="text-slate-500 text-[11px]">Instant digital activation. QR code delivered before flight landing.</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-sky-300 transition">
-                    <input
-                      type="checkbox"
-                      checked={selectedVipBuggy}
-                      onChange={(e) => setSelectedVipBuggy(e.target.checked)}
-                      className="mt-0.5 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
-                    />
-                    <div className="space-y-0.5">
-                      <span className="font-extrabold text-slate-900 block">⚡ VIP Aerobridge Escort &amp; Fast-Track Golf Buggy (Adani Pranaam) — ₹1,999</span>
-                      <p className="text-slate-500 text-[11px]">Met directly at aerobridge by dedicated agent with electric cart to fast-track customs.</p>
-                    </div>
-                  </label>
-                </div>
 
                 {/* Service Classification Badges */}
                 <div className="pt-2">
