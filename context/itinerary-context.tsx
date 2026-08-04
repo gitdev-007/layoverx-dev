@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
+import { calculateRouteDuration } from '@/utils/routeCalculator';
 
 export interface ItineraryItem {
   id: string;
@@ -29,8 +30,13 @@ export interface ToastNotice {
 
 interface ItineraryContextType {
   items: ItineraryItem[];
+  itineraryItems: ItineraryItem[];
   savedPlans: SavedPlan[];
   toast: ToastNotice | null;
+  totalLayoverHours: number;
+  setTotalLayoverHours: (hours: number) => void;
+  selectedCar: any;
+  setSelectedCar: (car: any) => void;
   addItem: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
   removeItem: (id: string) => void;
   updateItemDuration: (id: string, durationHours: number, cost: string) => void;
@@ -41,6 +47,10 @@ interface ItineraryContextType {
   deleteSavedPlan: (id: string) => void;
   loadSavedPlan: (plan: SavedPlan) => void;
   showToast: (message: string, type?: 'success' | 'warning' | 'info') => void;
+  driveTimeHours: number;
+  totalBufferHours: number;
+  usedActivitiesHours: number;
+  availableWindowHours: number;
 }
 
 const ItineraryContext = createContext<ItineraryContextType | undefined>(undefined);
@@ -89,6 +99,38 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [toast, setToast] = useState<ToastNotice | null>(null);
+
+  const [totalLayoverHours, setTotalLayoverHours] = useState<number>(17.0);
+  const [selectedCar, setSelectedCar] = useState<any>(null);
+  const [driveTimeHours, setDriveTimeHours] = useState<number>(0.0);
+
+  const itineraryItems = items;
+
+  useEffect(() => {
+    const cabItem = items.find((i) => i.badge === 'Cab');
+    setSelectedCar(cabItem || null);
+  }, [items]);
+
+  useEffect(() => {
+    let active = true;
+    async function updateRouteDuration() {
+      const duration = await calculateRouteDuration(items);
+      if (active) {
+        setDriveTimeHours(duration);
+      }
+    }
+    updateRouteDuration();
+    return () => {
+      active = false;
+    };
+  }, [items]);
+
+  const totalBufferHours = 2.5 + driveTimeHours;
+  const usedActivitiesHours = items
+    .filter((item) => item.badge !== 'Cab' && item.badge !== 'Arrival' && item.badge !== 'Security' && item.badge !== 'Departure')
+    .reduce((sum, item) => sum + (item.durationHours || 0), 0);
+  
+  const availableWindowHours = totalLayoverHours - totalBufferHours - usedActivitiesHours;
 
   const getStorageKeys = (email: string | undefined | null) => {
     if (email) {
@@ -181,18 +223,18 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
     let updatedList = [...items];
 
-    // REQUIREMENT: Check if vehicle/cab is added first. If not present and adding an activity, auto-insert vehicle
     const hasCab = updatedList.some((item) => item.badge === 'Cab');
-    if (!hasCab && itemData.badge !== 'Cab') {
-      const defaultCab: ItineraryItem = {
-        id: `cab_auto_${Date.now()}`,
-        title: 'Executive Sedan Airport Pickup & Return',
-        detail: 'Toyota Innova Crysta / Camry • Fixed rate transfer',
-        badge: 'Cab',
-        cost: '₹1,499',
-        durationHours: 0.75,
-      };
-      updatedList.push(defaultCab);
+    if (itemData.badge !== 'Cab' && !hasCab) {
+      showToast('Please select your Transfer Cab first to calculate accurate road travel times.', 'warning');
+      if (typeof window !== 'undefined') {
+        const step1El = document.getElementById('step-1-cabs');
+        if (step1El) {
+          step1El.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          window.location.href = '/plan-my-layover#step-1-cabs';
+        }
+      }
+      return;
     }
 
     const newItem: ItineraryItem = {
@@ -201,38 +243,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     };
     updatedList.push(newItem);
 
-    // TIME FORMULA: Total Layover - 2.5h Transit - Dynamic Cab Driving Time - 0.17h (10m extra) = Available Time
-    const cabDrivingTime = calculateDynamicCabDriveTime(updatedList);
-    const transitBuffer = 2.5;
-    const extraTenMin = cabDrivingTime > 0 ? 0.17 : 0.0;
-    
-    const availableTime = Math.max(0, totalLayoverHours - transitBuffer - cabDrivingTime - extraTenMin);
-    const activitiesHours = updatedList.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
-
-    // Update dynamic drive time on cab item
-    updatedList = updatedList.map((item) => {
-      if (item.badge === 'Cab') {
-        return {
-          ...item,
-          durationHours: cabDrivingTime,
-          detail: `Toyota Innova Crysta / Camry • Dynamic route transit (${cabDrivingTime.toFixed(2)}h ride)`,
-        };
-      }
-      return item;
-    });
-
-    if (activitiesHours > availableTime) {
-      showToast(
-        `⚠️ Time limit warning! Total activities (${activitiesHours.toFixed(1)}h) exceeds available stopover window (${availableTime.toFixed(1)}h).`,
-        'warning'
-      );
-    } else {
-      if (!hasCab && itemData.badge !== 'Cab') {
-        showToast(`🚗 Added Airport Cab & "${itemData.title}" to itinerary!`, 'success');
-      } else {
-        showToast(`Added "${itemData.title}" to your itinerary!`, 'success');
-      }
-    }
+    showToast(`Added "${itemData.title}" to your itinerary!`, 'success');
 
     saveItemsToStorage(updatedList);
   };
@@ -305,8 +316,13 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     <ItineraryContext.Provider
       value={{
         items,
+        itineraryItems,
         savedPlans,
         toast,
+        totalLayoverHours,
+        setTotalLayoverHours,
+        selectedCar,
+        setSelectedCar,
         addItem,
         removeItem,
         updateItemDuration,
@@ -317,6 +333,10 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
         deleteSavedPlan,
         loadSavedPlan,
         showToast,
+        driveTimeHours,
+        totalBufferHours,
+        usedActivitiesHours,
+        availableWindowHours,
       }}
     >
       {children}

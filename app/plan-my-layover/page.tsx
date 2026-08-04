@@ -10,6 +10,7 @@ import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
 import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
+import TimelineHeader from '@/components/TimelineHeader';
 
 import {
   Plane,
@@ -241,7 +242,7 @@ export default function PlanMyLayoverPage() {
   };
   const router = useRouter();
   const { requireAuth } = useAuth();
-  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem } = useItinerary();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours } = useItinerary();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const scrollToStep5 = () => {
@@ -616,18 +617,8 @@ export default function PlanMyLayoverPage() {
     }
 
     // Check available time limit vs activities duration
-    const arrDate = new Date(arrivalTime || Date.now());
-    const depDate = new Date(departureTime || Date.now() + 8 * 60 * 60 * 1000);
-    const layoverH = Math.max(1, (depDate.getTime() - arrDate.getTime()) / (1000 * 60 * 60));
-
-    const cabDriveH = calculateDynamicCabDriveTime(contextItems);
-    const transitBuf = 2.5;
-    const extraTen = cabDriveH > 0 ? 0.17 : 0.0;
-    const availWindowH = Math.max(0, layoverH - transitBuf - cabDriveH - extraTen);
-    const activitiesSumH = contextItems.reduce((sum, item) => sum + (item.badge === 'Cab' ? 0 : (item.durationHours || 2)), 0);
-
-    if (activitiesSumH > availWindowH && contextItems.length > 0) {
-      setValidationError(`⚠️ Time Limit Exceeded! Selected activities (${activitiesSumH.toFixed(1)}h) exceeds available stopover window (${availWindowH.toFixed(1)}h). Please unselect an activity or select fewer hours.`);
+    if (availableWindowHours < 0 && contextItems.length > 0) {
+      setValidationError(`⚠️ Time Limit Exceeded! Selected activities exceed the available stopover window. Please unselect an activity or select fewer hours.`);
       return;
     }
 
@@ -813,14 +804,15 @@ export default function PlanMyLayoverPage() {
 
       {/* MAIN PLANNER WORKSPACE */}
       <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <TimelineHeader />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* LEFT COLUMN: BUILDER STEPS */}
             <div className="lg:col-span-8 space-y-8">
               
               {/* Step 1: Airport Cabs */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+              <div id="step-1-cabs" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
                   <div className="flex items-center gap-3">
                     <span className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs">1</span>
