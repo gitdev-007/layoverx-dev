@@ -146,44 +146,44 @@ export default function AuthModal() {
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative space-y-6 text-white"
+        className="bg-white border border-slate-150 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative space-y-6 text-slate-800"
       >
         
         {/* Close Button */}
         <button
           type="button"
           onClick={closeAuthModal}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full transition"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 mb-1">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 text-sky-600 mb-1">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight">
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
             Welcome to LayoverX
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             CSMIA Mumbai T2 Airport Transit &amp; VIP Layover Pass
           </p>
         </div>
 
         {/* Auth Tab Buttons */}
-        <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50 text-xs font-bold">
           <button
             type="button"
             onClick={() => handleTabSwitch('signin')}
-            className={`flex-1 py-2 rounded-lg transition ${tab === 'signin' ? 'bg-sky-50 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`flex-1 py-2 rounded-lg transition ${tab === 'signin' ? 'bg-white text-sky-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Sign In
           </button>
           <button
             type="button"
             onClick={() => handleTabSwitch('signup')}
-            className={`flex-1 py-2 rounded-lg transition ${tab === 'signup' ? 'bg-sky-50 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`flex-1 py-2 rounded-lg transition ${tab === 'signup' ? 'bg-white text-sky-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Register
           </button>
@@ -191,12 +191,12 @@ export default function AuthModal() {
 
         {/* Error / Success Messages */}
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-300 text-xs text-center font-medium">
+          <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl text-rose-700 text-xs text-center font-semibold animate-in fade-in duration-200">
             {error}
           </div>
         )}
         {message && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-emerald-300 text-xs text-center font-medium">
+          <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-emerald-700 text-xs text-center font-semibold animate-in fade-in duration-200">
             {message}
           </div>
         )}
@@ -206,36 +206,36 @@ export default function AuthModal() {
           /* Sign In Form */
           <form onSubmit={handleSignIn} className="space-y-4 text-xs">
             <div className="space-y-1.5">
-              <label className="block text-slate-300 font-semibold">Email Address</label>
+              <label className="block text-slate-700 font-semibold">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-3 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-slate-300 font-semibold">Password</label>
+              <label className="block text-slate-700 font-semibold">Password</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-10 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-10 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 transition"
+                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-650 transition"
                   title={showPassword ? 'Hide Password' : 'Show Password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -246,7 +246,7 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-sky-500 hover:bg-sky-400 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-sky-400/30 text-xs"
+              className="w-full py-3 bg-[#0369a1] hover:bg-[#0284c7] text-white font-extrabold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs"
             >
               {loading ? (
                 <>
@@ -262,39 +262,39 @@ export default function AuthModal() {
           /* Register Form */
           <form onSubmit={handleSignUp} className="space-y-4 text-xs">
             <div className="space-y-1.5">
-              <label className="block text-slate-300 font-semibold">Username</label>
+              <label className="block text-slate-700 font-semibold">Username</label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Choose a username"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-3 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-slate-300 font-semibold">Email Address</label>
+              <label className="block text-slate-700 font-semibold">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-3 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-slate-300 font-semibold">Password</label>
+              <label className="block text-slate-700 font-semibold">Password</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -302,12 +302,12 @@ export default function AuthModal() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
                   minLength={6}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-10 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-10 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 transition"
+                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-655 transition"
                   title={showPassword ? 'Hide Password' : 'Show Password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -318,7 +318,7 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-sky-500 hover:bg-sky-400 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2 border border-sky-400/30 text-xs"
+              className="w-full py-3 bg-[#0369a1] hover:bg-[#0284c7] text-white font-extrabold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs"
             >
               {loading ? (
                 <>
@@ -326,7 +326,7 @@ export default function AuthModal() {
                   <span>Creating Account...</span>
                 </>
               ) : (
-                <span>Create Account</span>
+                <span>Register</span>
               )}
             </button>
           </form>
@@ -335,8 +335,8 @@ export default function AuthModal() {
         {/* Divider and Google OAuth */}
         <div className="space-y-4 pt-2">
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-slate-800 w-full"></div>
-            <span className="bg-slate-900 px-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider absolute">
+            <div className="border-t border-slate-250 w-full"></div>
+            <span className="bg-white px-3 text-[10px] font-extrabold text-slate-455 uppercase tracking-wider absolute">
               OR
             </span>
           </div>
@@ -345,7 +345,7 @@ export default function AuthModal() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
-            className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-extrabold rounded-xl shadow-md transition flex items-center justify-center gap-3 text-xs border border-slate-200"
+            className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-extrabold rounded-xl shadow-sm transition flex items-center justify-center gap-3 text-xs border border-slate-250"
           >
             {googleLoading ? (
               <>
