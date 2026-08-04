@@ -1751,25 +1751,11 @@ export default function PlanMyLayoverPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full mx-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
             <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2 mb-2">
-              <span>✅ Itinerary Draft Saved Successfully!</span>
+              <span>Itinerary Draft Saved Successfully!</span>
             </h3>
             <p className="text-sm text-slate-500 mb-6">
               Your stopover path and transit buffers have been locked in.
             </p>
-            
-            <div className="bg-slate-50 rounded-2xl p-4 space-y-3 mb-6 border border-slate-100">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600 font-medium">Calculated Cab Fare:</span>
-                <strong className="text-slate-900 font-bold">₹{lastCalculatedCabFare?.toLocaleString()}</strong>
-              </div>
-              <div className="text-xs text-slate-400 italic">
-                (Uber/Ola/Rapido Market Estimate)
-              </div>
-              <div className="border-t border-slate-200 pt-3 flex justify-between text-sm">
-                <span className="text-slate-900 font-bold">Total Estimated Trip Cost:</span>
-                <strong className="text-[#0284C7] font-black text-lg">₹{lastTotalPayable?.toLocaleString()}</strong>
-              </div>
-            </div>
 
             <div className="flex flex-col gap-2">
               <button
