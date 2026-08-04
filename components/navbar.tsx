@@ -54,6 +54,7 @@ export const Navbar: React.FC = () => {
             const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
             if (!error && data.session) {
               setUser(data.session.user);
+              window.history.replaceState({}, document.title, window.location.pathname);
               setLoading(false);
               return;
             }
@@ -61,6 +62,16 @@ export const Navbar: React.FC = () => {
         }
         const { data: { session } } = await supabaseClient.auth.getSession();
         setUser(session?.user || null);
+        
+        // Error URL sanitization: If session is valid, clear error parameters
+        if (session?.user && typeof window !== 'undefined') {
+          if (
+            window.location.search.includes('error=') ||
+            window.location.search.includes('otp_expired')
+          ) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
       } catch (err) {
         console.error('[Navbar Auth] Error:', err);
       } finally {
@@ -70,7 +81,23 @@ export const Navbar: React.FC = () => {
     getSession();
 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      if (session?.user) {
+        setUser(session.user);
+        
+        // Clean up error/code parameters from browser URL bar after successful auth
+        if (
+          typeof window !== 'undefined' && (
+            window.location.search.includes('code=') || 
+            window.location.hash.includes('access_token=') || 
+            window.location.search.includes('error=') ||
+            window.location.search.includes('otp_expired')
+          )
+        ) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 

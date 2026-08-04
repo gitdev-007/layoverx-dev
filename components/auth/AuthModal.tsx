@@ -120,6 +120,7 @@ export default function AuthModal() {
         email: cleanEmail,
         password,
         options: {
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
           data: {
             username: cleanUsername,
             full_name: cleanUsername,

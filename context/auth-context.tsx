@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!error && data.session) {
               setSession(data.session);
               setRawUser(data.session.user);
+              window.history.replaceState({}, document.title, window.location.pathname);
               setLoading(false);
               return;
             }
@@ -64,6 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session: initialSession } } = await supabaseClient.auth.getSession();
         setSession(initialSession);
         setRawUser(initialSession?.user || null);
+
+        // Error URL sanitization: If session is valid, clear error parameters
+        if (initialSession?.user && typeof window !== 'undefined') {
+          if (
+            window.location.search.includes('error=') ||
+            window.location.search.includes('otp_expired')
+          ) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
       } catch (err) {
         console.error('[AuthContext] Error getting session:', err);
       } finally {
@@ -76,6 +87,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession);
       setRawUser(currentSession?.user || null);
+
+      if (currentSession?.user && typeof window !== 'undefined') {
+        // Clean up error/code/token parameters from browser URL bar after successful auth
+        if (
+          window.location.search.includes('code=') || 
+          window.location.hash.includes('access_token=') || 
+          window.location.search.includes('error=') ||
+          window.location.search.includes('otp_expired')
+        ) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
       setLoading(false);
     });
 
