@@ -212,7 +212,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
 
 
-  const addItem = (itemData: Omit<ItineraryItem, 'id'>, totalLayoverHours = 8.0) => {
+  const addItem = (itemData: Omit<ItineraryItem, 'id'> & { id?: string }, totalLayoverHours = 8.0) => {
     if (!user) {
       openAuthModal();
       showToast('Please sign in or create an account to build your itinerary.', 'warning');
@@ -252,7 +252,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
     const newItem: ItineraryItem = {
       ...itemData,
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      id: itemData.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
     };
     updatedList.push(newItem);
 

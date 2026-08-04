@@ -364,19 +364,19 @@ export default function PlanMyLayoverPage() {
   const handleCabClick = (type: 'sedan' | 'suv') => {
     const targetId = type === 'sedan' ? 'cab_sedan' : 'cab_suv';
     const isCurrentlySelected = selectedCar?.id === targetId;
+    if (isCurrentlySelected) return; // Strict Radio: already selected cab cannot be deselected by clicking again
+
     contextItems.filter((i) => i.badge === 'Cab' || i.type === 'transfer').forEach((i) => removeItem(i.id));
 
-    if (!isCurrentlySelected) {
-      addItem({
-        id: targetId,
-        badge: 'Cab',
-        type: 'transfer',
-        title: type === 'sedan' ? 'AC Sedan Transfer (Toyota Etios)' : 'AC SUV Transfer (Innova Crysta)',
-        detail: type === 'sedan' ? 'Fits 4 Passengers, 2 Standard Bags. Verified Driver.' : 'Fits 6 Passengers, 4 Standard Bags. Extra comfort.',
-        cost: type === 'sedan' ? '₹899' : '₹1,499',
-        durationHours: 0.75,
-      });
-    }
+    addItem({
+      id: targetId,
+      badge: 'Cab',
+      type: 'transfer',
+      title: type === 'sedan' ? 'AC Sedan Transfer (Toyota Etios)' : 'AC SUV Transfer (Innova Crysta)',
+      detail: type === 'sedan' ? 'Fits 4 Passengers, 2 Standard Bags. Verified Driver.' : 'Fits 6 Passengers, 4 Standard Bags. Extra comfort.',
+      cost: type === 'sedan' ? '₹899' : '₹1,499',
+      durationHours: 0.75,
+    });
   };
 
   const handleHotelClick = (hotel: HotelItem) => {
