@@ -155,8 +155,10 @@ function ServiceDetailsContent() {
     });
   };
 
+  const isDining = service.type === 'Dining';
+
   return (
-    <div className="min-h-screen pb-20 bg-slate-900 text-slate-100">
+    <div className="min-h-screen pb-20 bg-slate-50/80 text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
         
         {/* Back Link */}
@@ -172,87 +174,107 @@ function ServiceDetailsContent() {
               ? '/gaming-entertainment'
               : '/experiences'
           }
-          className="inline-flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-sky-300 transition"
+          className={`inline-flex items-center gap-2 text-xs font-black transition ${
+            isDining ? 'text-amber-700 hover:text-amber-800' : 'text-sky-700 hover:text-sky-800'
+          }`}
         >
           <ArrowLeft size={14} /> Back to {service.type} Catalog
         </Link>
-
+ 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="p-6 md:p-8 bg-slate-800/80 border border-slate-700/60 rounded-3xl shadow-xl space-y-6">
-              <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden">
+            <div className="p-6 md:p-8 bg-white border border-slate-200/80 rounded-3xl shadow-sm space-y-6">
+              <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden shadow-inner">
                 <Image
                   src={service.image}
                   alt={service.name}
                   fill
                   className="object-cover"
                 />
-                <span className="absolute top-4 left-4 px-3 py-1 bg-sky-500 text-white font-bold text-xs rounded-full shadow-md">
+                <span className={`absolute top-4 left-4 px-3 py-1 font-extrabold text-xs rounded-full shadow ${
+                  isDining ? 'bg-amber-600 text-white' : 'bg-sky-600 text-white'
+                }`}>
                   {service.badge}
                 </span>
               </div>
-
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+ 
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                    isDining ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-sky-50 text-sky-800 border border-sky-200'
+                  }`}>
+                    {service.type}
+                  </span>
+                  {service.rating && (
+                    <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md flex items-center gap-1">
+                      ★ {service.rating}
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {service.name}
                 </h1>
-                <p className="text-xs text-slate-400 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-sky-400 flex-shrink-0" /> {service.location} ({service.distance})
+                <p className="text-xs text-slate-500 flex items-center gap-2">
+                  <MapPin className={`w-4 h-4 flex-shrink-0 ${isDining ? 'text-amber-600' : 'text-sky-600'}`} /> {service.location} ({service.distance})
                 </p>
               </div>
-
-              <div className="flex items-center gap-4 text-xs border-y border-slate-700 py-3">
-                <span className="flex items-center gap-1 font-bold text-white">
+ 
+              <div className="flex items-center gap-4 text-xs border-y border-slate-200 py-3">
+                <span className="flex items-center gap-1 font-bold text-slate-800">
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {service.rating} / 5.0 ({service.reviews} reviews)
                 </span>
-                <span className="text-slate-600">|</span>
-                <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <ShieldCheck className="w-4 h-4" /> Delay Protection Included
+                <span className="text-slate-300">|</span>
+                <span className="text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Delay Protection Included
                 </span>
               </div>
-
-              <div>
-                <h2 className="text-lg font-bold text-white mb-2">Service Overview</h2>
-                <p className="text-xs text-slate-300 leading-relaxed">
+ 
+              <div className="space-y-2">
+                <h2 className="text-lg font-bold text-slate-900">Service Overview</h2>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   {service.description}
                 </p>
               </div>
-
-              <div>
-                <h2 className="text-lg font-bold text-white mb-3">Included Highlights & Amenities</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+ 
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-slate-900">Included Highlights & Amenities</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {service.amenities.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-slate-900/80 p-3 rounded-xl border border-slate-700"
+                      className={`flex items-center gap-2.5 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow transition-all ${
+                        isDining ? 'hover:bg-rose-50/50 hover:border-rose-300' : 'hover:bg-sky-50/50 hover:border-sky-300'
+                      }`}
                     >
-                      <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" /> {item}
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" /> {item}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Booking Side Card (Clean Add to Itinerary without screenshot 2 fee breakdown) */}
+ 
+          {/* Booking Side Card */}
           <div>
-            <div className="p-6 bg-slate-800/80 border border-slate-700/60 rounded-3xl sticky top-24 shadow-xl space-y-6">
-              <div className="border-b border-slate-700 pb-3">
-                <h3 className="text-lg font-bold text-white">Select {service.type} Slot</h3>
-                <p className="text-xs text-slate-400">Choose your duration and add directly to itinerary.</p>
+            <div className="p-6 bg-white border border-slate-200 rounded-3xl sticky top-24 shadow-md space-y-6">
+              <div className="border-b border-slate-200 pb-3">
+                <h3 className="text-lg font-bold text-slate-900">Select {service.type} Slot</h3>
+                <p className="text-xs text-slate-500">Choose your duration and add directly to itinerary.</p>
               </div>
-
+ 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">
                     Select Duration Slot
                   </label>
                   <select
                     value={selectedSlotIndex}
                     onChange={(e) => setSelectedSlotIndex(Number(e.target.value))}
-                    className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5 cursor-pointer"
+                    className={`w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-900 px-3 py-3 cursor-pointer outline-none transition focus:bg-white focus:ring-2 ${
+                      isDining ? 'focus:ring-amber-500 focus:border-amber-500' : 'focus:ring-sky-500 focus:border-sky-500'
+                    }`}
                   >
                     {slotOptions.map((opt, idx) => (
                       <option key={idx} value={idx}>
@@ -261,27 +283,31 @@ function ServiceDetailsContent() {
                     ))}
                   </select>
                 </div>
-
+ 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">
                     Preferred Time
                   </label>
                   <input
                     type="datetime-local"
                     value={checkInTime}
                     onChange={(e) => setCheckInTime(e.target.value)}
-                    className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5"
+                    className={`w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-900 px-3 py-3 outline-none transition focus:bg-white focus:ring-2 ${
+                      isDining ? 'focus:ring-amber-500 focus:border-amber-500' : 'focus:ring-sky-500 focus:border-sky-500'
+                    }`}
                   />
                 </div>
-
+ 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">
                     Travelers
                   </label>
                   <select
                     value={travelersCount}
                     onChange={(e) => setTravelersCount(e.target.value)}
-                    className="w-full text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900 text-white px-3 py-2.5 cursor-pointer"
+                    className={`w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-900 px-3 py-3 cursor-pointer outline-none transition focus:bg-white focus:ring-2 ${
+                      isDining ? 'focus:ring-amber-500 focus:border-amber-500' : 'focus:ring-sky-500 focus:border-sky-500'
+                    }`}
                   >
                     <option>1 Adult</option>
                     <option>2 Adults</option>
@@ -289,27 +315,35 @@ function ServiceDetailsContent() {
                   </select>
                 </div>
               </div>
-
-              <div className="bg-slate-900/90 border border-slate-700 p-4 rounded-2xl flex items-center justify-between">
+ 
+              <div className={`border p-4 rounded-2xl flex items-center justify-between shadow-inner ${
+                isDining ? 'bg-amber-50/70 border-amber-200' : 'bg-sky-50/70 border-sky-200'
+              }`}>
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Selected Rate</span>
-                  <span className="text-xl font-black text-sky-400">{selectedSlot.price}</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Selected Rate</span>
+                  <span className={`text-xl font-black ${isDining ? 'text-amber-950' : 'text-sky-950'}`}>{selectedSlot.price}</span>
                 </div>
-                <span className="text-xs font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+                <span className={`text-xs font-bold bg-white px-3 py-1.5 rounded-lg shadow-sm border ${
+                  isDining ? 'text-amber-800 border-amber-200' : 'text-sky-800 border-sky-200'
+                }`}>
                   {selectedSlot.hours} Hours
                 </span>
               </div>
-
+ 
               <button
                 type="button"
                 onClick={handleAddToItinerary}
-                className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm rounded-xl transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                className={`w-full py-4 text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                  isDining 
+                    ? 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800' 
+                    : 'bg-sky-600 hover:bg-sky-700 active:bg-sky-800'
+                }`}
               >
                 <Plus size={16} /> Add to Itinerary
               </button>
             </div>
           </div>
-
+ 
         </div>
       </div>
     </div>
@@ -318,7 +352,7 @@ function ServiceDetailsContent() {
 
 export default function ServiceDetailsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-900 text-white p-12 text-center">Loading details...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 text-slate-800 p-12 text-center font-bold">Loading details...</div>}>
       <ServiceDetailsContent />
     </Suspense>
   );
