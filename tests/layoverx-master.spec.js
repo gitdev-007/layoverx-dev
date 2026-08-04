@@ -41,7 +41,7 @@ test.describe('LayoverX Full System & Error-Free Verification', () => {
 
     // Proceed to Step 5
     await page.click('button:has-text("Continue to Passenger Registration")');
-    await expect(page.locator('text=Review & Passenger Registration')).toBeInViewport();
+    await expect(page.locator('text=Review & Passenger Verification')).toBeInViewport();
 
     // Assert zero runtime errors or CSP errors
     const criticalErrors = consoleErrors.filter(

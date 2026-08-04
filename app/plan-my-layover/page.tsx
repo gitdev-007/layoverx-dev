@@ -32,6 +32,10 @@ import {
   Share2,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export default function PlanMyLayoverPage() {
@@ -358,6 +362,7 @@ export default function PlanMyLayoverPage() {
   const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
   const [isDpdpConsented, setIsDpdpConsented] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [showManualFields, setShowManualFields] = useState(false);
   const [emergencyContact, setEmergencyContact] = useState('');
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('INR');
 
@@ -743,40 +748,17 @@ export default function PlanMyLayoverPage() {
 
   const handleProceedCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!leadPassengerName.trim()) {
-      showToast('Lead Passenger Name is required.', 'warning');
+    const hasTicketOrManual = !!(uploadedDocument || (leadPassengerName.trim() && pnr.trim().length === 6));
+    if (!hasTicketOrManual) {
+      showToast('Please upload your e-ticket or enter your passenger name and valid 6-character PNR manually.', 'warning');
       return;
     }
-    if (!passportNumber.trim()) {
-      showToast('Passport / ID Number is required.', 'warning');
-      return;
-    }
-    if (!passportCountry.trim()) {
-      showToast('Passport Issuing Country is required.', 'warning');
-      return;
-    }
-    if (!pnr || pnr.trim().length !== 6) {
-      showToast('Airline Booking Reference / PNR must be exactly 6 alphanumeric characters.', 'warning');
-      return;
-    }
-    if (!flightIn.trim()) {
-      showToast('Inbound Flight Number is required.', 'warning');
-      return;
-    }
-    if (!flightOut.trim()) {
-      showToast('Outbound / Connecting Flight Number is required.', 'warning');
-      return;
-    }
-    if (!emergencyContact.trim()) {
-      showToast('Emergency Contact is required.', 'warning');
-      return;
-    }
-    if (!uploadedDocument) {
-      showToast('Please upload your e-ticket or boarding pass to proceed.', 'warning');
+    if (emergencyContact.trim().length < 8) {
+      showToast('WhatsApp / Emergency Contact Phone is required (at least 8 characters).', 'warning');
       return;
     }
     if (!isDpdpConsented) {
-      showToast('Please accept the DPDP Act 2023 data protection consent to proceed.', 'warning');
+      showToast('Please review and check the DPDP Act 2023 consent box to proceed.', 'warning');
       return;
     }
 
@@ -794,6 +776,12 @@ export default function PlanMyLayoverPage() {
 
     await performHoldSlot();
   };
+
+  const isFormValid = !!(
+    (uploadedDocument || (leadPassengerName.trim() && pnr.trim().length === 6)) &&
+    emergencyContact.trim().length >= 8 &&
+    isDpdpConsented
+  );
 
   return (
 
@@ -1234,272 +1222,248 @@ export default function PlanMyLayoverPage() {
 
               {/* Step 5: Passenger Registration */}
               <div id="review-and-passenger-registration">
-                <div id="step-5-registration" className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 text-slate-100">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div id="step-5-registration" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 text-slate-900">
+                  
+                  {/* Step Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold flex items-center justify-center text-xs">5</span>
-                      <h2 className="text-lg font-bold text-slate-100">Review &amp; Passenger Registration</h2>
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-bold text-sm">
+                        5
+                      </span>
+                      <h3 className="text-xl font-bold text-slate-900">Review &amp; Passenger Verification</h3>
                     </div>
-                    <span className="text-xs text-emerald-400 font-bold bg-emerald-950/30 border border-emerald-900/50 px-2 py-0.5 rounded-lg">Instant Sync</span>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      DPDP Compliant
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Lead Passenger Name */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Lead Passenger Name <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={leadPassengerName}
-                        onChange={(e) => setLeadPassengerName(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
+                  {/* PRIMARY UPLOAD ZONE */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Upload E-Ticket or Boarding Pass <span className="text-sky-600">*</span>
+                      <span className="block text-xs font-normal text-slate-500 mt-0.5">
+                        Upload your flight confirmation (PDF or photo). Your name, flight numbers, PNR, and times will be automatically extracted.
+                      </span>
+                    </label>
 
-                    {/* Passport / ID Number */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Passport / ID Number <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={passportNumber}
-                        onChange={(e) => setPassportNumber(e.target.value)}
-                        placeholder="Enter passport number"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
-
-                    {/* Passport Issuing Country */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Passport Issuing Country <span className="text-sky-500">*</span>
-                      </label>
-                      <select
-                        value={passportCountry}
-                        onChange={(e) => handleCountryChange(e.target.value)}
-                        className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    {!uploadedDocument ? (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragActive(true);
+                        }}
+                        onDragLeave={() => setDragActive(false)}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all group ${
+                          dragActive 
+                            ? 'border-sky-500 bg-sky-50/50' 
+                            : 'border-slate-300 bg-slate-50/80 hover:border-sky-500 hover:bg-sky-50/40'
+                        }`}
+                        onClick={() => document.getElementById('ticket-upload-input')?.click()}
                       >
-                        {PASSPORT_COUNTRIES.map((c) => (
-                          <option key={c} value={c} className="bg-slate-950 text-slate-100">
-                            {c} {c === 'India' ? '(Domestic)' : '(International)'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Airline Booking Reference / PNR */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Airline Booking Reference / PNR <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={pnr}
-                        onChange={(e) => setPnr(e.target.value.toUpperCase())}
-                        placeholder="e.g. AB12CD"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
-
-                    {/* Inbound Flight Number */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Inbound Flight Number <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={flightIn}
-                        onChange={(e) => setFlightIn(e.target.value)}
-                        placeholder="e.g. EK-504"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
-
-                    {/* Outbound / Connecting Flight Number */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Outbound / Connecting Flight Number <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={flightOut}
-                        onChange={(e) => setFlightOut(e.target.value)}
-                        placeholder="e.g. AI-102"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
-
-                    {/* Onward Flight Terminal */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Onward Flight Terminal <span className="text-sky-500">*</span>
-                      </label>
-                      <select
-                        value={onwardTerminal}
-                        onChange={(e) => setOnwardTerminal(e.target.value as 'T2' | 'T1')}
-                        className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      >
-                        <option value="T2" className="bg-slate-950 text-slate-100">Terminal 2 (CSMIA International &amp; Premium Domestic)</option>
-                        <option value="T1" className="bg-slate-950 text-slate-100">Terminal 1 (Santacruz - Budget Domestic: IndiGo/Akasa)</option>
-                      </select>
-                    </div>
-
-                    {/* Emergency Contact Phone */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Emergency Contact Phone <span className="text-sky-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={emergencyContact}
-                        onChange={(e) => setEmergencyContact(e.target.value)}
-                        placeholder="+1-xxx-xxx-xxxx"
-                        className="w-full bg-slate-950/50 border border-slate-800 text-slate-100 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      />
-                    </div>
-
-                    {/* Boarding Pass / E-Ticket Upload Zone */}
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Upload Boarding Pass / E-Ticket <span className="text-sky-500">*</span>
-                      </label>
-                      
-                      {!uploadedDocument ? (
-                        <div
-                          onDragEnter={handleDrag}
-                          onDragOver={handleDrag}
-                          onDragLeave={handleDrag}
-                          onDrop={handleDrop}
-                          className={`border-2 border-dashed rounded-2xl p-6 text-center transition flex flex-col items-center justify-center cursor-pointer ${
-                            dragActive 
-                              ? 'border-sky-500 bg-sky-500/10' 
-                              : 'border-slate-800 bg-slate-950/20 hover:border-slate-700'
-                          }`}
-                          onClick={() => document.getElementById('file-upload-input')?.click()}
-                        >
-                          <input
-                            id="file-upload-input"
-                            type="file"
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
-                          <span className="text-3xl mb-2">📤</span>
-                          <p className="text-sm font-semibold text-slate-200">
-                            Drag &amp; drop your e-ticket/boarding pass PDF or photo, or click to browse
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            Supports PDF, PNG, JPG, JPEG (Max 10MB)
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="border border-slate-800 bg-slate-950/30 rounded-2xl p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl text-emerald-500">✅</span>
-                            <div>
-                              <p className="text-sm font-bold text-slate-100">{uploadedDocument.name}</p>
-                              <p className="text-xs text-slate-400">
-                                {(uploadedDocument.size / (1024 * 1024)).toFixed(2)} MB • File Attached
-                              </p>
-                            </div>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          className="hidden"
+                          id="ticket-upload-input"
+                          onChange={handleFileChange}
+                        />
+                        <label htmlFor="ticket-upload-input" className="cursor-pointer space-y-2 block" onClick={(e) => e.stopPropagation()}>
+                          <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-105 transition-transform text-sky-600">
+                            <Upload className="w-5 h-5"/>
                           </div>
-                          <button
-                            type="button"
-                            onClick={removeFile}
-                            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition"
-                          >
-                            Remove File
-                          </button>
+                          <p className="text-sm font-medium text-slate-800">
+                            <span className="text-sky-600 font-semibold underline">Click to upload</span> or drag &amp; drop your ticket PDF or image
+                          </p>
+                          <p className="text-xs text-slate-400">Supports PDF, PNG, JPG, JPEG (Max 10MB)</p>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-8 h-8 text-emerald-600"/>
+                          <div>
+                            <p className="text-sm font-semibold text-emerald-900">{uploadedDocument.name}</p>
+                            <p className="text-xs text-emerald-700">{(uploadedDocument.size / (1024 * 1024)).toFixed(2)} MB • Verified Format</p>
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => setUploadedDocument(null)}
+                          className="text-xs text-rose-600 hover:text-rose-700 font-semibold underline px-2 py-1"
+                        >
+                          Remove / Change
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* DPDP Consent Notice & Checkbox */}
-                    <div className="md:col-span-2 space-y-4">
-                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 my-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">🔒</span>
-                          <h4 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider">
-                            Data Privacy &amp; DPDP Compliance
-                          </h4>
+                  {/* ESSENTIAL DISPATCH CONTACT */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-1">
+                      WhatsApp / Emergency Contact Phone <span className="text-sky-600">*</span>
+                      <span className="block text-xs font-normal text-slate-500">
+                        Used exclusively by your chauffeur &amp; LayoverX concierge for airport pickup dispatch.
+                      </span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+91 98765 43210"
+                      value={emergencyContact}
+                      onChange={(e) => setEmergencyContact(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* OPTIONAL MANUAL FIELD OVERRIDE ACCORDION */}
+                  <div className="border-t border-slate-100 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualFields(!showManualFields)}
+                      className="flex items-center justify-between w-full text-xs font-medium text-slate-600 hover:text-slate-900 py-1"
+                    >
+                      <span>Don&apos;t have your e-ticket file handy? Enter flight details manually</span>
+                      {showManualFields ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
+                    </button>
+
+                    {showManualFields && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                        <div>
+                          <label className="font-semibold text-slate-700">Passenger Full Name</label>
+                          <input
+                            type="text"
+                            placeholder="John Doe"
+                            value={leadPassengerName}
+                            onChange={(e) => setLeadPassengerName(e.target.value)}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
+                          />
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          🔒 Data Privacy &amp; DPDP Compliance: LayoverX processes your passport, PNR, and boarding pass strictly for verifying layover flight timings and ground dispatch. Under the Digital Personal Data Protection (DPDP) Act 2023, your uploaded document files are encrypted at rest and will be permanently purged from our servers 48 hours after your outbound flight departs.
+                        <div>
+                          <label className="font-semibold text-slate-700">PNR / Booking Reference</label>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="AB12CD"
+                            value={pnr}
+                            onChange={(e) => setPnr(e.target.value.toUpperCase())}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 uppercase"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-semibold text-slate-700">Passport / ID Number</label>
+                          <input
+                            type="text"
+                            placeholder="Enter passport number"
+                            value={passportNumber}
+                            onChange={(e) => setPassportNumber(e.target.value)}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-semibold text-slate-700">Passport Issuing Country</label>
+                          <select
+                            value={passportCountry}
+                            onChange={(e) => handleCountryChange(e.target.value)}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
+                          >
+                            {PASSPORT_COUNTRIES.map((c) => (
+                              <option key={c} value={c}>
+                                {c} {c === 'India' ? '(Domestic)' : '(International)'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="font-semibold text-slate-700">Inbound Flight Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. EK-504"
+                            value={flightIn}
+                            onChange={(e) => setFlightIn(e.target.value)}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-semibold text-slate-700">Outbound Flight Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. AI-102"
+                            value={flightOut}
+                            onChange={(e) => setFlightOut(e.target.value)}
+                            className="w-full mt-1 bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* STATUTORY DPDP ACT 2023 CONSENT BOX */}
+                  <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-start gap-2.5">
+                      <ShieldCheck className="w-5 h-5 text-amber-700 shrink-0 mt-0.5"/>
+                      <div className="text-xs text-amber-900 space-y-1">
+                        <p className="font-bold text-amber-950 uppercase tracking-wider">
+                          Data Privacy &amp; DPDP Act 2023 Statutory Protection
+                        </p>
+                        <p className="leading-relaxed">
+                          LayoverX processes your uploaded e-ticket strictly for verifying connection times and arranging chauffeur airport pickup. In accordance with Section 8(7) of India&apos;s Digital Personal Data Protection (DPDP) Act 2023, your uploaded ticket documents are encrypted at rest and will be <strong>permanently erased from our servers 48 hours post-flight departure</strong>.
                         </p>
                       </div>
-
-                      <label className="flex items-start gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isDpdpConsented}
-                          onChange={(e) => setIsDpdpConsented(e.target.checked)}
-                          className="mt-1 rounded border-slate-800 text-sky-600 bg-slate-950 focus:ring-sky-500"
-                        />
-                        <span className="text-xs text-slate-300 leading-relaxed font-semibold">
-                          I consent to LayoverX processing my PNR and Boarding Pass solely to verify my flight schedule and transit eligibility. I understand my uploaded documents will be automatically erased 48 hours post-flight.
-                        </span>
-                      </label>
                     </div>
+
+                    <label className="flex items-start gap-3 pt-2 border-t border-amber-200/60 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isDpdpConsented}
+                        onChange={(e) => setIsDpdpConsented(e.target.checked)}
+                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-amber-400 mt-0.5 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-amber-950 leading-tight">
+                        I explicitly consent to LayoverX processing my e-ticket file solely for flight verification and ground pickup dispatch under the terms of the DPDP Act 2023.
+                      </span>
+                    </label>
                   </div>
 
                   {/* Terminal Mismatch Warning Card */}
                   {onwardTerminal === 'T1' && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl space-y-2 text-xs text-amber-200">
-                      <div className="font-extrabold flex items-center gap-1.5 text-amber-400 text-sm">
+                    <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-2 text-xs text-amber-950">
+                      <div className="font-extrabold flex items-center gap-1.5 text-amber-900 text-sm">
                         <span>⚠️ TERMINAL CHANGE DETECTED</span>
                       </div>
                       <p className="leading-relaxed">
                         Your onward flight departs from <strong>Terminal 1 (Santacruz - 5 km from T2)</strong>. A 45-minute inter-terminal road transfer buffer is required.
                       </p>
-                      <label className="flex items-center gap-2 pt-1 cursor-pointer font-bold text-amber-400">
+                      <label className="flex items-center gap-2 pt-1 cursor-pointer font-bold text-amber-950">
                         <input
                           type="checkbox"
                           checked={interTerminalCabAddon}
                           onChange={(e) => setInterTerminalCabAddon(e.target.checked)}
-                          className="rounded border-amber-500/50 text-amber-700 focus:ring-amber-500 bg-slate-950"
+                          className="rounded border-amber-400 text-amber-700 focus:ring-amber-500"
                         />
                         <span>T2 to T1 Private Inter-Terminal Transfer (Cab) — ₹699</span>
                       </label>
                     </div>
                   )}
 
-                  {/* Service Classification Badges */}
-                  <div className="pt-2">
-                    {selectedServiceCategory === 'AIRSIDE' ? (
-                      <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                        <span>🟢 AIRSIDE SERVICE: No Indian Visa required. You remain in the international transit area.</span>
-                      </div>
-                    ) : (
-                      <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex items-center gap-2 text-amber-400 text-xs font-bold">
-                        <span>🛂 LANDSIDE SERVICE: Requires valid Indian Immigration entry permission (Tourist Visa, e-Visa, Transit Visa, or OCI Card).</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Delay Protection Banner */}
-                  <div className="bg-slate-950/50 border border-slate-800 p-4 rounded-xl text-xs text-slate-300 space-y-2">
-                    <p className="font-bold text-slate-100">🛡️ LayoverX Delay Protection &amp; Visa Guarantee Included</p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Free reschedule if your incoming flight is delayed.</li>
-                      <li>Full refund on activities if immigration queue exceeds 2 hours.</li>
-                      <li>Chauffeur pickup scheduled automatically for 30 minutes after actual landing time.</li>
-                    </ul>
+                  {/* LANDSIDE VISA WARNING */}
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-sky-700 shrink-0 mt-0.5"/>
+                    <p className="text-xs text-sky-900 leading-relaxed">
+                      <strong>Landside Notice:</strong> Exiting CSMIA airport terminals requires valid Indian immigration clearance (e-Visa, Tourist Visa, Transit Visa, or OCI Card).
+                    </p>
                   </div>
 
                   {validationError && (
-                    <div className="p-3 text-xs font-bold text-rose-400 bg-rose-950/30 border border-rose-900/50 rounded-xl">
+                    <div className="p-3 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-100 rounded-xl">
                       ⚠️ {validationError}
                     </div>
                   )}
 
+                  {/* PROCEED TO CHECKOUT BUTTON */}
                   <button
                     type="button"
-                    disabled={isHolding || availableWindowHours < 0}
-                    title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
+                    disabled={!isFormValid || isHolding || availableWindowHours < 0}
                     onClick={(e) => {
                       if (!isDraftSaved) {
                         showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
@@ -1513,10 +1477,10 @@ export default function PlanMyLayoverPage() {
                       }
                       handleProceedCheckout(e);
                     }}
-                    className={`w-full py-4 font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 ${
-                      isHolding || availableWindowHours < 0 || !leadPassengerName.trim() || !passportNumber.trim() || !passportCountry.trim() || !flightIn.trim() || !flightOut.trim() || !emergencyContact.trim() || !pnr || pnr.trim().length !== 6 || !uploadedDocument || !isDpdpConsented
-                        ? 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed'
-                        : 'bg-[#0284C7] hover:bg-[#027ab1] text-white cursor-pointer'
+                    className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md ${
+                      isFormValid && !isHolding && availableWindowHours >= 0
+                        ? 'bg-sky-600 hover:bg-sky-700 text-white cursor-pointer active:scale-[0.99]'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                   >
                     {isHolding ? (
@@ -1528,6 +1492,12 @@ export default function PlanMyLayoverPage() {
                       '🚀 Proceed to Secure Checkout'
                     )}
                   </button>
+
+                  {!isFormValid && (
+                    <p className="text-center text-xs text-slate-500">
+                      Please attach your e-ticket, enter your WhatsApp contact number, and check the DPDP consent box to proceed.
+                    </p>
+                  )}
                 </div>
               </div>
 

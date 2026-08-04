@@ -24,7 +24,7 @@ test.describe('LayoverX Unified Checkout & Routing Suite', () => {
       await page.click('button:has-text("Continue to Passenger Registration")');
 
       // 6. Confirm Step 5 is visible
-      await expect(page.locator('text=Review & Passenger Registration')).toBeInViewport();
+      await expect(page.locator('text=Review & Passenger Verification')).toBeInViewport();
     }
   });
 

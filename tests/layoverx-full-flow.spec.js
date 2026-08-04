@@ -24,6 +24,6 @@ test.describe('LayoverX Master Workflow Verification', () => {
 
     // 5. Proceed to Step 5
     await page.click('button:has-text("Continue to Passenger Registration")');
-    await expect(page.locator('text=Review & Passenger Registration')).toBeInViewport();
+    await expect(page.locator('text=Review & Passenger Verification')).toBeInViewport();
   });
 });
