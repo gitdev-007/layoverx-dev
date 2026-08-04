@@ -391,7 +391,9 @@ export default function MyItineraryPage() {
                           </div>
 
                           <div className="flex sm:flex-col items-end justify-between gap-2">
-                            <span className="text-sm font-black text-slate-900">{item.cost}</span>
+                            {item.badge === 'Cab' || item.type === 'transfer' ? null : (
+                              <span className="text-sm font-black text-slate-900">{item.cost}</span>
+                            )}
                             
                             {/* Priority Shift & Action Controls */}
                             <div className="flex items-center gap-1.5 pt-1">

@@ -480,10 +480,12 @@ export default function PlanMyLayoverPage() {
   const interTerminalCabPrice = onwardTerminal === 'T1' && interTerminalCabAddon ? 699 : 0;
 
   const baseSubtotalINR =
-    contextItems.reduce((sum, item) => {
-      const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
-      return sum + numCost;
-    }, 0) +
+    contextItems
+      .filter((item) => item.badge !== 'Cab' && item.type !== 'transfer')
+      .reduce((sum, item) => {
+        const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
+        return sum + numCost;
+      }, 0) +
     esimPrice +
     vipBuggyPrice +
     interTerminalCabPrice;
@@ -841,7 +843,6 @@ export default function PlanMyLayoverPage() {
                         <p className="text-gray-700 text-xs mt-0.5">Fits 4 Passengers, 2 Standard Bags. Verified Driver.</p>
                       </div>
                     </div>
-                    <strong className="text-gray-900 text-sm">₹899 <span className="text-gray-700 text-xs font-normal">flat</span></strong>
                   </div>
 
                   <div
@@ -861,7 +862,6 @@ export default function PlanMyLayoverPage() {
                         <p className="text-gray-700 text-xs mt-0.5">Fits 6 Passengers, 4 Standard Bags. Extra comfort.</p>
                       </div>
                     </div>
-                    <strong className="text-gray-900 text-sm">₹1,499 <span className="text-gray-700 text-xs font-normal">flat</span></strong>
                   </div>
                 </div>
               </div>
@@ -1311,7 +1311,9 @@ export default function PlanMyLayoverPage() {
                           <span className="truncate max-w-[190px]">
                             {badgeIcon} {item.title}
                           </span>
-                          <strong className="text-slate-900">{formatPrice(numCost)}</strong>
+                          <strong className="text-slate-900">
+                            {item.badge === 'Cab' || item.type === 'transfer' ? 'Calculated at Final Booking' : formatPrice(numCost)}
+                          </strong>
                         </div>
                       );
                     })
