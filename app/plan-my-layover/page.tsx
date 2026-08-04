@@ -296,7 +296,7 @@ export default function PlanMyLayoverPage() {
     }
   };
   const router = useRouter();
-  const { requireAuth } = useAuth();
+  const { requireAuth, user, openAuthModal } = useAuth();
   const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar, totalLayoverHours } = useItinerary();
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showPostSaveModal, setShowPostSaveModal] = useState(false);
@@ -1243,7 +1243,22 @@ export default function PlanMyLayoverPage() {
                     </span>
                   </div>
 
-                  {/* 1. PRIMARY E-TICKET UPLOAD ZONE */}
+                  {!user ? (
+                    <div className="p-8 border border-slate-200 rounded-xl bg-slate-50 text-center space-y-4">
+                      <p className="text-sm font-semibold text-slate-800">
+                        🔒 Authentication Required: You must be logged in to upload your e-ticket and complete your layover verification.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal()}
+                        className="py-3 px-6 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-md transition-all cursor-pointer active:scale-95"
+                      >
+                        Log In / Sign Up to Continue
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 1. PRIMARY E-TICKET UPLOAD ZONE */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-slate-800">
                       Upload E-Ticket or Boarding Pass <span className="text-sky-600">*</span>
@@ -1400,6 +1415,8 @@ export default function PlanMyLayoverPage() {
                     <p className="text-center text-xs text-slate-400">
                       Please attach your e-ticket, enter your contact number, and check the privacy box to continue.
                     </p>
+                  )}
+                    </>
                   )}
                 </div>
               </div>

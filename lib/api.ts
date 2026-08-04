@@ -234,11 +234,12 @@ export interface UploadTicketResponse {
   message: string;
 }
 
-export async function uploadTicket(ticketFile: File, phone: string, isConsented: boolean): Promise<UploadTicketResponse> {
+export async function uploadTicket(ticketFile: File, phone: string, isConsented: boolean, userId: string): Promise<UploadTicketResponse> {
   const formData = new FormData();
   formData.append('ticket', ticketFile);
   formData.append('phone', phone);
   formData.append('isConsented', isConsented.toString());
+  formData.append('userId', userId);
 
   const baseUrl = getApiBaseUrl();
   let uploadUrl = '';

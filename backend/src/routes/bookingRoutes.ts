@@ -8,8 +8,13 @@ const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB memor
 
 router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { phone, isConsented } = req.body || {};
+    const { phone, isConsented, userId } = req.body || {};
     const file = req.file;
+
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      res.status(401).json({ error: 'Authentication required. Please log in to upload your ticket.' });
+      return;
+    }
 
     if (!file || !phone) {
       res.status(400).json({ error: 'Missing e-ticket file or contact phone number.' });
@@ -49,6 +54,7 @@ router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res:
       .from('bookings')
       .insert([
         {
+          user_id: userId,
           user_phone: phone,
           ticket_file_path: storageData.path,
           extracted_pnr: telemetry.pnr,
