@@ -364,11 +364,12 @@ export default function PlanMyLayoverPage() {
   // Click handlers that mutate contextItems to ensure simultaneous 2-way sync
   const handleCabClick = (type: 'sedan' | 'suv') => {
     const isCurrentlySelected = selectedCab === type;
-    contextItems.filter((i) => i.badge === 'Cab').forEach((i) => removeItem(i.id));
+    contextItems.filter((i) => i.badge === 'Cab' || i.type === 'transfer').forEach((i) => removeItem(i.id));
 
     if (!isCurrentlySelected) {
       addItem({
         badge: 'Cab',
+        type: 'transfer',
         title: type === 'sedan' ? 'AC Sedan Transfer (Toyota Etios)' : 'AC SUV Transfer (Innova Crysta)',
         detail: type === 'sedan' ? 'Fits 4 Passengers, 2 Standard Bags. Verified Driver.' : 'Fits 6 Passengers, 4 Standard Bags. Extra comfort.',
         cost: type === 'sedan' ? '₹899' : '₹1,499',

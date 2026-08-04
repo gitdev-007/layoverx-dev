@@ -12,6 +12,7 @@ export interface ItineraryItem {
   cost: string;
   time?: string;
   durationHours?: number;
+  type?: string;
 }
 
 export interface SavedPlan {
@@ -107,7 +108,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const itineraryItems = items;
 
   useEffect(() => {
-    const cabItem = items.find((i) => i.badge === 'Cab');
+    const cabItem = items.find((i) => i.badge === 'Cab' || i.type === 'transfer');
     setSelectedCar(cabItem || null);
   }, [items]);
 
@@ -223,18 +224,24 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
     let updatedList = [...items];
 
-    const hasCab = updatedList.some((item) => item.badge === 'Cab');
-    if (itemData.badge !== 'Cab' && !hasCab) {
-      showToast('Please select your Transfer Cab first to calculate accurate road travel times.', 'warning');
-      if (typeof window !== 'undefined') {
-        const step1El = document.getElementById('step-1-cabs');
-        if (step1El) {
-          step1El.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          window.location.href = '/plan-my-layover#step-1-cabs';
+    const isAddingCab = itemData.badge === 'Cab' || itemData.type === 'transfer';
+
+    if (isAddingCab) {
+      updatedList = updatedList.filter((item) => item.badge !== 'Cab' && item.type !== 'transfer');
+    } else {
+      const hasCab = updatedList.some((item) => item.badge === 'Cab' || item.type === 'transfer');
+      if (!hasCab) {
+        showToast('Please select your Transfer Cab first to calculate accurate road travel times.', 'warning');
+        if (typeof window !== 'undefined') {
+          const step1El = document.getElementById('step-1-cabs');
+          if (step1El) {
+            step1El.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            window.location.href = '/plan-my-layover#step-1-cabs';
+          }
         }
+        return;
       }
-      return;
     }
 
     const newItem: ItineraryItem = {
