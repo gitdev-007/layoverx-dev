@@ -242,7 +242,7 @@ export default function PlanMyLayoverPage() {
   };
   const router = useRouter();
   const { requireAuth } = useAuth();
-  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours } = useItinerary();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar } = useItinerary();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const scrollToStep5 = () => {
@@ -349,9 +349,8 @@ export default function PlanMyLayoverPage() {
     }
 
     // Cab
-    const cabItem = contextItems.find((i) => i.badge === 'Cab');
-    if (cabItem) {
-      if (cabItem.title.toLowerCase().includes('suv')) {
+    if (selectedCar) {
+      if (selectedCar.id === 'cab_suv' || selectedCar.title.toLowerCase().includes('suv')) {
         setSelectedCab('suv');
       } else {
         setSelectedCab('sedan');
@@ -359,15 +358,17 @@ export default function PlanMyLayoverPage() {
     } else {
       setSelectedCab(null);
     }
-  }, [contextItems]);
+  }, [contextItems, selectedCar]);
 
   // Click handlers that mutate contextItems to ensure simultaneous 2-way sync
   const handleCabClick = (type: 'sedan' | 'suv') => {
-    const isCurrentlySelected = selectedCab === type;
+    const targetId = type === 'sedan' ? 'cab_sedan' : 'cab_suv';
+    const isCurrentlySelected = selectedCar?.id === targetId;
     contextItems.filter((i) => i.badge === 'Cab' || i.type === 'transfer').forEach((i) => removeItem(i.id));
 
     if (!isCurrentlySelected) {
       addItem({
+        id: targetId,
         badge: 'Cab',
         type: 'transfer',
         title: type === 'sedan' ? 'AC Sedan Transfer (Toyota Etios)' : 'AC SUV Transfer (Innova Crysta)',
@@ -823,37 +824,45 @@ export default function PlanMyLayoverPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <label
+                  <div
                     onClick={() => handleCabClick('sedan')}
                     className={`relative border rounded-xl p-4 flex items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                      selectedCab === 'sedan' ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
+                      selectedCar?.id === 'cab_sedan' ? 'border-2 border-sky-600 bg-sky-50/20 ring-1 ring-sky-600' : 'border-gray-200 bg-white'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <input type="radio" checked={selectedCab === 'sedan'} readOnly className="text-sky-700 focus:ring-sky-500 h-4 w-4 border-gray-300" />
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedCar?.id === 'cab_sedan' ? 'border-sky-600 bg-sky-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {selectedCar?.id === 'cab_sedan' && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
                       <div>
                         <h3 className="font-bold text-gray-800 text-sm">AC Sedan Transfer (Toyota Etios)</h3>
                         <p className="text-gray-700 text-xs mt-0.5">Fits 4 Passengers, 2 Standard Bags. Verified Driver.</p>
                       </div>
                     </div>
                     <strong className="text-gray-900 text-sm">₹899 <span className="text-gray-700 text-xs font-normal">flat</span></strong>
-                  </label>
+                  </div>
 
-                  <label
+                  <div
                     onClick={() => handleCabClick('suv')}
                     className={`relative border rounded-xl p-4 flex items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                      selectedCab === 'suv' ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
+                      selectedCar?.id === 'cab_suv' ? 'border-2 border-sky-600 bg-sky-50/20 ring-1 ring-sky-600' : 'border-gray-200 bg-white'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <input type="radio" checked={selectedCab === 'suv'} readOnly className="text-sky-700 focus:ring-sky-500 h-4 w-4 border-gray-300" />
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedCar?.id === 'cab_suv' ? 'border-sky-600 bg-sky-600' : 'border-slate-300 bg-white'
+                      }`}>
+                        {selectedCar?.id === 'cab_suv' && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
                       <div>
                         <h3 className="font-bold text-gray-800 text-sm">AC SUV Transfer (Innova Crysta)</h3>
                         <p className="text-gray-700 text-xs mt-0.5">Fits 6 Passengers, 4 Standard Bags. Extra comfort.</p>
                       </div>
                     </div>
                     <strong className="text-gray-900 text-sm">₹1,499 <span className="text-gray-700 text-xs font-normal">flat</span></strong>
-                  </label>
+                  </div>
                 </div>
               </div>
 
