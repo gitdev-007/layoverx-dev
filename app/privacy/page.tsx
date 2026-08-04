@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-1 text-slate-400">
               <li><strong className="text-slate-200">Service Vendors:</strong> Hotel operators, restaurant partners, spa providers, and transport operators for service fulfillment.</li>
               <li><strong className="text-slate-200">Payment Processors:</strong> Razorpay for secure payment processing (PCI-DSS Level 1 certified).</li>
-              <li><strong className="text-slate-200">Flight Data Providers:</strong> Aviationstack / AeroAPI for real-time flight tracking.</li>
+              <li><strong className="text-slate-200">Flight Data Providers:</strong> AirLabs / AeroAPI for real-time flight tracking.</li>
               <li><strong className="text-slate-200">Communication Services:</strong> WhatsApp Business API and email services for booking notifications.</li>
             </ul>
             <p>

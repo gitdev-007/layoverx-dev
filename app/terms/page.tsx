@@ -61,7 +61,7 @@ export default function TermsPage() {
           <div className="space-y-3">
             <h2 className="text-lg font-bold text-white">2. Flight Connections &amp; Passenger Responsibility</h2>
             <p>
-              While LayoverX provides real-time flight tracking via AeroAPI / Aviationstack integration and automatically adjusts
+              While LayoverX provides real-time flight tracking via AeroAPI / AirLabs integration and automatically adjusts
               booked service windows in the event of flight delays, <strong className="text-white">it is the sole responsibility of the passenger</strong> to ensure
               they return to the airport terminal in sufficient time for immigration clearance, security screening, and onward boarding.
             </p>

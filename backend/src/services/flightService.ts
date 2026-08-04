@@ -29,9 +29,76 @@ export interface FlightTrackResult {
   statusCode?: number;
 }
 
+export interface FlightData {
+  flightIata: string;
+  depIata: string;
+  arrIata: string;
+  depTerminal?: string;
+  arrTerminal?: string;
+  scheduledArrival: string;
+  estimatedArrival: string;
+  scheduledDeparture: string;
+  status: string;
+}
+
+export async function getFlightTelemetry(flightIata: string): Promise<FlightData> {
+  const apiKey = process.env.AIRLABS_API_KEY;
+
+  if (!apiKey || apiKey === 'placeholder') {
+    console.log(`ℹ️ AIRLABS_API_KEY missing. Returning Mock Telemetry for flight: ${flightIata}`);
+    return getMockTelemetry(flightIata);
+  }
+
+  try {
+    const response = await fetch(
+      `https://airlabs.co/api/v9/flight?flight_iata=${encodeURIComponent(flightIata)}&api_key=${apiKey}`
+    );
+    const result = await response.json();
+
+    if (!result || !result.response) {
+      console.warn(`⚠️ AirLabs lookup yielded no results for ${flightIata}. Falling back to mock data.`);
+      return getMockTelemetry(flightIata);
+    }
+
+    const data = result.response;
+    return {
+      flightIata: data.flight_iata || flightIata,
+      depIata: data.dep_iata || 'DXB',
+      arrIata: data.arr_iata || 'BOM',
+      depTerminal: data.dep_terminal || 'T3',
+      arrTerminal: data.arr_terminal || 'T2',
+      scheduledArrival: data.arr_time || new Date().toISOString(),
+      estimatedArrival: data.arr_estimated || data.arr_time || new Date().toISOString(),
+      scheduledDeparture: data.dep_time || new Date().toISOString(),
+      status: data.status || 'scheduled',
+    };
+  } catch (error) {
+    console.error(`❌ AirLabs API call error:`, error);
+    return getMockTelemetry(flightIata);
+  }
+}
+
+function getMockTelemetry(flightIata: string): FlightData {
+  const now = new Date();
+  const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const dep = new Date(now.getTime() + 18 * 60 * 60 * 1000);
+
+  return {
+    flightIata,
+    depIata: 'DXB',
+    arrIata: 'BOM',
+    depTerminal: 'T3',
+    arrTerminal: 'T2',
+    scheduledArrival: arr.toISOString(),
+    estimatedArrival: arr.toISOString(),
+    scheduledDeparture: dep.toISOString(),
+    status: 'scheduled',
+  };
+}
+
 export async function trackAndProtectFlight(input: FlightTrackInput): Promise<FlightTrackResult> {
   const { flightNumber, flightDate, bookingId } = input;
-  const apiKey = process.env.AVIATIONSTACK_API_KEY;
+  const apiKey = process.env.AIRLABS_API_KEY;
   const isProduction = process.env.NODE_ENV === 'production';
 
   let status: 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN' = 'ON_TIME';
@@ -40,38 +107,29 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
   let updatedETA = '14:30';
 
   const isDelayPrefix = flightNumber.toUpperCase().startsWith('DELAY-');
-  const shouldSimulateDelay = isDelayPrefix || !isProduction || !apiKey || apiKey.includes('sample_') || apiKey.includes('your_');
+  const shouldSimulateDelay = isDelayPrefix || !isProduction || !apiKey || apiKey.includes('sample_') || apiKey.includes('your_') || apiKey === 'placeholder';
 
   if (!shouldSimulateDelay) {
     try {
-      const url = `http://api.aviationstack.com/v1/flights?access_key=${apiKey}&flight_iata=${flightNumber}`;
-      const response = await axios.get(url);
-      const flightData = response.data?.data?.[0];
-
-      if (flightData) {
-        const arrival = flightData.arrival;
-        delayMinutes = arrival?.delay || 0;
+      const telemetry = await getFlightTelemetry(flightNumber);
+      if (telemetry) {
+        const sched = new Date(telemetry.scheduledArrival);
+        const est = new Date(telemetry.estimatedArrival);
+        delayMinutes = Math.max(0, Math.round((est.getTime() - sched.getTime()) / 60000));
         
-        if (delayMinutes > 15) {
+        if (telemetry.status === 'cancelled' || telemetry.status === 'cancelled_status') {
+          status = 'CANCELLED';
+        } else if (delayMinutes > 15) {
           status = 'DELAYED';
         } else {
           status = 'ON_TIME';
         }
 
-        if (arrival?.scheduled) {
-          const schedDate = new Date(arrival.scheduled);
-          originalETA = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-          if (arrival.estimated) {
-            updatedETA = new Date(arrival.estimated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-          } else {
-            updatedETA = new Date(schedDate.getTime() + delayMinutes * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-          }
-        }
-      } else {
-        console.warn(`[FLIGHT SERVICE] No live flight data found for ${flightNumber}, defaulting to ON_TIME`);
+        originalETA = sched.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        updatedETA = est.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       }
     } catch (err: any) {
-      console.error('[FLIGHT TRACK ERROR] AviationStack API fetch error:', err?.message || err);
+      console.error('[FLIGHT TRACK ERROR] AirLabs API fetch error:', err?.message || err);
     }
   } else {
     // Dev/Mock Flow

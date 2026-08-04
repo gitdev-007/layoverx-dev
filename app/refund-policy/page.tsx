@@ -91,7 +91,7 @@ export default function RefundPolicyPage() {
             </p>
             <p>
               This protection is automatically triggered by our Flight Delay Auto-Protection Engine when connected to live
-              AeroAPI / Aviationstack tracking. If automatic detection is not possible, passengers may request a manual review
+              AeroAPI / AirLabs tracking. If automatic detection is not possible, passengers may request a manual review
               by contacting <a href="mailto:support@layoverx.com" className="text-sky-400 hover:underline">support@layoverx.com</a> with
               proof of the airline disruption.
             </p>
