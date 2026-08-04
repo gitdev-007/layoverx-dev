@@ -59,97 +59,97 @@ export default function PlanMyLayoverPage() {
         if (data && data.length > 0) {
           const hotelPods = data.filter(item => item.category === 'HOTEL_PODS');
           if (hotelPods.length > 0) {
-            setHotelsList(hotelPods.map(item => ({
+            setHotelsList(hotelPods.map((item: any) => ({
               id: item.id,
               slotId: item.slotId || `slot_${item.id}_101`,
-              name: item.name,
-              terminal: item.terminal || 'CSMIA Terminal 2',
+              name: item.name || item.title || '',
+              terminal: item.terminal || item.vendor?.proximity || 'CSMIA Terminal 2',
               distance: item.distance || '0 km',
               rating: item.rating || 4.8,
               reviews: item.reviews || 1200,
               stars: 5,
-              price3h: `₹${item.price || 3499}`,
-              price6h: `₹${Math.round((item.price || 3499) * 1.4)}`,
-              priceFullNight: `₹${Math.round((item.price || 3499) * 1.8)}`,
+              price3h: `₹${item.price || item.hourlyRate || 3499}`,
+              price6h: `₹${Math.round((item.price || item.hourlyRate || 3499) * 1.4)}`,
+              priceFullNight: `₹${Math.round((item.price || item.hourlyRate || 3499) * 1.8)}`,
               locationCategory: 'in-terminal',
-              badge: item.badge || 'Inside T2',
+              badge: item.badge || item.vendor?.proximity || 'Inside T2',
               amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
               description: item.description || 'Hourly micro-stay transit accommodations.',
-              image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+              image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
             })));
           }
 
           const spas = data.filter(item => item.category === 'SPA');
           if (spas.length > 0) {
-            setSpasList(spas.map(item => ({
+            setSpasList(spas.map((item: any) => ({
               id: item.id,
               slotId: item.slotId || `slot_${item.id}_101`,
-              name: item.name,
-              location: item.terminal || 'Inside T2',
+              name: item.name || item.title || '',
+              location: item.terminal || item.vendor?.proximity || 'Inside T2',
               distance: item.distance || '0 km',
               rating: item.rating || 4.8,
               reviews: item.reviews || 230,
-              price: `₹${item.price || 1999}`,
+              price: `₹${item.price || item.hourlyRate || 1999}`,
               duration: '45 Mins',
               treatment: item.description || 'Express Foot Reflexology & Back Relief',
               badge: item.badge || 'In-Terminal',
               amenities: item.amenities || ['🚿 Hot Rain Shower', '💆 Deep Tissue', '☕ Herbal Tea'],
               description: item.description || 'Express reflexology therapy inside Terminal 2.',
-              image: item.image || 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
+              image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
             })));
           }
 
           const gaming = data.filter(item => item.category === 'GAMING');
           if (gaming.length > 0) {
-            setGamingList(gaming.map(item => ({
+            setGamingList(gaming.map((item: any) => ({
               id: item.id,
               slotId: item.slotId || `slot_${item.id}_101`,
-              name: item.name,
-              location: item.terminal || 'Terminal 2 Departures',
+              name: item.name || item.title || '',
+              location: item.terminal || item.vendor?.proximity || 'Terminal 2 Departures',
               distance: item.distance || '0 km',
               rating: item.rating || 4.7,
               reviews: item.reviews || 140,
-              price: `₹${item.price || 1499} / 3 Hours`,
+              price: `₹${item.price || item.hourlyRate || 1499} / 3 Hours`,
               features: item.amenities || ['PS5 Pro Gaming Stations', 'High-Speed Fiber Wi-Fi'],
               description: item.description || 'High-tech gaming setup.',
-              image: item.image || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+              image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
             })));
           }
 
           const tours = data.filter(item => item.category === 'TOURS');
           if (tours.length > 0) {
-            setToursList(tours.map(item => ({
+            setToursList(tours.map((item: any) => ({
               id: item.id,
-              name: item.name,
+              name: item.name || item.title || '',
               duration: '5 Hours',
               safeWindow: '6+ Hr Layover Required',
               rating: item.rating || 4.9,
               reviews: item.reviews || 480,
-              price: `₹${item.price || 3999} per car`,
+              price: `₹${item.price || item.hourlyRate || 3999} per car`,
               badge: item.badge || 'Most Popular',
               highlights: item.amenities || ['Gateway of India', 'Taj Mahal Palace'],
               description: item.description || 'Explore Mumbai with private air-conditioned cars.',
-              image: item.image || 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
+              image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
             })));
           }
 
           const dining = data.filter(item => item.category === 'DINING' || item.category === 'dining');
           if (dining.length > 0) {
-            setDiningList(dining.map(item => ({
+            setDiningList(dining.map((item: any) => ({
               id: item.id,
-              name: item.name,
+              name: item.name || item.title || '',
               cuisine: 'Coastal Seafood',
               category: 'seafood',
-              location: item.terminal || 'Vile Parle East',
+              location: item.terminal || item.vendor?.proximity || 'Vile Parle East',
               distance: item.distance || '3.5 km',
               rating: item.rating || 4.8,
               reviews: item.reviews || 940,
-              avgCost: `₹${item.price || 1800}`,
+              avgCost: `₹${item.price || item.hourlyRate || 1800}`,
               transitTime: '15 mins taxi',
               badge: item.badge || '🦀 Seafood',
               amenities: item.amenities || ['🦀 Fresh Coastal', '🍷 Premium Lounge'],
               description: item.description || 'Authentic dining near airport.',
-              image: item.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+              image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
             })));
           }
         }

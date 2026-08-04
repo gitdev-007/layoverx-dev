@@ -2,7 +2,8 @@ import { supabaseClient } from '@/lib/supabaseClient';
 
 const getApiBaseUrl = () => {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
+    const url = process.env.NEXT_PUBLIC_API_BASE_URL;
+    return url.endsWith('/api/v1') || url.endsWith('/api/v1/') ? url : `${url.replace(/\/$/, '')}/api/v1`;
   }
   if (typeof window !== 'undefined' && window.location.origin) {
     return `${window.location.origin}/api/v1`;
@@ -127,7 +128,17 @@ export async function holdSlot(payload: HoldSlotPayload): Promise<HoldSlotRespon
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const json = await res.json();
+  
+  const contentType = res.headers.get('content-type');
+  let json: any;
+  if (contentType && contentType.includes('application/json')) {
+    json = await res.json();
+  } else {
+    const text = await res.text();
+    console.error(`HTTP ${res.status} Error from holdSlot:`, text);
+    throw new Error(`Server returned status ${res.status}. Please check route mapping.`);
+  }
+
   if (!res.ok || json.status === 'error') {
     throw new Error(json.message || '⚠️ This slot is currently held or booked by another traveler. Please choose another time slot.');
   }

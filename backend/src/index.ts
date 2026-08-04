@@ -85,6 +85,7 @@ app.use('/api/v1/verify', verifyRouter);
 app.use('/api/v1/ops', opsRouter);
 app.use('/api/user', userRouter);
 app.use('/api/bookings', bookingRoutesRouter);
+app.use('/api/v1/bookings', bookingRoutesRouter);
 
 
 
