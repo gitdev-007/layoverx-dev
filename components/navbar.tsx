@@ -291,27 +291,7 @@ export const Navbar: React.FC = () => {
                       <p className="text-xs font-semibold text-slate-700 truncate">{user.email}</p>
                     </div>
 
-                    {/* User ID with Copy */}
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">User ID</p>
-                      <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1.5">
-                        <span className="text-[11px] font-mono text-slate-500 truncate select-all">
-                          {userId.slice(0, 8)}...{userId.slice(-8)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(userId);
-                            setCopiedId(true);
-                            setTimeout(() => setCopiedId(false), 2000);
-                          }}
-                          className="text-slate-400 hover:text-[#0284C7] transition p-1 rounded-md hover:bg-slate-100"
-                          title="Copy User ID to Clipboard"
-                        >
-                          {copiedId ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                        </button>
-                      </div>
-                    </div>
+
 
                     {/* Action Links */}
                     <div className="flex flex-col gap-1 border-t border-slate-100 pt-3">
@@ -419,27 +399,11 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Email & ID */}
-                  <div className="px-2 space-y-1.5">
+                  {/* Email Info */}
+                  <div className="px-2">
                     <p className="text-[11px] text-slate-600 truncate">
                       <span className="font-bold text-slate-400 text-[9px] uppercase tracking-wider">Email:</span> {user.email}
                     </p>
-                    <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1">
-                      <span className="text-[10px] font-mono text-slate-500 truncate">
-                        {userId.slice(0, 8)}...{userId.slice(-8)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(userId);
-                          setCopiedId(true);
-                          setTimeout(() => setCopiedId(false), 2000);
-                        }}
-                        className="text-slate-400 hover:text-[#0284C7] transition p-1"
-                      >
-                        {copiedId ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                      </button>
-                    </div>
                   </div>
 
                   {/* Action Links */}
