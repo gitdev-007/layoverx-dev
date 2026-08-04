@@ -157,7 +157,7 @@ export default function AuthModal({ isOpen, onClose }) {
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="bg-white border border-slate-150 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative space-y-6 text-slate-800"
+        className="bg-white border border-slate-150 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative space-y-6 text-slate-800 max-h-[90vh] overflow-y-auto"
       >
         
         {/* Close Button */}
