@@ -11,6 +11,7 @@ import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
 import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
 import TimelineHeader from '@/components/TimelineHeader';
+import { calculateRouteMetrics, estimateCabFare } from '@/utils/routeCalculator';
 
 import {
   Plane,
@@ -207,24 +208,74 @@ export default function PlanMyLayoverPage() {
     }
   }, []);
 
-  const handleSaveDraft = () => {
-    const draftData = {
-      destinationArea,
-      arrivalTime,
-      departureTime,
-      travelers,
-      selectedCab,
-      selectedHotelId,
-      selectedDiningId,
-      selectedTourId,
-      selectedSpaId,
-      selectedGamingId,
-      totalPrice
-    };
-    localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
-    saveCurrentPlan(`Mumbai Plan (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`);
-    setSaveStatus('Plan saved to My Saved Itineraries!');
-    setTimeout(() => setSaveStatus(null), 3000);
+  const handleSaveDraft = async () => {
+    setValidationError(null);
+    try {
+      const metrics = await calculateRouteMetrics(contextItems);
+      const fare = estimateCabFare(
+        selectedCar?.title || 'Sedan',
+        metrics.distanceKm,
+        metrics.durationMins
+      );
+
+      // Lock in the calculated cab fare on the cab item cost
+      const cabItem = contextItems.find((i) => i.badge === 'Cab' || i.type === 'transfer');
+      if (cabItem) {
+        cabItem.cost = `₹${fare}`;
+      }
+
+      // Update subtotal
+      const currentEsim = selectedEsim ? 400 : 0;
+      const currentVip = selectedVipBuggy ? 1999 : 0;
+      const currentInter = onwardTerminal === 'T1' && interTerminalCabAddon ? 699 : 0;
+
+      const lockedSubtotal = contextItems.reduce((sum, item) => {
+        const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
+        return sum + numCost;
+      }, 0) + currentEsim + currentVip + currentInter;
+
+      const totalP = lockedSubtotal + Math.round(lockedSubtotal * 0.18);
+
+      setLastCalculatedCabFare(fare);
+      setLastTotalPayable(totalP);
+
+      // Save draft to Saved Itineraries list
+      const planName = `Mumbai Stopover - ${totalLayoverHours.toFixed(1)}h (${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+      saveCurrentPlan(planName, {
+        cabFare: fare,
+        subtotal: lockedSubtotal,
+        gst: Math.round(lockedSubtotal * 0.18),
+        totalPayable: totalP,
+        itemsCount: contextItems.length,
+      });
+
+      // Persist draft to local storage
+      const draftData = {
+        destinationArea,
+        arrivalTime,
+        departureTime,
+        travelers,
+        selectedCab,
+        selectedHotelId,
+        selectedDiningId,
+        selectedTourId,
+        selectedSpaId,
+        selectedGamingId,
+        totalPrice: totalP,
+        cabFare: fare,
+        onwardTerminal,
+        selectedEsim,
+        selectedVipBuggy,
+        interTerminalCabAddon,
+      };
+      localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
+
+      setIsDraftSaved(true);
+      setShowPostSaveModal(true);
+    } catch (err) {
+      console.error('[SaveDraftError]', err);
+      showToast('An error occurred while saving draft.', 'warning');
+    }
   };
 
   const handleSharePlan = () => {
@@ -243,6 +294,16 @@ export default function PlanMyLayoverPage() {
   const router = useRouter();
   const { requireAuth } = useAuth();
   const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar } = useItinerary();
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const [showPostSaveModal, setShowPostSaveModal] = useState(false);
+  const [lastCalculatedCabFare, setLastCalculatedCabFare] = useState<number | null>(null);
+  const [lastTotalPayable, setLastTotalPayable] = useState<number | null>(null);
+  const [highlightSaveDraft, setHighlightSaveDraft] = useState(false);
+
+  useEffect(() => {
+    setIsDraftSaved(false);
+  }, [contextItems]);
+
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const scrollToStep5 = () => {
@@ -481,7 +542,7 @@ export default function PlanMyLayoverPage() {
 
   const baseSubtotalINR =
     contextItems
-      .filter((item) => item.badge !== 'Cab' && item.type !== 'transfer')
+      .filter((item) => isDraftSaved || (item.badge !== 'Cab' && item.type !== 'transfer'))
       .reduce((sum, item) => {
         const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
         return sum + numCost;
@@ -1247,7 +1308,19 @@ export default function PlanMyLayoverPage() {
                   type="button"
                   disabled={isHolding || availableWindowHours < 0}
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
-                  onClick={handleProceedCheckout}
+                  onClick={(e) => {
+                    if (!isDraftSaved) {
+                      showToast("💾 Please save your draft first! Saving your itinerary locks in transit estimates and calculates real-time cab pricing before booking.", "warning");
+                      setHighlightSaveDraft(true);
+                      setTimeout(() => setHighlightSaveDraft(false), 5000);
+                      const btn = document.getElementById('save-draft-button');
+                      if (btn) {
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
+                    handleProceedCheckout(e);
+                  }}
                   className="w-full py-4 bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2"
                 >
                   {isHolding ? (
@@ -1312,7 +1385,7 @@ export default function PlanMyLayoverPage() {
                             {badgeIcon} {item.title}
                           </span>
                           <strong className="text-slate-900">
-                            {item.badge === 'Cab' || item.type === 'transfer' ? 'Calculated at Final Booking' : formatPrice(numCost)}
+                            {(item.badge === 'Cab' || item.type === 'transfer') && !isDraftSaved ? 'Calculated at Final Booking' : formatPrice(numCost)}
                           </strong>
                         </div>
                       );
@@ -1365,7 +1438,19 @@ export default function PlanMyLayoverPage() {
                   type="button"
                   disabled={isHolding || availableWindowHours < 0}
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
-                  onClick={() => requireAuth(() => scrollToStep5())}
+                  onClick={() => requireAuth(() => {
+                    if (!isDraftSaved) {
+                      showToast("💾 Please save your draft first! Saving your itinerary locks in transit estimates and calculates real-time cab pricing before booking.", "warning");
+                      setHighlightSaveDraft(true);
+                      setTimeout(() => setHighlightSaveDraft(false), 5000);
+                      const btn = document.getElementById('save-draft-button');
+                      if (btn) {
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
+                    scrollToStep5();
+                  })}
                   className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-md transition w-full"
                 >
                   {isHolding ? (
@@ -1380,9 +1465,14 @@ export default function PlanMyLayoverPage() {
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button 
+                    id="save-draft-button"
                     onClick={() => requireAuth(() => handleSaveDraft())}
                     type="button"
-                    className="h-10 flex items-center justify-center bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-sm transition gap-1.5"
+                    className={`h-10 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm transition gap-1.5 ${
+                      highlightSaveDraft 
+                        ? 'bg-amber-600 text-white ring-4 ring-amber-400 animate-pulse' 
+                        : 'bg-gray-900 hover:bg-black text-white'
+                    }`}
                   >
                     <Bookmark size={14} /> Save Draft
                   </button>
@@ -1483,39 +1573,49 @@ export default function PlanMyLayoverPage() {
                 ) : (
                   <div className="space-y-3">
                     {savedPlans.map((plan) => (
-                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pb-2 border-b border-slate-200/60">
+                          <strong className="text-xs font-black text-slate-900 truncate max-w-[200px]">{plan.name}</strong>
+                          <span className="text-[9px] text-slate-500 font-bold">{plan.createdAt}</span>
+                        </div>
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-900">{plan.name}</span>
-                          <span className="text-[10px] text-slate-500">{plan.createdAt}</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-100">
+                            {plan.itemsCount || plan.items.length} items included
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            ₹{(plan.totalPayable || plan.totalCost).toLocaleString()}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-slate-600 font-semibold">
-                          {plan.items.length} items • Total: ₹{plan.totalCost.toLocaleString()}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
+                        <div className="flex items-center gap-2 pt-1">
                           <button
                             type="button"
                             onClick={() => loadSavedPlan(plan)}
-                            className="px-2.5 py-1 bg-[#0284C7] hover:bg-[#027ab1] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
-                            title="Replace all active itinerary items with this saved plan"
+                            className="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[10px] font-bold transition text-center"
                           >
-                            🔄 Replace Active
+                            Load Draft
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard?.writeText(window.location.href);
-                              showToast(`Share link for "${plan.name}" copied!`, 'success');
+                              loadSavedPlan(plan);
+                              if (typeof window !== 'undefined') {
+                                const step5El = document.getElementById('step-5-registration');
+                                if (step5El) {
+                                  step5El.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }
                             }}
-                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                            className="flex-1 py-1.5 bg-[#0284C7] hover:bg-[#027ab1] text-white rounded-lg text-[10px] font-bold transition text-center"
                           >
-                            🔗 Share
+                            Proceed to Checkout
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteSavedPlan(plan.id)}
-                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ml-auto"
+                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition"
+                            title="Delete draft"
                           >
-                            🗑️ Delete
+                            🗑️
                           </button>
                         </div>
                       </div>
@@ -1647,6 +1747,58 @@ export default function PlanMyLayoverPage() {
             >
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {showPostSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full mx-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2 mb-2">
+              <span>✅ Itinerary Saved Successfully!</span>
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Your stopover path and transit buffers have been locked in.
+            </p>
+            
+            <div className="bg-slate-50 rounded-2xl p-4 space-y-3 mb-6 border border-slate-100">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600 font-medium">Calculated Cab Fare:</span>
+                <strong className="text-slate-900 font-bold">₹{lastCalculatedCabFare?.toLocaleString()}</strong>
+              </div>
+              <div className="text-xs text-slate-400 italic">
+                (Uber/Ola/Rapido Market Estimate)
+              </div>
+              <div className="border-t border-slate-200 pt-3 flex justify-between text-sm">
+                <span className="text-slate-900 font-bold">Total Estimated Trip Cost:</span>
+                <strong className="text-[#0284C7] font-black text-lg">₹{lastTotalPayable?.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    const step5El = document.getElementById('step-5-registration');
+                    if (step5El) {
+                      step5El.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                  setShowPostSaveModal(false);
+                }}
+                className="w-full py-3 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl transition shadow-md"
+              >
+                Continue to Passenger Registration →
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPostSaveModal(false)}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition"
+              >
+                Keep Editing
+              </button>
+            </div>
           </div>
         </div>
       )}

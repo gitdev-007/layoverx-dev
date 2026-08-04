@@ -21,6 +21,11 @@ export interface SavedPlan {
   createdAt: string;
   items: ItineraryItem[];
   totalCost: number;
+  cabFare?: number;
+  subtotal?: number;
+  gst?: number;
+  totalPayable?: number;
+  itemsCount?: number;
 }
 
 export interface ToastNotice {
@@ -44,7 +49,7 @@ interface ItineraryContextType {
   moveItemUp: (index: number) => void;
   moveItemDown: (index: number) => void;
   clearAllItems: () => void;
-  saveCurrentPlan: (planName?: string) => void;
+  saveCurrentPlan: (planName?: string, extraFields?: any) => void;
   deleteSavedPlan: (id: string) => void;
   loadSavedPlan: (plan: SavedPlan) => void;
   showToast: (message: string, type?: 'success' | 'warning' | 'info') => void;
@@ -294,7 +299,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     saveItemsToStorage([]);
   };
 
-  const saveCurrentPlan = (name?: string) => {
+  const saveCurrentPlan = (name?: string, extraFields?: any) => {
     const planName = name || `Mumbai Stopover Plan #${savedPlans.length + 1}`;
     const totalCost = items.reduce((acc, item) => {
       const num = parseInt(item.cost.replace(/[^0-9]/g, '')) || 0;
@@ -306,7 +311,9 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
       name: planName,
       createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       items: [...items],
-      totalCost,
+      totalCost: extraFields?.totalPayable || totalCost,
+      itemsCount: items.length,
+      ...extraFields,
     };
 
     savePlansToStorage([newPlan, ...savedPlans]);

@@ -475,39 +475,49 @@ export default function MyItineraryPage() {
                 ) : (
                   <div className="space-y-3">
                     {savedPlans.map((plan) => (
-                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
+                      <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pb-2 border-b border-slate-200/60">
+                          <strong className="text-xs font-black text-slate-900 truncate max-w-[200px]">{plan.name}</strong>
+                          <span className="text-[9px] text-slate-500 font-bold">{plan.createdAt}</span>
+                        </div>
                         <div className="flex items-center justify-between">
-                          <strong className="text-xs font-bold text-slate-900">{plan.name}</strong>
-                          <span className="text-[10px] text-slate-500">{plan.createdAt}</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-100">
+                            {plan.itemsCount || plan.items.length} items included
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            ₹{(plan.totalPayable || plan.totalCost).toLocaleString()}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-slate-600 font-semibold">
-                          {plan.items.length} items • ₹{plan.totalCost.toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200">
+                        <div className="flex items-center gap-2 pt-1">
                           <button
                             type="button"
                             onClick={() => loadSavedPlan(plan)}
-                            className="px-2.5 py-1 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
-                            title="Replace all active itinerary items with this saved plan"
+                            className="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[10px] font-bold transition text-center"
                           >
-                            🔄 Replace Active
+                            Load Draft
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard?.writeText(window.location.href);
-                              showToast(`Share link for "${plan.name}" copied!`, 'success');
+                              loadSavedPlan(plan);
+                              if (typeof window !== 'undefined') {
+                                const checkoutEl = document.getElementById('checkout-card');
+                                if (checkoutEl) {
+                                  checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }
                             }}
-                            className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                            className="flex-1 py-1.5 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[10px] font-bold transition text-center"
                           >
-                            🔗 Share
+                            Proceed to Checkout
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteSavedPlan(plan.id)}
-                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ml-auto"
+                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition"
+                            title="Delete draft"
                           >
-                            🗑️ Delete
+                            🗑️
                           </button>
                         </div>
                       </div>
@@ -517,7 +527,7 @@ export default function MyItineraryPage() {
               </div>
 
               {/* Checkout Card */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-md space-y-6">
+              <div id="checkout-card" className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-md space-y-6">
                 {/* High-Trust Launch Badge */}
                 <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 text-center text-xs font-bold text-sky-900 flex items-center justify-center gap-1.5 shadow-sm">
                   <span>🚀 CSMIA T2 Launch Special — 24/7 Gate 2 Airport Concierge Included</span>

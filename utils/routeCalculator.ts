@@ -84,3 +84,63 @@ export async function calculateRouteDuration(items: { title: string; detail: str
 
   return calculateFallbackDuration(activities);
 }
+
+export interface RouteMetrics {
+  distanceKm: number;
+  durationMins: number;
+  durationHours: number;
+}
+
+export async function calculateRouteMetrics(items: { title: string; detail: string; badge: string }[]): Promise<RouteMetrics> {
+  const activities = items.filter(
+    (item) => item.badge !== 'Cab' && item.badge !== 'Arrival' && item.badge !== 'Security' && item.badge !== 'Departure'
+  );
+
+  if (activities.length === 0) {
+    return { distanceKm: 0, durationMins: 0, durationHours: 0 };
+  }
+
+  const coordsList = [
+    AIRPORT_COORDS,
+    ...activities.map(getCoordinatesForSpot),
+    AIRPORT_COORDS
+  ];
+
+  const coordinatesString = coordsList.map((c) => `${c.lng},${c.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=false`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`OSRM error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (data.routes && data.routes[0]) {
+      const durationSeconds = data.routes[0].duration;
+      const distanceMeters = data.routes[0].distance || 0;
+      const durationHours = durationSeconds / 3600;
+      const durationMins = durationSeconds / 60;
+      const distanceKm = distanceMeters / 1000;
+      return { distanceKm, durationMins, durationHours };
+    }
+  } catch (err) {
+    console.error('[RouteCalculator] Failed to fetch OSRM route metrics:', err);
+  }
+
+  // Fallback estimates
+  const fallbackHours = calculateFallbackDuration(activities);
+  const durationMins = fallbackHours * 60;
+  const distanceKm = fallbackHours * 25; // Roughly 25km per hour of driving
+  return { distanceKm, durationMins, durationHours: fallbackHours };
+}
+
+export function estimateCabFare(cabType: string, distanceKm: number, durationMins: number): number {
+  const isSUV = cabType?.toLowerCase().includes('suv');
+  const baseFare = 120;
+  const perKmRate = isSUV ? 24 : 16;
+  const perMinRate = 2;
+  const airportSurcharge = 150;
+
+  const rawFare = baseFare + (distanceKm * perKmRate) + (durationMins * perMinRate) + airportSurcharge;
+  return Math.round(rawFare);
+}
