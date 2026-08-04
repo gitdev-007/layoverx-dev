@@ -68,8 +68,11 @@ export async function calculateRouteDuration(items: { title: string; detail: str
   const coordinatesString = coordsList.map((c) => `${c.lng},${c.lat}`).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=false`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       throw new Error(`OSRM error: ${response.statusText}`);
     }
@@ -79,6 +82,7 @@ export async function calculateRouteDuration(items: { title: string; detail: str
       return durationSeconds / 3600;
     }
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error('[RouteCalculator] Failed to fetch OSRM route:', err);
   }
 
@@ -109,8 +113,11 @@ export async function calculateRouteMetrics(items: { title: string; detail: stri
   const coordinatesString = coordsList.map((c) => `${c.lng},${c.lat}`).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=false`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       throw new Error(`OSRM error: ${response.statusText}`);
     }
@@ -124,6 +131,7 @@ export async function calculateRouteMetrics(items: { title: string; detail: stri
       return { distanceKm, durationMins, durationHours };
     }
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error('[RouteCalculator] Failed to fetch OSRM route metrics:', err);
   }
 
@@ -137,7 +145,7 @@ export async function calculateRouteMetrics(items: { title: string; detail: stri
 export function estimateCabFare(cabType: string, distanceKm: number, durationMins: number): number {
   const isSUV = cabType?.toLowerCase().includes('suv');
   const baseFare = 120;
-  const perKmRate = isSUV ? 24 : 16;
+  const perKmRate = isSUV ? 26 : 18;
   const perMinRate = 2;
   const airportSurcharge = 150;
 

@@ -46,7 +46,7 @@ export default function TimelineHeader() {
 
       {availableWindowHours < 0 && (
         <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-bold flex items-center gap-2">
-          <span>⚠️ Overbooked Itinerary! Your activities exceed your available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours. Please adjust or remove an activity.</span>
+          <span>⚠️ Overbooked Itinerary! Activities exceed available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours.</span>
         </div>
       )}
 
@@ -86,7 +86,7 @@ export default function TimelineHeader() {
         <div
           className={`border p-4 rounded-xl ${
             availableWindowHours < 0
-              ? 'bg-rose-50 border-rose-300 text-rose-700'
+              ? 'bg-rose-50 border-rose-300 text-rose-900'
               : 'bg-indigo-50/70 border-indigo-100 text-indigo-950'
           }`}
         >

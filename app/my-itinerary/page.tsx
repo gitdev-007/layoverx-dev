@@ -103,7 +103,7 @@ export default function MyItineraryPage() {
     }
   }, []);
 
-  const rawBaseAmount = items.reduce((acc, i) => acc + (parseInt(i.cost.replace(/[^0-9]/g, '')) || 0), 0);
+  const rawBaseAmount = items.reduce((acc, i) => acc + (parseInt((i.cost || '').toString().replace(/[^0-9]/g, '')) || 0), 0);
   const pricingBreakdown = calculateBookingTotal(rawBaseAmount || 0);
 
   const [passportCountry, setPassportCountry] = useState('India');
@@ -302,7 +302,7 @@ export default function MyItineraryPage() {
                   <div className="space-y-6">
                     {availableWindowHours < 0 && (
                       <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-bold flex items-center gap-2">
-                        <span>⚠️ Overbooked Itinerary! Your activities exceed your available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours. Please adjust or remove an activity.</span>
+                        <span>⚠️ Overbooked Itinerary! Activities exceed available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours.</span>
                       </div>
                     )}
                     <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">

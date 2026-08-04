@@ -28,6 +28,7 @@ interface AuthContextType {
   apiFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
+  requireAuth: (callback: () => void) => void;
   closeAuthModal: () => void;
   authModalMessage: string | null;
   setAuthModalMessage: (msg: string | null) => void;
@@ -200,6 +201,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     : null;
 
+  const requireAuth = (callback: () => void) => {
+    if (!rawUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    callback();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -215,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         apiFetch,
         isAuthModalOpen,
         openAuthModal,
+        requireAuth,
         closeAuthModal,
         authModalMessage,
         setAuthModalMessage,

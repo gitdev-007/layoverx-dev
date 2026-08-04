@@ -293,7 +293,7 @@ export default function PlanMyLayoverPage() {
   };
   const router = useRouter();
   const { requireAuth } = useAuth();
-  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar } = useItinerary();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar, totalLayoverHours } = useItinerary();
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showPostSaveModal, setShowPostSaveModal] = useState(false);
   const [lastCalculatedCabFare, setLastCalculatedCabFare] = useState<number | null>(null);
@@ -1310,7 +1310,7 @@ export default function PlanMyLayoverPage() {
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={(e) => {
                     if (!isDraftSaved) {
-                      showToast("💾 Please save your draft first! Saving your itinerary locks in transit estimates and calculates real-time cab pricing before booking.", "warning");
+                      showToast("Please click 'Save Draft' first to calculate exact cab fares before booking!", "warning");
                       setHighlightSaveDraft(true);
                       setTimeout(() => setHighlightSaveDraft(false), 5000);
                       const btn = document.getElementById('save-draft-button');
@@ -1438,9 +1438,9 @@ export default function PlanMyLayoverPage() {
                   type="button"
                   disabled={isHolding || availableWindowHours < 0}
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
-                  onClick={() => requireAuth(() => {
+                  onClick={() => {
                     if (!isDraftSaved) {
-                      showToast("💾 Please save your draft first! Saving your itinerary locks in transit estimates and calculates real-time cab pricing before booking.", "warning");
+                      showToast("Please click 'Save Draft' first to calculate exact cab fares before booking!", "warning");
                       setHighlightSaveDraft(true);
                       setTimeout(() => setHighlightSaveDraft(false), 5000);
                       const btn = document.getElementById('save-draft-button');
@@ -1450,7 +1450,7 @@ export default function PlanMyLayoverPage() {
                       return;
                     }
                     scrollToStep5();
-                  })}
+                  }}
                   className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-md transition w-full"
                 >
                   {isHolding ? (
@@ -1466,11 +1466,11 @@ export default function PlanMyLayoverPage() {
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button 
                     id="save-draft-button"
-                    onClick={() => requireAuth(() => handleSaveDraft())}
+                    onClick={() => handleSaveDraft()}
                     type="button"
                     className={`h-10 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm transition gap-1.5 ${
                       highlightSaveDraft 
-                        ? 'bg-amber-600 text-white ring-4 ring-amber-400 animate-pulse' 
+                        ? 'bg-amber-600 text-white ring-4 ring-amber-400 animate-bounce' 
                         : 'bg-gray-900 hover:bg-black text-white'
                     }`}
                   >
@@ -1755,7 +1755,7 @@ export default function PlanMyLayoverPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full mx-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
             <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2 mb-2">
-              <span>✅ Itinerary Saved Successfully!</span>
+              <span>✅ Itinerary Draft Saved Successfully!</span>
             </h3>
             <p className="text-sm text-slate-500 mb-6">
               Your stopover path and transit buffers have been locked in.
