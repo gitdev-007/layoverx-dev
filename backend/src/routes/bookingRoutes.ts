@@ -10,6 +10,7 @@ router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res:
   try {
     const { phone, isConsented } = req.body || {};
     const userId = req.body.userId;
+    const amount = req.body.amount ? parseFloat(req.body.amount) : 0.00;
     const file = req.file;
 
     if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
@@ -65,7 +66,9 @@ router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res:
           extracted_outbound_flight: telemetry.flights[1] || null,
           dpdp_consented: isConsented === 'true' || isConsented === true,
           scheduled_deletion_at: deletionTimestamp,
-          status: 'pending_verification'
+          status: 'pending_verification',
+          amount: amount,
+          currency: 'INR'
         }
       ])
       .select()

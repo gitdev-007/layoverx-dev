@@ -1,15 +1,17 @@
-import * as pdfParseModule from 'pdf-parse';
+import * as rawPdfParse from 'pdf-parse';
 import Tesseract from 'tesseract.js';
 
-const pdfParse = typeof pdfParseModule === 'function'
-  ? pdfParseModule
-  : ((pdfParseModule as any).default || pdfParseModule);
+const pdfParse = typeof rawPdfParse === 'function' 
+  ? rawPdfParse 
+  : (rawPdfParse && typeof (rawPdfParse as any).default === 'function' ? (rawPdfParse as any).default : null);
 
 export async function extractTextFromFile(buffer: Buffer, mimeType: string): Promise<string> {
   try {
     if (mimeType === 'application/pdf') {
-      const parsed = await pdfParse(buffer);
-      return parsed.text || '';
+      if (typeof pdfParse === 'function') {
+        const parsed = await pdfParse(buffer);
+        return parsed.text || '';
+      }
     } else if (mimeType.startsWith('image/')) {
       const { data: { text } } = await Tesseract.recognize(buffer, 'eng');
       return text || '';
