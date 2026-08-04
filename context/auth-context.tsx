@@ -29,6 +29,8 @@ interface AuthContextType {
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
+  authModalMessage: string | null;
+  setAuthModalMessage: (msg: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,11 +40,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Get initial session
     async function getInitialSession() {
       try {
+        const isFromEmailVerify = typeof window !== 'undefined' && (
+          window.location.search.includes('type=signup') ||
+          window.location.search.includes('otp_expired') ||
+          window.location.hash.includes('type=signup') ||
+          window.location.hash.includes('otp_expired') ||
+          window.location.search.includes('error=')
+        );
+
         if (typeof window !== 'undefined') {
           const searchParams = new URLSearchParams(window.location.search);
           const code = searchParams.get('code');
@@ -66,14 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(initialSession);
         setRawUser(initialSession?.user || null);
 
-        // Error URL sanitization: If session is valid, clear error parameters
-        if (initialSession?.user && typeof window !== 'undefined') {
-          if (
-            window.location.search.includes('error=') ||
-            window.location.search.includes('otp_expired')
-          ) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
+        // If landing from email verification redirect and not logged in, trigger modal
+        if (!initialSession?.user && isFromEmailVerify) {
+          setAuthModalMessage('Email verified successfully! Please sign in below.');
+          setIsAuthModalOpen(true);
+        }
+
+        // Clean up URL parameters immediately
+        if (isFromEmailVerify && typeof window !== 'undefined') {
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (err) {
         console.error('[AuthContext] Error getting session:', err);
@@ -206,6 +218,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthModalOpen,
         openAuthModal,
         closeAuthModal,
+        authModalMessage,
+        setAuthModalMessage,
       }}
     >
       {children}

@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabaseClient as supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/auth-context';
 import { Lock, Mail, User as UserIcon, X, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose }) {
+  const { authModalMessage, setAuthModalMessage } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,6 +15,13 @@ export default function AuthModal({ isOpen, onClose }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && authModalMessage) {
+      setSuccessMessage(authModalMessage);
+      setAuthModalMessage(null);
+    }
+  }, [isOpen, authModalMessage]);
 
   if (!isOpen) return null;
 

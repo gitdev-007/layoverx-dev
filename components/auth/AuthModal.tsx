@@ -6,7 +6,13 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { Lock, Mail, User as UserIcon, X, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, loginWithGoogle } = useAuth();
+  const { 
+    isAuthModalOpen, 
+    closeAuthModal, 
+    loginWithGoogle, 
+    authModalMessage, 
+    setAuthModalMessage 
+  } = useAuth();
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +22,13 @@ export default function AuthModal() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  React.useEffect(() => {
+    if (isAuthModalOpen && authModalMessage) {
+      setMessage(authModalMessage);
+      setAuthModalMessage(null);
+    }
+  }, [isAuthModalOpen, authModalMessage]);
 
   if (!isAuthModalOpen) return null;
 
