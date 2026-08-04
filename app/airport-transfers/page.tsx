@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Car, MapPin, ShieldCheck, ChevronDown, CheckCircle2, Star } from 'lucide-react';
 
 export default function AirportTransfersPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [pickup, setPickup] = useState('t2');
   const [drop, setDrop] = useState('bandra');
@@ -207,12 +207,17 @@ export default function AirportTransfersPage() {
                           type="button"
                           onClick={() => {
                             requireAuth(() => {
-                              addItem({
+                              addToItinerary({
+                                id: c.id,
                                 title: c.name,
-                                detail: `${c.vehicle} • Fixed rate transfer`,
-                                badge: 'Cab',
+                                type: 'transfer',
+                                price: c.price,
                                 cost: c.price,
                                 durationHours: 1.0,
+                                image: c.image,
+                                location: 'CSMIA Mumbai',
+                                detail: `${c.vehicle} • Fixed rate transfer`,
+                                badge: 'Cab',
                               });
                             });
                           }}

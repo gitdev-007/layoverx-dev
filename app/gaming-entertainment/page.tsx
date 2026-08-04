@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Gamepad2, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function GamingEntertainmentPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'gaming' | 'movie'>('all');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -254,12 +254,17 @@ export default function GamingEntertainmentPage() {
                           type="button"
                           onClick={() => {
                             requireAuth(() => {
-                              addItem({
+                              addToItinerary({
+                                id: g.id,
                                 title: g.name,
-                                detail: g.location,
-                                badge: 'Gaming',
+                                type: 'gaming',
+                                price: g.price,
                                 cost: g.price,
                                 durationHours: 2.0,
+                                image: g.image,
+                                location: g.location,
+                                detail: g.location,
+                                badge: 'Gaming',
                               });
                             });
                           }}

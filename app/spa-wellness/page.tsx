@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Sparkles, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function SpaWellnessPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'massage' | 'express' | 'full-day'>('all');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -272,12 +272,17 @@ export default function SpaWellnessPage() {
                           type="button"
                           onClick={() => {
                             requireAuth(() => {
-                              addItem({
+                              addToItinerary({
+                                id: s.id,
                                 title: s.name,
-                                detail: `${s.treatment} (${s.duration})`,
-                                badge: 'Spa',
+                                type: 'spa',
+                                price: s.price,
                                 cost: s.price,
                                 durationHours: 1.0,
+                                image: s.image,
+                                location: s.location,
+                                detail: `${s.treatment} (${s.duration})`,
+                                badge: 'Spa',
                               });
                             });
                           }}

@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Compass, MapPin, Clock, Star, ShieldCheck, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export default function ExperiencesPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'sightseeing' | 'culture' | 'shopping' | 'food' | 'nightlife'>('all');
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
@@ -199,12 +199,17 @@ export default function ExperiencesPage() {
                           type="button"
                           onClick={() => {
                             requireAuth(() => {
-                              addItem({
+                              addToItinerary({
+                                id: t.id,
                                 title: t.name,
-                                detail: `Duration: ${t.duration} (${t.safeWindow})`,
-                                badge: 'Tour',
+                                type: 'tour',
+                                price: t.price,
                                 cost: t.price,
                                 durationHours: 4.0,
+                                image: t.image,
+                                location: t.location || 'Mumbai',
+                                detail: `Duration: ${t.duration} (${t.safeWindow})`,
+                                badge: 'Tour',
                               });
                             });
                           }}

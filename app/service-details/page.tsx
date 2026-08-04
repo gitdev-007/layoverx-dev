@@ -13,7 +13,7 @@ function ServiceDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('id') || 'h1';
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { user, requireAuth } = useAuth();
 
   // Look up item across catalogs
@@ -145,13 +145,20 @@ function ServiceDetailsContent() {
 
   const handleAddToItinerary = () => {
     requireAuth(() => {
-      addItem({
+      const itemToAdd = {
+        id: service.id,
         title: service.name,
-        detail: `${selectedSlot.label} • ${service.location}`,
+        type: service.type.toLowerCase() === 'dining' ? 'restaurant' : service.type.toLowerCase(),
+        price: selectedSlot.price || service.price,
+        cost: selectedSlot.price || service.price,
+        durationHours: selectedSlot.hours || service.durationHours || 1.0,
+        image: service.image,
+        location: service.location,
+        detail: `${selectedSlot.label} • ${service.location} (${travelersCount} Travelers)`,
         badge: service.type,
-        cost: selectedSlot.price,
-        durationHours: selectedSlot.hours,
-      });
+        time: checkInTime,
+      };
+      addToItinerary(itemToAdd);
     });
   };
 

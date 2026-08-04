@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function HotelsPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [stayDuration, setStayDuration] = useState('6');
@@ -510,12 +510,18 @@ export default function HotelsPage() {
                             type="button"
                             onClick={() => {
                               requireAuth(() => {
-                                addItem({
+                                const selectedPrice = stayDuration === '3' ? hotel.price3h : hotel.price6h;
+                                addToItinerary({
+                                  id: hotel.id,
                                   title: hotel.name,
+                                  type: 'hotel',
+                                  price: selectedPrice,
+                                  cost: selectedPrice,
+                                  durationHours: parseInt(stayDuration) || 3,
+                                  image: hotel.image,
+                                  location: hotel.terminal,
                                   detail: `${hotel.terminal} • ${stayDuration}h slot`,
                                   badge: 'Hotel',
-                                  cost: stayDuration === '3' ? hotel.price3h : hotel.price6h,
-                                  durationHours: parseInt(stayDuration) || 3,
                                 });
                               });
                             }}

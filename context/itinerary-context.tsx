@@ -44,6 +44,7 @@ interface ItineraryContextType {
   selectedCar: any;
   setSelectedCar: (car: any) => void;
   addItem: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
+  addToItinerary: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
   removeItem: (id: string) => void;
   updateItemDuration: (id: string, durationHours: number, cost: string) => void;
   moveItemUp: (index: number) => void;
@@ -344,6 +345,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
         selectedCar,
         setSelectedCar,
         addItem,
+        addToItinerary: addItem,
         removeItem,
         updateItemDuration,
         moveItemUp,

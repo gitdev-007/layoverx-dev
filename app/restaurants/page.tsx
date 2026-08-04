@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function RestaurantsPage() {
-  const { addItem } = useItinerary();
+  const { addToItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [costFilter, setCostFilter] = useState<string[]>([]);
@@ -392,12 +392,17 @@ export default function RestaurantsPage() {
                             type="button"
                             onClick={() => {
                               requireAuth(() => {
-                                addItem({
+                                addToItinerary({
+                                  id: res.id,
                                   title: res.name,
-                                  detail: `${res.cuisine} • ${res.location}`,
-                                  badge: 'Dining',
+                                  type: 'restaurant',
+                                  price: res.avgCost,
                                   cost: res.avgCost,
                                   durationHours: 1.5,
+                                  image: res.image,
+                                  location: res.location,
+                                  detail: `${res.cuisine} • ${res.location}`,
+                                  badge: 'Dining',
                                 });
                               });
                             }}
