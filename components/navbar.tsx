@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useItinerary } from '@/context/itinerary-context';
@@ -35,8 +36,10 @@ export const Navbar: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function getSession() {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -442,7 +445,10 @@ export const Navbar: React.FC = () => {
           </div>
         )}
       </div>
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      {mounted && createPortal(
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />,
+        document.body
+      )}
     </nav>
   );
 };
