@@ -301,6 +301,31 @@ export default function PlanMyLayoverPage() {
   const [highlightSaveDraft, setHighlightSaveDraft] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const trigger = params.get('triggerCheckout');
+      if (trigger === 'true') {
+        if (!isDraftSaved) {
+          showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
+          setHighlightSaveDraft(true);
+          setTimeout(() => setHighlightSaveDraft(false), 5000);
+          const saveBtn = document.getElementById("save-draft-button");
+          if (saveBtn) {
+            saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        } else {
+          scrollToStep5();
+        }
+        
+        // Clean up parameter
+        const url = new URL(window.location.href);
+        url.searchParams.delete('triggerCheckout');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    }
+  }, [isDraftSaved]);
+
+  useEffect(() => {
     setIsDraftSaved(false);
   }, [contextItems]);
 
@@ -1134,7 +1159,8 @@ export default function PlanMyLayoverPage() {
               </div>
 
               {/* Step 5: Passenger Registration */}
-              <div id="step-5-registration" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
+              <div id="review-and-passenger-registration">
+                <div id="step-5-registration" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-3">
                     <span className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs">5</span>
@@ -1310,7 +1336,7 @@ export default function PlanMyLayoverPage() {
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={(e) => {
                     if (!isDraftSaved) {
-                      showToast("Please click 'Save Draft' first to calculate exact cab fares before booking!", "warning");
+                      showToast("💾 Please save your draft first! Saving your itinerary locks in transit estimates and calculates real-time cab pricing before booking.", "warning");
                       setHighlightSaveDraft(true);
                       setTimeout(() => setHighlightSaveDraft(false), 5000);
                       const btn = document.getElementById('save-draft-button');
@@ -1332,6 +1358,7 @@ export default function PlanMyLayoverPage() {
                     '🚀 Proceed to Secure Checkout'
                   )}
                 </button>
+              </div>
               </div>
 
             </div>
@@ -1440,7 +1467,7 @@ export default function PlanMyLayoverPage() {
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={() => {
                     if (!isDraftSaved) {
-                      showToast("Please click 'Save Draft' first to calculate exact cab fares before booking!", "warning");
+                      showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
                       setHighlightSaveDraft(true);
                       setTimeout(() => setHighlightSaveDraft(false), 5000);
                       const btn = document.getElementById('save-draft-button');

@@ -603,7 +603,7 @@ export default function MyItineraryPage() {
                       return;
                     }
                     requireAuth(() => {
-                      router.push('/plan-my-layover#step-5-registration');
+                      router.push('/plan-my-layover?triggerCheckout=true');
                     });
                   }}
                   disabled={checkoutLoading || (() => {
