@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
 import { useItinerary } from '@/context/itinerary-context';
-import { createClient } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
+import AuthModal from '@/components/AuthModal';
 import { getUserHandle } from '@/lib/utils';
 import {
   Menu,
@@ -26,15 +26,61 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { user, loading, logout, loginWithGoogle, openAuthModal } = useAuth();
   const { items, toast } = useItinerary();
   
+  const [user, setUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
-  const isAdmin = user ? (user.role === 'admin' || user.email === 'founder@layoverx.in') : false;
+  useEffect(() => {
+    async function getSession() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setUser(session?.user || null);
+      } catch (err) {
+        console.error('[Navbar Auth] Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    getSession();
+
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabaseClient.auth.signOut();
+    setUser(null);
+    setDropdownOpen(false);
+  };
+
+  const name = user?.user_metadata?.full_name 
+    || user?.user_metadata?.name 
+    || user?.email?.split('@')[0] 
+    || 'Traveler';
+
+  const avatarUrl = user?.user_metadata?.avatar_url 
+    || user?.user_metadata?.picture 
+    || '';
+
+  const usernamePrefix = user?.user_metadata?.username 
+    || user?.email?.split('@')[0] 
+    || 'traveler';
+
+  const userId = user?.id || '';
+
+  const isAdmin = user ? (user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin' || user.email === 'founder@layoverx.in') : false;
 
   const getInitials = (name: string) => {
     return name
@@ -200,19 +246,19 @@ export const Navbar: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 border border-slate-200 bg-white px-3.5 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
                 >
-                  {user.avatarUrl ? (
+                  {avatarUrl ? (
                     <img
-                      src={user.avatarUrl}
-                      alt={user.name}
+                      src={avatarUrl}
+                      alt={name}
                       className="w-6 h-6 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-extrabold text-[11px] uppercase flex-shrink-0 shadow-sm border border-sky-200">
-                      {getInitials(user.name)}
+                      {getInitials(name)}
                     </div>
                   )}
                   <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate max-w-[120px]">
-                    {user.name}
+                    {name}
                   </span>
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
@@ -222,20 +268,20 @@ export const Navbar: React.FC = () => {
                     
                     {/* User Profile Header */}
                     <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                      {user.avatarUrl ? (
+                      {avatarUrl ? (
                         <img
-                          src={user.avatarUrl}
-                          alt={user.name}
+                          src={avatarUrl}
+                          alt={name}
                           className="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200 flex-shrink-0"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-black text-lg uppercase flex-shrink-0 border border-sky-200 shadow-sm">
-                          {getInitials(user.name)}
+                          {getInitials(name)}
                         </div>
                       )}
                       <div className="flex flex-col min-w-0">
-                        <p className="font-extrabold text-sm text-slate-900 truncate leading-snug">{user.name}</p>
-                        <p className="text-xs text-[#0284C7] font-semibold">@{user.usernamePrefix}</p>
+                        <p className="font-extrabold text-sm text-slate-900 truncate leading-snug">{name}</p>
+                        <p className="text-xs text-[#0284C7] font-semibold">@{usernamePrefix}</p>
                       </div>
                     </div>
 
@@ -250,12 +296,12 @@ export const Navbar: React.FC = () => {
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">User ID</p>
                       <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1.5">
                         <span className="text-[11px] font-mono text-slate-500 truncate select-all">
-                          {user.id.slice(0, 8)}...{user.id.slice(-8)}
+                          {userId.slice(0, 8)}...{userId.slice(-8)}
                         </span>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText(user.id);
+                            navigator.clipboard.writeText(userId);
                             setCopiedId(true);
                             setTimeout(() => setCopiedId(false), 2000);
                           }}
@@ -276,10 +322,7 @@ export const Navbar: React.FC = () => {
                         <Calendar size={16} /> My Layover Itinerary
                       </Link>
                       <button
-                        onClick={() => {
-                          logout();
-                          setDropdownOpen(false);
-                        }}
+                        onClick={handleSignOut}
                         className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border-t border-slate-50 mt-1"
                       >
                         <LogOut size={16} /> Sign Out
@@ -291,10 +334,10 @@ export const Navbar: React.FC = () => {
             ) : (
               <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                 <button
-                  onClick={loginWithGoogle}
+                  onClick={() => setIsAuthModalOpen(true)}
                   className="px-4 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm"
                 >
-                  Log In
+                  Sign In / Register
                 </button>
               </div>
             )}
@@ -355,23 +398,23 @@ export const Navbar: React.FC = () => {
                   
                   {/* Profile Header */}
                   <div className="flex items-center gap-3 px-2 py-1">
-                    {user.avatarUrl ? (
+                    {avatarUrl ? (
                       <img
-                        src={user.avatarUrl}
-                        alt={user.name}
+                        src={avatarUrl}
+                        alt={name}
                         className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-200"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-black text-md uppercase border border-sky-200 shadow-sm">
-                        {getInitials(user.name)}
+                        {getInitials(name)}
                       </div>
                     )}
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-extrabold text-[#0F172A] truncate">
-                        {user.name}
+                        {name}
                       </span>
                       <span className="text-[10px] text-[#0284C7] font-bold truncate">
-                        @{user.usernamePrefix}
+                        @{usernamePrefix}
                       </span>
                     </div>
                   </div>
@@ -383,12 +426,12 @@ export const Navbar: React.FC = () => {
                     </p>
                     <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1">
                       <span className="text-[10px] font-mono text-slate-500 truncate">
-                        {user.id.slice(0, 8)}...{user.id.slice(-8)}
+                        {userId.slice(0, 8)}...{userId.slice(-8)}
                       </span>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(user.id);
+                          navigator.clipboard.writeText(userId);
                           setCopiedId(true);
                           setTimeout(() => setCopiedId(false), 2000);
                         }}
@@ -408,10 +451,7 @@ export const Navbar: React.FC = () => {
                       My Layover Itinerary
                     </Link>
                     <button
-                      onClick={() => {
-                        logout();
-                        setMobileMenuOpen(false);
-                      }}
+                      onClick={handleSignOut}
                       className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition"
                     >
                       Sign Out
@@ -421,13 +461,13 @@ export const Navbar: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
-                    onClick={loginWithGoogle}
+                    onClick={() => setIsAuthModalOpen(true)}
                     className="py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl border border-slate-200"
                   >
                     Log In
                   </button>
                   <button
-                    onClick={loginWithGoogle}
+                    onClick={() => setIsAuthModalOpen(true)}
                     className="py-2.5 bg-[#0F172A] text-white text-sm font-bold rounded-xl"
                   >
                     Sign Up
@@ -438,6 +478,7 @@ export const Navbar: React.FC = () => {
           </div>
         )}
       </div>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </nav>
   );
 };
