@@ -43,42 +43,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    async function getInitialSession() {
-      try {
-        const isFromEmailVerify = typeof window !== 'undefined' && (
-          window.location.search.includes('type=signup') ||
-          window.location.search.includes('otp_expired') ||
-          window.location.hash.includes('type=signup') ||
-          window.location.hash.includes('otp_expired') ||
-          window.location.search.includes('error=')
-        );
+    const handleEmailVerification = async () => {
+      const isFromEmailVerify = typeof window !== 'undefined' && (
+        window.location.search.includes('type=signup') ||
+        window.location.search.includes('otp_expired') ||
+        window.location.hash.includes('type=signup') ||
+        window.location.hash.includes('otp_expired') ||
+        window.location.search.includes('error=')
+      );
 
-        if (typeof window !== 'undefined') {
-          const searchParams = new URLSearchParams(window.location.search);
-          const code = searchParams.get('code');
-          if (code) {
-            // Remove code parameter immediately to prevent duplicate exchanges
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('code');
-            window.history.replaceState({}, '', newUrl.toString());
-
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          try {
             const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
-            if (!error && data.session) {
+            if (data?.session?.user) {
               setSession(data.session);
               setRawUser(data.session.user);
               window.history.replaceState({}, document.title, window.location.pathname);
               setLoading(false);
               return;
             }
+          } catch (err) {
+            console.error('Error exchanging code:', err);
           }
         }
-        const { data: { session: initialSession } } = await supabaseClient.auth.getSession();
-        setSession(initialSession);
-        setRawUser(initialSession?.user || null);
+      }
+
+      try {
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+        setSession(currentSession);
+        setRawUser(currentSession?.user || null);
 
         // If landing from email verification redirect and not logged in, trigger modal
-        if (!initialSession?.user && isFromEmailVerify) {
+        if (!currentSession?.user && isFromEmailVerify) {
           setAuthModalMessage('Email verified successfully! Please sign in below.');
           setIsAuthModalOpen(true);
         }
@@ -88,20 +88,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (err) {
-        console.error('[AuthContext] Error getting session:', err);
+        console.error('Error fetching session:', err);
       } finally {
         setLoading(false);
       }
-    }
-    getInitialSession();
+    };
 
-    // Listen for auth state changes
+    handleEmailVerification();
+
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession);
       setRawUser(currentSession?.user || null);
-
       if (currentSession?.user && typeof window !== 'undefined') {
-        // Clean up error/code/token parameters from browser URL bar after successful auth
         if (
           window.location.search.includes('code=') || 
           window.location.hash.includes('access_token=') || 
