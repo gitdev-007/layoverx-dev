@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './auth-context';
 
 export interface ItineraryItem {
   id: string;
@@ -84,20 +85,40 @@ export function calculateDynamicCabDriveTime(itemsList: ItineraryItem[]): number
 }
 
 export function ItineraryProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [toast, setToast] = useState<ToastNotice | null>(null);
 
-  // Load from localStorage on mount
+  const getStorageKeys = (email: string | undefined | null) => {
+    if (email) {
+      const cleanEmail = email.toLowerCase().trim();
+      return {
+        itemsKey: `layoverx_itinerary_items_${cleanEmail}`,
+        plansKey: `layoverx_saved_plans_${cleanEmail}`,
+      };
+    }
+    return {
+      itemsKey: 'layoverx_itinerary_items_anon',
+      plansKey: 'layoverx_saved_plans_anon',
+    };
+  };
+
+  // Sync with User Session State
   useEffect(() => {
+    const { itemsKey, plansKey } = getStorageKeys(user?.email);
     try {
-      const storedItems = localStorage.getItem('layoverx_itinerary_items');
-      if (storedItems) {
-        setItems(JSON.parse(storedItems));
-      }
-      const storedPlans = localStorage.getItem('layoverx_saved_plans');
-      if (storedPlans) {
-        setSavedPlans(JSON.parse(storedPlans));
+      if (!user) {
+        // Clear active display on log out as requested
+        setItems([]);
+        setSavedPlans([]);
+      } else {
+        // Load user-specific itinerary
+        const storedItems = localStorage.getItem(itemsKey);
+        setItems(storedItems ? JSON.parse(storedItems) : []);
+
+        const storedPlans = localStorage.getItem(plansKey);
+        setSavedPlans(storedPlans ? JSON.parse(storedPlans) : []);
       }
     } catch (e) {
       console.warn('[ItineraryContext] Failed to load local storage:', e);
@@ -106,7 +127,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     const handleClear = () => {
       setItems([]);
       try {
-        localStorage.setItem('layoverx_itinerary_items', JSON.stringify([]));
+        localStorage.setItem(itemsKey, JSON.stringify([]));
       } catch {}
     };
 
@@ -114,19 +135,21 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener('layoverx_clear_itinerary', handleClear);
     };
-  }, []);
+  }, [user]);
 
   const saveItemsToStorage = (newItems: ItineraryItem[]) => {
     setItems(newItems);
+    const { itemsKey } = getStorageKeys(user?.email);
     try {
-      localStorage.setItem('layoverx_itinerary_items', JSON.stringify(newItems));
+      localStorage.setItem(itemsKey, JSON.stringify(newItems));
     } catch {}
   };
 
   const savePlansToStorage = (newPlans: SavedPlan[]) => {
     setSavedPlans(newPlans);
+    const { plansKey } = getStorageKeys(user?.email);
     try {
-      localStorage.setItem('layoverx_saved_plans', JSON.stringify(newPlans));
+      localStorage.setItem(plansKey, JSON.stringify(newPlans));
     } catch {}
   };
 
