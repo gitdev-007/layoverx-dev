@@ -13,7 +13,7 @@ function ServiceDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('id') || 'h1';
-  const { addToItinerary } = useItinerary();
+  const { addToItinerary = () => {} } = useItinerary() || {};
   const { user, requireAuth } = useAuth();
 
   // Look up item across catalogs
@@ -103,6 +103,14 @@ function ServiceDetailsContent() {
       tourMatch?.image ||
       'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
     type: matchedType,
+    price:
+      hotelMatch?.price3h ||
+      restaurantMatch?.avgCost ||
+      spaMatch?.price ||
+      gamingMatch?.price ||
+      tourMatch?.price ||
+      '₹0',
+    durationHours: hotelMatch ? 3.0 : restaurantMatch ? 1.5 : spaMatch ? 1.0 : gamingMatch ? 2.0 : tourMatch ? 4.0 : 1.0,
   };
 
   // Slot options based on category
@@ -143,7 +151,9 @@ function ServiceDetailsContent() {
 
   const selectedSlot = slotOptions[selectedSlotIndex] || slotOptions[0];
 
-  const handleAddToItinerary = () => {
+  const handleAddToItinerary = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     requireAuth(() => {
       const itemToAdd = {
         id: service.id,

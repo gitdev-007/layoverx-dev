@@ -82,6 +82,7 @@ export interface Tour {
   description: string;
   image: string;
   badge?: string;
+  location?: string;
 }
 
 export interface Transfer {

@@ -12,7 +12,10 @@ export interface ItineraryItem {
   cost: string;
   time?: string;
   durationHours?: number;
+  price?: string;
   type?: string;
+  image?: string;
+  location?: string;
 }
 
 export interface SavedPlan {
@@ -43,9 +46,10 @@ interface ItineraryContextType {
   setTotalLayoverHours: (hours: number) => void;
   selectedCar: any;
   setSelectedCar: (car: any) => void;
-  addItem: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
-  addToItinerary: (item: Omit<ItineraryItem, 'id'>, usableHoursLimit?: number) => void;
+  addItem: (item: Omit<ItineraryItem, 'id'> & { id?: string }, usableHoursLimit?: number) => void;
+  addToItinerary: (item: Omit<ItineraryItem, 'id'> & { id?: string }, usableHoursLimit?: number) => void;
   removeItem: (id: string) => void;
+  removeFromItinerary: (id: string) => void;
   updateItemDuration: (id: string, durationHours: number, cost: string) => void;
   moveItemUp: (index: number) => void;
   moveItemDown: (index: number) => void;
@@ -226,6 +230,19 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    if (!isAddingCab && !selectedCar) {
+      showToast('Please select an Airport Transfer Cab first', 'warning');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/airport-transfers';
+      }
+      return;
+    }
+
+    if (!isAddingCab && (itemData.durationHours || 0) > availableWindowHours) {
+      showToast('⚠️ Adding this activity exceeds your available layover window.', 'warning');
+      return;
+    }
+
     // Check for duplicate booking
     const isDuplicate = items.some(
       (item) => item.title.trim().toLowerCase() === itemData.title.trim().toLowerCase()
@@ -239,20 +256,6 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
 
     if (isAddingCab) {
       updatedList = updatedList.filter((item) => item.badge !== 'Cab' && item.type !== 'transfer');
-    } else {
-      const hasCab = updatedList.some((item) => item.badge === 'Cab' || item.type === 'transfer');
-      if (!hasCab) {
-        showToast('Please select an Airport Transfer Cab first to calculate accurate road travel times.', 'warning');
-        if (typeof window !== 'undefined') {
-          const step1El = document.getElementById('step-1-cabs');
-          if (step1El) {
-            step1El.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          } else {
-            window.location.href = '/airport-transfers';
-          }
-        }
-        return;
-      }
     }
 
     const newItem: ItineraryItem = {
@@ -346,6 +349,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
         addItem,
         addToItinerary: addItem,
         removeItem,
+        removeFromItinerary: removeItem,
         updateItemDuration,
         moveItemUp,
         moveItemDown,

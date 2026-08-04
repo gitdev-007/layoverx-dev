@@ -27,7 +27,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   apiFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  openAuthModal: (view?: any) => void;
   requireAuth: (callback: () => void) => void;
   closeAuthModal: () => void;
   authModalMessage: string | null;
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return fetch(input, { ...init, headers });
   };
 
-  const openAuthModal = () => setIsAuthModalOpen(true);
+  const openAuthModal = (view?: any) => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   // Derived user details

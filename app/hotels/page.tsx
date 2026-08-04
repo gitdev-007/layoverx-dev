@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function HotelsPage() {
-  const { addToItinerary } = useItinerary();
+  const { items = [], addToItinerary = () => {}, removeFromItinerary = () => {} } = useItinerary() || {};
   const { requireAuth } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [stayDuration, setStayDuration] = useState('6');
@@ -506,29 +506,42 @@ export default function HotelsPage() {
                           >
                             View Details
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              requireAuth(() => {
-                                const selectedPrice = stayDuration === '3' ? hotel.price3h : hotel.price6h;
-                                addToItinerary({
-                                  id: hotel.id,
-                                  title: hotel.name,
-                                  type: 'hotel',
-                                  price: selectedPrice,
-                                  cost: selectedPrice,
-                                  durationHours: parseInt(stayDuration) || 3,
-                                  image: hotel.image,
-                                  location: hotel.terminal,
-                                  detail: `${hotel.terminal} • ${stayDuration}h slot`,
-                                  badge: 'Hotel',
-                                });
-                              });
-                            }}
-                            className="px-4 py-2 bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
-                          >
-                            Add to Itinerary
-                          </button>
+                          {(() => {
+                            const isAdded = items.some((item) => item.id === hotel.id);
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (isAdded) {
+                                    removeFromItinerary(hotel.id);
+                                  } else {
+                                    requireAuth(() => {
+                                      const selectedPrice = stayDuration === '3' ? hotel.price3h : hotel.price6h;
+                                      addToItinerary({
+                                        id: hotel.id,
+                                        title: hotel.name,
+                                        type: 'hotel',
+                                        price: selectedPrice,
+                                        cost: selectedPrice,
+                                        durationHours: parseInt(stayDuration) || 3,
+                                        image: hotel.image,
+                                        location: hotel.terminal,
+                                        detail: `${hotel.terminal} • ${stayDuration}h slot`,
+                                        badge: 'Hotel',
+                                      });
+                                    });
+                                  }
+                                }}
+                                className={`px-4 py-2 font-bold text-xs rounded-xl shadow-md transition cursor-pointer ${
+                                  isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0369a1] hover:bg-[#075985] text-white'
+                                }`}
+                              >
+                                {isAdded ? 'Added ✓' : 'Add to Itinerary'}
+                              </button>
+                            );
+                          })()}
                         </div>
                       </div>
 

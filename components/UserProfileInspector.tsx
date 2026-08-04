@@ -25,10 +25,11 @@ export default function UserProfileInspector() {
     rawUser, // This is the native Supabase User object
     session, // This is the native Supabase Session object
     loading, 
-    isAdmin, 
-    signOut, 
+    logout, 
     openAuthModal 
   } = useAuth();
+
+  const isAdmin = user?.role === 'admin';
 
   const [isRawJsonExpanded, setIsRawJsonExpanded] = useState(false);
 
@@ -124,7 +125,7 @@ export default function UserProfileInspector() {
 
         {/* Sign Out Button */}
         <button
-          onClick={signOut}
+          onClick={logout}
           className="flex items-center gap-2 px-4 py-2 bg-rose-950/40 hover:bg-rose-950/70 border border-rose-500/30 text-rose-300 hover:text-rose-100 rounded-xl text-sm font-bold transition duration-200 mt-2 sm:mt-0"
         >
           <LogOut className="w-4 h-4" /> Log Out

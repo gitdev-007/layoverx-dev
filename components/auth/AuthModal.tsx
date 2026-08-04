@@ -97,7 +97,7 @@ export default function AuthModal() {
     // Zod validation check
     const validation = loginSchema.safeParse({ email: cleanEmail, password });
     if (!validation.success) {
-      setError(validation.error.errors[0].message);
+      setError(validation.error.issues[0]?.message || 'Invalid input');
       turnstileRef.current?.reset();
       setCaptchaToken(null);
       return;
@@ -151,7 +151,7 @@ export default function AuthModal() {
       password,
     });
     if (!validation.success) {
-      setError(validation.error.errors[0].message);
+      setError(validation.error.issues[0]?.message || 'Invalid input');
       turnstileRef.current?.reset();
       setCaptchaToken(null);
       return;
@@ -306,7 +306,7 @@ export default function AuthModal() {
             <div className="flex justify-center py-1">
               <Turnstile
                 ref={turnstileRef}
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
                 onSuccess={(token) => setCaptchaToken(token)}
                 onError={() => setCaptchaToken(null)}
                 onExpire={() => setCaptchaToken(null)}
@@ -388,7 +388,7 @@ export default function AuthModal() {
             <div className="flex justify-center py-1">
               <Turnstile
                 ref={turnstileRef}
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''}
                 onSuccess={(token) => setCaptchaToken(token)}
                 onError={() => setCaptchaToken(null)}
                 onExpire={() => setCaptchaToken(null)}

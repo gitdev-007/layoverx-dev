@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Sparkles, MapPin, Clock, Star, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
 
 export default function SpaWellnessPage() {
-  const { addToItinerary } = useItinerary();
+  const { items = [], addToItinerary = () => {}, removeFromItinerary = () => {} } = useItinerary() || {};
   const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'massage' | 'express' | 'full-day'>('all');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -268,28 +268,47 @@ export default function SpaWellnessPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            requireAuth(() => {
-                              addToItinerary({
-                                id: s.id,
-                                title: s.name,
-                                type: 'spa',
-                                price: s.price,
-                                cost: s.price,
-                                durationHours: 1.0,
-                                image: s.image,
-                                location: s.location,
-                                detail: `${s.treatment} (${s.duration})`,
-                                badge: 'Spa',
-                              });
-                            });
-                          }}
-                          className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"
+                        <Link
+                          href={`/service-details?id=${s.id}`}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
                         >
-                          Add to Itinerary
-                        </button>
+                          View Details
+                        </Link>
+                        {(() => {
+                          const isAdded = items.some((item) => item.id === s.id);
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (isAdded) {
+                                  removeFromItinerary(s.id);
+                                } else {
+                                  requireAuth(() => {
+                                    addToItinerary({
+                                      id: s.id,
+                                      title: s.name,
+                                      type: 'spa',
+                                      price: s.price,
+                                      cost: s.price,
+                                      durationHours: 1.0,
+                                      image: s.image,
+                                      location: s.location,
+                                      detail: `${s.treatment} (${s.duration})`,
+                                      badge: 'Spa',
+                                    });
+                                  });
+                                }
+                              }}
+                              className={`px-4 py-2 font-bold text-xs rounded-xl shadow transition cursor-pointer ${
+                                isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0284C7] hover:bg-[#027ab1] text-white'
+                              }`}
+                            >
+                              {isAdded ? 'Added ✓' : 'Add to Itinerary'}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

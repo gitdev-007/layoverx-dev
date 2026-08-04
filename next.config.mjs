@@ -1,6 +1,6 @@
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com;
+  script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://checkout.razorpay.com https://*.razorpay.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https:;
   font-src 'self' data:;
@@ -8,8 +8,8 @@ const cspHeader = `
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
-  frame-src 'self' https://challenges.cloudflare.com;
-  connect-src 'self' https://*.supabase.co https://challenges.cloudflare.com;
+  frame-src 'self' https://challenges.cloudflare.com https://checkout.razorpay.com https://*.razorpay.com;
+  connect-src 'self' https://router.project-osrm.org https://*.supabase.co https://challenges.cloudflare.com https://layoverx-dev.onrender.com https://*.razorpay.com;
   upgrade-insecure-requests;
 `.replace(/\s{2,}/g, ' ').trim();
 
