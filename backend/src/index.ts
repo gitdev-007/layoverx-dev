@@ -12,6 +12,7 @@ import flightRouter from './routes/flight.js';
 import verifyRouter from './routes/verify.js';
 import opsRouter from './routes/ops.js';
 import userRouter from './routes/user.js';
+import bookingRoutesRouter from './routes/bookingRoutes.js';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ app.use('/api/v1/flight', flightRouter);
 app.use('/api/v1/verify', verifyRouter);
 app.use('/api/v1/ops', opsRouter);
 app.use('/api/user', userRouter);
+app.use('/api/bookings', bookingRoutesRouter);
 
 
 

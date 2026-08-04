@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel as HotelItem, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
-import { holdSlot, fetchServices } from '@/lib/api';
+import { holdSlot, fetchServices, uploadTicket } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
 import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
@@ -683,6 +683,13 @@ export default function PlanMyLayoverPage() {
     setIsHolding(true);
 
     try {
+      if (!uploadedDocument) {
+        throw new Error('Please upload your e-ticket or boarding pass first.');
+      }
+
+      // 1. Upload & Parse Ticket via the new backend endpoint
+      const uploadRes = await uploadTicket(uploadedDocument, emergencyContact, isDpdpConsented);
+
       // Capture selected service details or default to mock if none selected
       const serviceId = selectedHotelId === 'h1' ? 'db01ad18-d911-4cdb-b73c-2518f2eee46a' : 'srv-pod-mumbai-t2';
       const slotId = 'slot-1400';
@@ -702,15 +709,15 @@ export default function PlanMyLayoverPage() {
         selectedSpaId,
         selectedGamingId,
         totalPrice,
-        bookingId: holdRes.bookingId || `bk_${Date.now()}`,
+        bookingId: uploadRes.bookingId || holdRes.bookingId || `bk_${Date.now()}`,
         paymentStatus: 'HELD',
         expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-        leadPassengerName,
+        leadPassengerName: uploadRes.extracted?.pnr ? `Passenger (${uploadRes.extracted.pnr})` : 'Passenger',
         passportNumber,
         passportCountry,
-        flightIn,
-        flightOut,
-        pnr,
+        flightIn: uploadRes.extracted?.flights?.[0] || '',
+        flightOut: uploadRes.extracted?.flights?.[1] || '',
+        pnr: uploadRes.extracted?.pnr || '',
         emergencyContact,
         serviceCategory: selectedServiceCategory,
         visaAffirmed,
@@ -723,10 +730,10 @@ export default function PlanMyLayoverPage() {
       };
 
       if (selectedEsim) {
-        console.log(`[ACTION REQUIRED - eSIM]: Order #${holdRes.bookingId || 'bk_draft'} purchased India eSIM for passenger ${leadPassengerName}. Passport: ${passportNumber}`);
+        console.log(`[ACTION REQUIRED - eSIM]: Order #${draftData.bookingId} purchased India eSIM for passenger. Phone: ${emergencyContact}`);
       }
       if (selectedVipBuggy) {
-        console.log(`[ACTION REQUIRED - VIP BUGGY]: Passenger ${leadPassengerName} flight ${flightIn} landing at T2. Call Adani Pranaam Desk to confirm buggy.`);
+        console.log(`[ACTION REQUIRED - VIP BUGGY]: Passenger booking landing at T2. Call Adani Pranaam Desk to confirm buggy.`);
       }
 
       localStorage.setItem('layoverx_draft', JSON.stringify(draftData));

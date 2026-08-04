@@ -224,4 +224,43 @@ export async function requestGateDispatch(payload: DispatchRequestPayload): Prom
   return json;
 }
 
+export interface UploadTicketResponse {
+  success: boolean;
+  bookingId: string;
+  extracted: {
+    pnr: string | null;
+    flights: string[];
+  };
+  message: string;
+}
+
+export async function uploadTicket(ticketFile: File, phone: string, isConsented: boolean): Promise<UploadTicketResponse> {
+  const formData = new FormData();
+  formData.append('ticket', ticketFile);
+  formData.append('phone', phone);
+  formData.append('isConsented', isConsented.toString());
+
+  const baseUrl = getApiBaseUrl();
+  let uploadUrl = '';
+  if (baseUrl.endsWith('/api/v1')) {
+    uploadUrl = baseUrl.replace('/api/v1', '/api/bookings/upload-ticket');
+  } else if (baseUrl.endsWith('/api/v1/')) {
+    uploadUrl = baseUrl.replace('/api/v1/', '/api/bookings/upload-ticket');
+  } else {
+    uploadUrl = `${baseUrl}/api/bookings/upload-ticket`;
+  }
+
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const json = await res.json();
+  if (!res.ok || json.status === 'error' || json.error) {
+    throw new Error(json.error || json.message || 'Failed to upload and process ticket.');
+  }
+  return json;
+}
+
+
 
