@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://chskafikxskbiaalmiaw.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
@@ -11,11 +11,14 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    detectSessionInUrl: true,
-    autoRefreshToken: true,
+export const supabaseClient = createBrowserClient(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
     cookieOptions: {
       name: 'sb-auth-token',
       domain: cookieDomain || undefined,
@@ -23,5 +26,5 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       sameSite: 'lax',
       secure: true,
     }
-  },
-});
+  }
+);
