@@ -8,11 +8,14 @@ const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB memor
 
 router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { phone, isConsented, userId } = req.body || {};
+    const { phone, isConsented } = req.body || {};
+    const userId = req.body.userId;
     const file = req.file;
 
-    if (!userId || userId === 'undefined' || userId === 'null') {
-      res.status(401).json({ error: 'Authentication required. Please log in to upload your ticket.' });
+    if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
+      res.status(401).json({ 
+        error: 'Authentication required. Please log in to upload your ticket.' 
+      });
       return;
     }
 

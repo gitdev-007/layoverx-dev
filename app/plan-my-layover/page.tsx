@@ -687,8 +687,15 @@ export default function PlanMyLayoverPage() {
         throw new Error('Please upload your e-ticket or boarding pass first.');
       }
 
+      const activeUserId = 
+        user?.id || 
+        user?.username || 
+        user?.email || 
+        (typeof window !== 'undefined' && localStorage.getItem('username')) || 
+        'testuser01';
+
       // 1. Upload & Parse Ticket via the new backend endpoint
-      const uploadRes = await uploadTicket(uploadedDocument, emergencyContact, isDpdpConsented);
+      const uploadRes = await uploadTicket(uploadedDocument, emergencyContact, isDpdpConsented, activeUserId);
 
       // Capture selected service details or default to mock if none selected
       const serviceId = selectedHotelId === 'h1' ? 'db01ad18-d911-4cdb-b73c-2518f2eee46a' : 'srv-pod-mumbai-t2';
