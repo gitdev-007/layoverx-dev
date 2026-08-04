@@ -40,6 +40,7 @@ export default function MyItineraryPage() {
     moveItemDown,
     removeItem,
     showToast,
+    availableWindowHours,
   } = useItinerary();
 
   const [totalHours, setTotalHours] = useState('8.0 Hours');
@@ -249,9 +250,9 @@ export default function MyItineraryPage() {
                           <span className="text-[#0369a1] block text-[10px] uppercase tracking-wider mb-0.5">Used Activities</span>
                           <strong className="text-sm font-extrabold text-[#0369a1]">{usedActivitiesH.toFixed(1)} Hours</strong>
                         </div>
-                        <div className={`p-3 rounded-2xl border ${isTimeExceeded ? 'bg-rose-50 border-rose-200' : 'bg-indigo-50 border-indigo-100'}`}>
-                          <span className={`block text-[10px] uppercase tracking-wider mb-0.5 ${isTimeExceeded ? 'text-rose-700' : 'text-indigo-600'}`}>Available Window</span>
-                          <strong className={`text-sm font-extrabold ${isTimeExceeded ? 'text-rose-900' : 'text-indigo-900'}`}>{remainingH.toFixed(1)} Hours</strong>
+                        <div className={`p-3 rounded-2xl border ${isTimeExceeded ? 'bg-rose-50 border-rose-300 text-rose-700' : 'bg-indigo-50 border-indigo-100 text-indigo-950'}`}>
+                          <span className="block text-[10px] uppercase tracking-wider mb-0.5">Available Window</span>
+                          <strong className="text-sm font-extrabold">{remainingH.toFixed(1)} Hours</strong>
                         </div>
                       </div>
 
@@ -298,8 +299,14 @@ export default function MyItineraryPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">
-                    {items.map((item, idx) => (
+                  <div className="space-y-6">
+                    {availableWindowHours < 0 && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-bold flex items-center gap-2">
+                        <span>⚠️ Overbooked Itinerary! Your activities exceed your available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours. Please adjust or remove an activity.</span>
+                      </div>
+                    )}
+                    <div className="relative border-l-2 border-sky-200 ml-4 space-y-6 pl-8">
+                      {items.map((item, idx) => (
                       <div key={item.id} className="relative group">
                         <div className="absolute -left-[41px] top-0 w-7 h-7 rounded-full bg-[#0369a1] text-white flex items-center justify-center text-xs font-bold shadow">
                           ✓
@@ -318,13 +325,8 @@ export default function MyItineraryPage() {
                               {item.detail}
                             </p>
 
-                            {/* Duration / Hour Slot Selector directly on timeline card */}
                             <div className="pt-2">
-                              {item.badge === 'Cab' ? (
-                                <span className="inline-block text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2.5 py-1 rounded-lg border border-slate-300">
-                                  🔒 Fixed Calculated Transit ({item.durationHours || 0.75}h ride)
-                                </span>
-                              ) : (
+                              {item.badge === 'Cab' || item.type === 'transfer' ? null : (
                                 <div className="flex items-center gap-2">
                                   <span className="text-[11px] font-bold text-slate-500">Spend Slot:</span>
                                   <select
@@ -397,7 +399,7 @@ export default function MyItineraryPage() {
                               <button
                                 type="button"
                                 onClick={() => moveItemUp(idx)}
-                                disabled={idx === 0}
+                                disabled={idx <= 1 || item.badge === 'Cab' || item.type === 'transfer'}
                                 className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
                                 title="Increase Priority (Move Up)"
                               >
@@ -408,7 +410,7 @@ export default function MyItineraryPage() {
                               <button
                                 type="button"
                                 onClick={() => moveItemDown(idx)}
-                                disabled={idx === items.length - 1}
+                                disabled={idx === 0 || idx === items.length - 1 || item.badge === 'Cab' || item.type === 'transfer'}
                                 className="p-1 rounded bg-slate-200 hover:bg-sky-500 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-200 disabled:hover:text-slate-500 text-slate-700 transition"
                                 title="Decrease Priority (Move Down)"
                               >
@@ -440,7 +442,8 @@ export default function MyItineraryPage() {
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
               </div>
 
             </div>

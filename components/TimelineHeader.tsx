@@ -44,6 +44,12 @@ export default function TimelineHeader() {
         </button>
       </div>
 
+      {availableWindowHours < 0 && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-bold flex items-center gap-2">
+          <span>⚠️ Overbooked Itinerary! Your activities exceed your available layover time by {Math.abs(availableWindowHours).toFixed(1)} hours. Please adjust or remove an activity.</span>
+        </div>
+      )}
+
       {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Layover */}
@@ -80,7 +86,7 @@ export default function TimelineHeader() {
         <div
           className={`border p-4 rounded-xl ${
             availableWindowHours < 0
-              ? 'bg-rose-50 border-rose-200 text-rose-900'
+              ? 'bg-rose-50 border-rose-300 text-rose-700'
               : 'bg-indigo-50/70 border-indigo-100 text-indigo-950'
           }`}
         >

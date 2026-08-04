@@ -380,10 +380,10 @@ export default function PlanMyLayoverPage() {
   };
 
   const handleHotelClick = (hotel: HotelItem) => {
-    const isCurrentlySelected = selectedHotelId === hotel.id;
-    contextItems.filter((i) => i.badge === 'Hotel').forEach((i) => removeItem(i.id));
-
-    if (!isCurrentlySelected) {
+    const existing = contextItems.find((i) => i.title.toLowerCase() === hotel.name.toLowerCase());
+    if (existing) {
+      removeItem(existing.id);
+    } else {
       addItem({
         badge: 'Hotel',
         title: hotel.name,
@@ -395,10 +395,10 @@ export default function PlanMyLayoverPage() {
   };
 
   const handleDiningClick = (restaurant: Restaurant) => {
-    const isCurrentlySelected = selectedDiningId === restaurant.id;
-    contextItems.filter((i) => i.badge === 'Dining').forEach((i) => removeItem(i.id));
-
-    if (!isCurrentlySelected) {
+    const existing = contextItems.find((i) => i.title.toLowerCase() === restaurant.name.toLowerCase());
+    if (existing) {
+      removeItem(existing.id);
+    } else {
       addItem({
         badge: 'Dining',
         title: restaurant.name,
@@ -410,10 +410,10 @@ export default function PlanMyLayoverPage() {
   };
 
   const handleTourClick = (tour: Tour) => {
-    const isCurrentlySelected = selectedTourId === tour.id;
-    contextItems.filter((i) => i.badge === 'Tour').forEach((i) => removeItem(i.id));
-
-    if (!isCurrentlySelected) {
+    const existing = contextItems.find((i) => i.title.toLowerCase() === tour.name.toLowerCase());
+    if (existing) {
+      removeItem(existing.id);
+    } else {
       addItem({
         badge: 'Tour',
         title: tour.name,
@@ -425,10 +425,10 @@ export default function PlanMyLayoverPage() {
   };
 
   const handleSpaClick = (spa: Spa) => {
-    const isCurrentlySelected = selectedSpaId === spa.id;
-    contextItems.filter((i) => i.badge === 'Spa').forEach((i) => removeItem(i.id));
-
-    if (!isCurrentlySelected) {
+    const existing = contextItems.find((i) => i.title.toLowerCase() === spa.name.toLowerCase());
+    if (existing) {
+      removeItem(existing.id);
+    } else {
       addItem({
         badge: 'Spa',
         title: spa.name,
@@ -440,10 +440,10 @@ export default function PlanMyLayoverPage() {
   };
 
   const handleGamingClick = (gaming: GamingLounge) => {
-    const isCurrentlySelected = selectedGamingId === gaming.id;
-    contextItems.filter((i) => i.badge === 'Gaming').forEach((i) => removeItem(i.id));
-
-    if (!isCurrentlySelected) {
+    const existing = contextItems.find((i) => i.title.toLowerCase() === gaming.name.toLowerCase());
+    if (existing) {
+      removeItem(existing.id);
+    } else {
       addItem({
         badge: 'Gaming',
         title: gaming.name,
@@ -877,31 +877,34 @@ export default function PlanMyLayoverPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {hotelsList.slice(0, 2).map((h) => (
-                    <div
-                      key={h.id}
-                      onClick={() => handleHotelClick(h)}
-                      className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                        selectedHotelId === h.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <input type="checkbox" checked={selectedHotelId === h.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
-                        <div>
-                          <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                            {h.name}
-                            <span className="bg-sky-100 text-sky-700 text-xs font-bold px-1.5 py-0.5 rounded">
-                              {h.locationCategory === 'in-terminal' ? 'Inside T2' : h.distance}
-                            </span>
-                          </h3>
-                          <p className="text-gray-700 text-xs mt-0.5">⭐ {h.rating} | {h.description}</p>
+                  {hotelsList.slice(0, 2).map((h) => {
+                    const isSelected = contextItems.some((item) => item.title.toLowerCase() === h.name.toLowerCase());
+                    return (
+                      <div
+                        key={h.id}
+                        onClick={() => handleHotelClick(h)}
+                        className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
+                          isSelected ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <input type="checkbox" checked={isSelected} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
+                          <div>
+                            <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                              {h.name}
+                              <span className="bg-sky-100 text-sky-700 text-xs font-bold px-1.5 py-0.5 rounded">
+                                {h.locationCategory === 'in-terminal' ? 'Inside T2' : h.distance}
+                              </span>
+                            </h3>
+                            <p className="text-gray-700 text-xs mt-0.5">⭐ {h.rating} | {h.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
+                          <strong className="text-sky-700 text-sm block">{h.price6h} <span className="text-gray-700 text-xs font-normal">/6h</span></strong>
                         </div>
                       </div>
-                      <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
-                        <strong className="text-sky-700 text-sm block">{h.price6h} <span className="text-gray-700 text-xs font-normal">/6h</span></strong>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -916,26 +919,29 @@ export default function PlanMyLayoverPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {diningList.slice(0, 2).map((r) => (
-                    <div
-                      key={r.id}
-                      onClick={() => handleDiningClick(r)}
-                      className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                        selectedDiningId === r.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <input type="checkbox" checked={selectedDiningId === r.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
-                        <div>
-                          <h3 className="font-bold text-gray-800 text-sm">{r.name}</h3>
-                          <p className="text-gray-700 text-xs mt-0.5">⭐ {r.rating} | {r.location}. {r.description}</p>
+                  {diningList.slice(0, 2).map((r) => {
+                    const isSelected = contextItems.some((item) => item.title.toLowerCase() === r.name.toLowerCase());
+                    return (
+                      <div
+                        key={r.id}
+                        onClick={() => handleDiningClick(r)}
+                        className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
+                          isSelected ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <input type="checkbox" checked={isSelected} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
+                          <div>
+                            <h3 className="font-bold text-gray-800 text-sm">{r.name}</h3>
+                            <p className="text-gray-700 text-xs mt-0.5">⭐ {r.rating} | {r.location}. {r.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
+                          <strong className="text-sky-700 text-sm block">{r.avgCost} <span className="text-gray-700 text-xs font-normal">for 2</span></strong>
                         </div>
                       </div>
-                      <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
-                        <strong className="text-sky-700 text-sm block">{r.avgCost} <span className="text-gray-700 text-xs font-normal">for 2</span></strong>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -981,78 +987,87 @@ export default function PlanMyLayoverPage() {
                 {/* Tab Content: Tours */}
                 {expTab === 'tours' && (
                   <div className="space-y-4">
-                    {toursList.slice(0, 2).map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => handleTourClick(t)}
-                        className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                          selectedTourId === t.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedTourId === t.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
-                          <div>
-                            <h3 className="font-bold text-gray-800 text-sm">{t.name}</h3>
-                            <p className="text-gray-700 text-xs mt-0.5">⭐ {t.rating} | ⏱️ {t.duration} duration. {t.highlights.join(', ')}</p>
+                    {toursList.slice(0, 2).map((t) => {
+                      const isSelected = contextItems.some((item) => item.title.toLowerCase() === t.name.toLowerCase());
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => handleTourClick(t)}
+                          className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
+                            isSelected ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <input type="checkbox" checked={isSelected} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
+                            <div>
+                              <h3 className="font-bold text-gray-800 text-sm">{t.name}</h3>
+                              <p className="text-gray-700 text-xs mt-0.5">⭐ {t.rating} | ⏱️ {t.duration} duration. {t.highlights.join(', ')}</p>
+                            </div>
+                          </div>
+                          <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
+                            <strong className="text-sky-700 text-sm block">{t.price} <span className="text-gray-700 text-xs font-normal">/ traveler</span></strong>
                           </div>
                         </div>
-                        <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
-                          <strong className="text-sky-700 text-sm block">{t.price} <span className="text-gray-700 text-xs font-normal">/ traveler</span></strong>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Tab Content: Spa */}
                 {expTab === 'spa' && (
                   <div className="space-y-4">
-                    {spasList.slice(0, 2).map((s) => (
-                      <div
-                        key={s.id}
-                        onClick={() => handleSpaClick(s)}
-                        className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                          selectedSpaId === s.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedSpaId === s.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
-                          <div>
-                            <h3 className="font-bold text-gray-800 text-sm">{s.name}</h3>
-                            <p className="text-gray-700 text-xs mt-0.5">⭐ {s.rating} | {s.treatment}. ({s.duration})</p>
+                    {spasList.slice(0, 2).map((s) => {
+                      const isSelected = contextItems.some((item) => item.title.toLowerCase() === s.name.toLowerCase());
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => handleSpaClick(s)}
+                          className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
+                            isSelected ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <input type="checkbox" checked={isSelected} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
+                            <div>
+                              <h3 className="font-bold text-gray-800 text-sm">{s.name}</h3>
+                              <p className="text-gray-700 text-xs mt-0.5">⭐ {s.rating} | {s.treatment}. ({s.duration})</p>
+                            </div>
+                          </div>
+                          <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
+                            <strong className="text-sky-700 text-sm block">{s.price} <span className="text-gray-700 text-xs font-normal">/ session</span></strong>
                           </div>
                         </div>
-                        <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
-                          <strong className="text-sky-700 text-sm block">{s.price} <span className="text-gray-700 text-xs font-normal">/ session</span></strong>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Tab Content: Gaming */}
                 {expTab === 'gaming' && (
                   <div className="space-y-4">
-                    {gamingList.slice(0, 2).map((g) => (
-                      <div
-                        key={g.id}
-                        onClick={() => handleGamingClick(g)}
-                        className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
-                          selectedGamingId === g.id ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <input type="checkbox" checked={selectedGamingId === g.id} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
-                          <div>
-                            <h3 className="font-bold text-gray-800 text-sm">{g.name}</h3>
-                            <p className="text-gray-700 text-xs mt-0.5">⭐ {g.rating} | {g.description}</p>
+                    {gamingList.slice(0, 2).map((g) => {
+                      const isSelected = contextItems.some((item) => item.title.toLowerCase() === g.name.toLowerCase());
+                      return (
+                        <div
+                          key={g.id}
+                          onClick={() => handleGamingClick(g)}
+                          className={`relative border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-sky-300 transition cursor-pointer select-card block ${
+                            isSelected ? 'border-[#0284C7] bg-sky-50/40' : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <input type="checkbox" checked={isSelected} readOnly className="rounded border-gray-300 text-sky-700 focus:ring-sky-500 mt-1 h-4 w-4 pointer-events-none" />
+                            <div>
+                              <h3 className="font-bold text-gray-800 text-sm">{g.name}</h3>
+                              <p className="text-gray-700 text-xs mt-0.5">⭐ {g.rating} | {g.description}</p>
+                            </div>
+                          </div>
+                          <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
+                            <strong className="text-sky-700 text-sm block">{g.price} <span className="text-gray-700 text-xs font-normal">/ person</span></strong>
                           </div>
                         </div>
-                        <div className="text-right mt-2 sm:mt-0 flex-shrink-0">
-                          <strong className="text-sky-700 text-sm block">{g.price} <span className="text-gray-700 text-xs font-normal">/ person</span></strong>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1218,7 +1233,7 @@ export default function PlanMyLayoverPage() {
                   <ul className="list-disc pl-4 space-y-1">
                     <li>Free reschedule if your incoming flight is delayed.</li>
                     <li>Full refund on activities if immigration queue exceeds 2 hours.</li>
-                    <li>Chauffeur pickup scheduled automatically for 30 minutes after actual landing time.</li>
+                  <li>Chauffeur pickup scheduled automatically for 30 minutes after actual landing time.</li>
                   </ul>
                 </div>
 
@@ -1230,7 +1245,8 @@ export default function PlanMyLayoverPage() {
 
                 <button
                   type="button"
-                  disabled={isHolding}
+                  disabled={isHolding || availableWindowHours < 0}
+                  title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={handleProceedCheckout}
                   className="w-full py-4 bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2"
                 >
@@ -1345,7 +1361,8 @@ export default function PlanMyLayoverPage() {
 
                 <button
                   type="button"
-                  disabled={isHolding}
+                  disabled={isHolding || availableWindowHours < 0}
+                  title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={() => requireAuth(() => scrollToStep5())}
                   className="h-12 flex items-center justify-center bg-[#0284C7] hover:bg-[#027ab1] disabled:bg-gray-400 text-white font-bold text-sm rounded-xl shadow-md transition w-full"
                 >

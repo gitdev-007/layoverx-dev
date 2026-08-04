@@ -181,10 +181,16 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const saveItemsToStorage = (newItems: ItineraryItem[]) => {
-    setItems(newItems);
+    const cabIndex = newItems.findIndex((item) => item.badge === 'Cab' || item.type === 'transfer');
+    let pinnedList = [...newItems];
+    if (cabIndex !== -1) {
+      const [cabItem] = pinnedList.splice(cabIndex, 1);
+      pinnedList = [cabItem, ...pinnedList];
+    }
+    setItems(pinnedList);
     const { itemsKey } = getStorageKeys(user?.email);
     try {
-      localStorage.setItem(itemsKey, JSON.stringify(newItems));
+      localStorage.setItem(itemsKey, JSON.stringify(pinnedList));
     } catch {}
   };
 
@@ -267,7 +273,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   };
 
   const moveItemUp = (index: number) => {
-    if (index <= 0) return;
+    if (index <= 1) return;
     const newItems = [...items];
     const temp = newItems[index];
     newItems[index] = newItems[index - 1];
@@ -276,7 +282,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   };
 
   const moveItemDown = (index: number) => {
-    if (index >= items.length - 1) return;
+    if (index === 0 || index >= items.length - 1) return;
     const newItems = [...items];
     const temp = newItems[index];
     newItems[index] = newItems[index + 1];
