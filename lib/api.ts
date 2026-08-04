@@ -241,14 +241,14 @@ export async function uploadTicket(ticketFile: File, phone: string, isConsented:
   formData.append('isConsented', isConsented.toString());
   formData.append('userId', userId);
 
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://layoverx-dev.onrender.com';
   let uploadUrl = '';
   if (baseUrl.endsWith('/api/v1')) {
     uploadUrl = baseUrl.replace('/api/v1', '/api/bookings/upload-ticket');
   } else if (baseUrl.endsWith('/api/v1/')) {
     uploadUrl = baseUrl.replace('/api/v1/', '/api/bookings/upload-ticket');
   } else {
-    uploadUrl = `${baseUrl}/api/bookings/upload-ticket`;
+    uploadUrl = `${baseUrl.replace(/\/$/, '')}/api/bookings/upload-ticket`;
   }
 
   const res = await fetch(uploadUrl, {
@@ -256,11 +256,21 @@ export async function uploadTicket(ticketFile: File, phone: string, isConsented:
     body: formData,
   });
 
-  const json = await res.json();
-  if (!res.ok || json.status === 'error' || json.error) {
-    throw new Error(json.error || json.message || 'Failed to upload and process ticket.');
+  const contentType = res.headers.get('content-type');
+  let resultData: any;
+
+  if (contentType && contentType.includes('application/json')) {
+    resultData = await res.json();
+  } else {
+    const text = await res.text();
+    console.error('⚠️ Non-JSON response received from server:', text);
+    throw new Error(`Server returned status ${res.status}. Please check backend logs.`);
   }
-  return json;
+
+  if (!res.ok || resultData?.status === 'error' || resultData?.error) {
+    throw new Error(resultData?.error || resultData?.message || 'Failed to upload and process ticket.');
+  }
+  return resultData;
 }
 
 
