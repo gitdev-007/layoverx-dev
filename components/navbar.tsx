@@ -42,6 +42,23 @@ export const Navbar: React.FC = () => {
     setMounted(true);
     async function getSession() {
       try {
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          const code = searchParams.get('code');
+          if (code) {
+            // Remove code parameter immediately to prevent duplicate exchanges
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('code');
+            window.history.replaceState({}, '', newUrl.toString());
+
+            const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+            if (!error && data.session) {
+              setUser(data.session.user);
+              setLoading(false);
+              return;
+            }
+          }
+        }
         const { data: { session } } = await supabaseClient.auth.getSession();
         setUser(session?.user || null);
       } catch (err) {

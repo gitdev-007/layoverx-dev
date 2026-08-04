@@ -43,6 +43,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     async function getInitialSession() {
       try {
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          const code = searchParams.get('code');
+          if (code) {
+            // Remove code parameter immediately to prevent duplicate exchanges
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('code');
+            window.history.replaceState({}, '', newUrl.toString());
+
+            const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+            if (!error && data.session) {
+              setSession(data.session);
+              setRawUser(data.session.user);
+              setLoading(false);
+              return;
+            }
+          }
+        }
         const { data: { session: initialSession } } = await supabaseClient.auth.getSession();
         setSession(initialSession);
         setRawUser(initialSession?.user || null);

@@ -134,6 +134,10 @@ export default function AuthModal({ isOpen, onClose }) {
         provider: 'google',
         options: {
           redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+          queryParams: {
+            prompt: 'consent select_account',
+            access_type: 'offline',
+          },
         },
       });
       if (error) {
