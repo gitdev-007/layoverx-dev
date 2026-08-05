@@ -722,17 +722,40 @@ export default function PlanMyLayoverPage() {
       },
     };
 
-    // Ensure body, main and all parent wrappers do not have any CSS blur filters applied
+    // Ensure ALL parent/ancestor elements have no CSS filters, transforms, or stacking
+    // contexts that could cause the Razorpay iframe to render blurry.
     try {
-      document.body.style.filter = 'none';
-      const mainEl = document.querySelector('main');
-      if (mainEl) mainEl.style.filter = 'none';
-      const rootEl = document.getElementById('root');
-      if (rootEl) rootEl.style.filter = 'none';
-      const bodyChildren = document.querySelectorAll('body > div');
-      bodyChildren.forEach((el: any) => {
-        el.style.filter = 'none';
-      });
+      if (typeof document !== 'undefined') {
+        // Reset body-level filters
+        document.body.style.filter = 'none';
+        document.body.style.transform = 'none';
+        (document.body.style as any).webkitFilter = 'none';
+        document.body.style.willChange = 'auto';
+
+        // Reset main element
+        const mainEl = document.querySelector('main');
+        if (mainEl) {
+          (mainEl as HTMLElement).style.filter = 'none';
+          (mainEl as HTMLElement).style.transform = 'none';
+          (mainEl as HTMLElement).style.willChange = 'auto';
+        }
+
+        // Reset #root if present (Next.js uses __next)
+        const rootEl = document.getElementById('__next') || document.getElementById('root');
+        if (rootEl) {
+          (rootEl as HTMLElement).style.filter = 'none';
+          (rootEl as HTMLElement).style.transform = 'none';
+          (rootEl as HTMLElement).style.willChange = 'auto';
+        }
+
+        // Reset all immediate body children (covers AuthGuard wrapper div)
+        document.querySelectorAll('body > div').forEach((el) => {
+          (el as HTMLElement).style.filter = 'none';
+          (el as HTMLElement).style.transform = 'none';
+          (el as HTMLElement).style.willChange = 'auto';
+          (el as any).style.webkitFilter = 'none';
+        });
+      }
     } catch (e) {
       console.warn('⚠️ Clear blur filters warning:', e);
     }
