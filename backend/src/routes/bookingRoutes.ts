@@ -93,30 +93,53 @@ router.post('/create-checkout-order', upload.single('ticket'), async (req: Reque
     let bookingId = `bk_mock_${Date.now()}`;
 
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-      const { data: booking, error: dbError } = await supabase
-        .from('bookings')
-        .insert([
-          {
-            user_id: userId,
-            user_phone: phone,
-            ticket_file_path: ticketPath,
-            extracted_pnr: telemetry.pnr,
-            extracted_inbound_flight: telemetry.flights[0] || null,
-            extracted_outbound_flight: telemetry.flights[1] || null,
-            dpdp_consented: isConsented === 'true' || isConsented === true,
-            scheduled_deletion_at: deletionTimestamp,
-            payment_status: 'PENDING',
-            amount: parseFloat(amount),
-            currency: 'INR',
-            payment_order_id: razorpayOrderId,
-            slot_id: sanitizedSlotId,
-            service_id: sanitizedServiceId,
-            status: 'pending_verification'
-          }
-        ])
-        .select()
-        .single();
+      const insertObj: any = {
+        user_id: userId,
+        user_phone: phone,
+        ticket_file_path: ticketPath,
+        extracted_pnr: telemetry.pnr,
+        extracted_inbound_flight: telemetry.flights[0] || null,
+        extracted_outbound_flight: telemetry.flights[1] || null,
+        dpdp_consented: isConsented === 'true' || isConsented === true,
+        scheduled_deletion_at: deletionTimestamp,
+        payment_status: 'PENDING',
+        amount: parseFloat(amount),
+        currency: 'INR',
+        payment_order_id: razorpayOrderId,
+        slot_id: sanitizedSlotId,
+        service_id: sanitizedServiceId,
+        status: 'pending_verification'
+      };
 
+      let insertResult: any = null;
+      if (req.body.itinerary) {
+        try {
+          console.log('[API] Attempting booking insert with itinerary:', req.body.itinerary);
+          const resWithItinerary = await supabase
+            .from('bookings')
+            .insert([{ ...insertObj, itinerary: req.body.itinerary }])
+            .select()
+            .single();
+          
+          if (!resWithItinerary.error) {
+            insertResult = resWithItinerary;
+          } else {
+            console.warn('⚠️ Error inserting with itinerary (might be missing column), attempting fallback:', resWithItinerary.error.message);
+          }
+        } catch (dbErr: any) {
+          console.warn('⚠️ Booking insert with itinerary column exception, falling back:', dbErr.message || dbErr);
+        }
+      }
+
+      if (!insertResult) {
+        insertResult = await supabase
+          .from('bookings')
+          .insert([insertObj])
+          .select()
+          .single();
+      }
+
+      const { data: booking, error: dbError } = insertResult;
       if (dbError) throw dbError;
       bookingId = booking.id;
     }

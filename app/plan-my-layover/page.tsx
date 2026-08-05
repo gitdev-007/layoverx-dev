@@ -722,6 +722,21 @@ export default function PlanMyLayoverPage() {
       },
     };
 
+    // Ensure body, main and all parent wrappers do not have any CSS blur filters applied
+    try {
+      document.body.style.filter = 'none';
+      const mainEl = document.querySelector('main');
+      if (mainEl) mainEl.style.filter = 'none';
+      const rootEl = document.getElementById('root');
+      if (rootEl) rootEl.style.filter = 'none';
+      const bodyChildren = document.querySelectorAll('body > div');
+      bodyChildren.forEach((el: any) => {
+        el.style.filter = 'none';
+      });
+    } catch (e) {
+      console.warn('⚠️ Clear blur filters warning:', e);
+    }
+
     const rzp = new (window as any).Razorpay(options);
     rzp.open();
   };
@@ -755,7 +770,8 @@ export default function PlanMyLayoverPage() {
         activeUserId,
         parsedAmount,
         slotId,
-        serviceId
+        serviceId,
+        contextItems
       );
 
       const draftData = {

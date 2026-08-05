@@ -304,7 +304,8 @@ export async function createCheckoutOrder(
   userId: string,
   amount: number,
   slotId: string,
-  serviceId: string
+  serviceId: string,
+  itinerary?: any[]
 ): Promise<CreateCheckoutOrderResponse> {
   const formData = new FormData();
   formData.append('ticket', ticketFile);
@@ -314,6 +315,7 @@ export async function createCheckoutOrder(
   formData.append('amount', amount.toString());
   if (slotId) formData.append('slotId', slotId);
   if (serviceId) formData.append('serviceId', serviceId);
+  if (itinerary) formData.append('itinerary', JSON.stringify(itinerary));
 
   const baseUrl = getApiBaseUrl(); // Ends with /api/v1
   const uploadUrl = `${baseUrl}/booking/create-checkout-order`;
