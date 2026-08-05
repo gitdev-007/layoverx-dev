@@ -708,11 +708,11 @@ export default function PlanMyLayoverPage() {
             // Redirect to booking-confirmation
             window.location.href = `/booking-confirmation?bookingId=${checkoutRes.bookingId}`;
           } else {
-            showToast('Payment verification failed. Please contact support.', 'error');
+            showToast('Payment verification failed. Please contact support.', 'warning');
           }
         } catch (err: any) {
           console.error('Payment Verification error:', err);
-          showToast(err.message || 'Payment verification failed. Please contact support.', 'error');
+          showToast(err.message || 'Payment verification failed. Please contact support.', 'warning');
         }
       },
       modal: {
@@ -752,7 +752,7 @@ export default function PlanMyLayoverPage() {
 
       const activeUserId = 
         user?.id || 
-        user?.username || 
+        user?.usernamePrefix || 
         user?.email || 
         (typeof window !== 'undefined' && localStorage.getItem('username')) || 
         'testuser01';
