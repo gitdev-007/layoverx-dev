@@ -10,6 +10,7 @@ export const bookingLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // Flight Tracking rate limiter: Max 20 requests per 15-minute window per IP.
@@ -22,4 +23,5 @@ export const flightLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });

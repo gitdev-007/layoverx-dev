@@ -257,26 +257,57 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
     expiresAt: Date.now() + ttlSeconds * 1000,
   });
 
-  // Check if slot exists in 'slots' table, if not, automatically insert a dummy/test slot record
+  // Check if slot exists in 'service_slots' or 'slots' table, if not, automatically insert a dummy/test slot record
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      const { data: existingSlot, error: slotCheckError } = await supabase
-        .from('slots')
-        .select('id')
-        .eq('id', dbSlotId)
-        .maybeSingle();
+      let slotExists = false;
+      let targetTable = 'service_slots';
 
-      if (slotCheckError) {
-        console.warn('⚠️ Error checking slot existence, attempting to insert default slot:', slotCheckError.message);
+      // 1. Try querying 'service_slots' first
+      try {
+        const { data: existingSlot, error: slotCheckError } = await supabase
+          .from('service_slots')
+          .select('id')
+          .eq('id', dbSlotId)
+          .maybeSingle();
+
+        if (!slotCheckError && existingSlot) {
+          slotExists = true;
+        } else if (slotCheckError) {
+          console.warn('⚠️ service_slots lookup warning:', slotCheckError.message);
+        }
+      } catch (err: any) {
+        console.warn('⚠️ service_slots check skipped safely:', err.message);
       }
 
-      if (!existingSlot) {
-        console.log(`[INFO] slotId "${slotId}" (db: ${dbSlotId}) does not exist in 'slots'. Inserting dummy/test slot...`);
+      // 2. If not found in 'service_slots', try 'slots' as fallback
+      if (!slotExists) {
+        try {
+          const { data: existingSlot, error: slotCheckError } = await supabase
+            .from('slots')
+            .select('id')
+            .eq('id', dbSlotId)
+            .maybeSingle();
+
+          if (!slotCheckError && existingSlot) {
+            slotExists = true;
+            targetTable = 'slots';
+          } else if (slotCheckError) {
+            console.warn('⚠️ slots lookup warning:', slotCheckError.message);
+          }
+        } catch (err: any) {
+          console.warn('⚠️ slots check skipped safely:', err.message);
+        }
+      }
+
+      // 3. If slot still does not exist, insert dummy record
+      if (!slotExists) {
+        console.log(`[INFO] slotId "${slotId}" (db: ${dbSlotId}) does not exist in 'service_slots' or 'slots'. Inserting dummy/test slot in '${targetTable}'...`);
         const now = new Date();
         const endTime = new Date(Date.now() + 3 * 60 * 60 * 1000); // NOW() + 3 hours
         
         const { error: slotInsertError } = await supabase
-          .from('slots')
+          .from(targetTable)
           .insert([
             {
               id: dbSlotId,
@@ -288,9 +319,9 @@ export async function holdSlot(input: HoldSlotInput): Promise<HoldSlotResult> {
           ]);
 
         if (slotInsertError) {
-          console.error('❌ Failed to insert default dummy slot:', slotInsertError.message);
+          console.error(`❌ Failed to insert default dummy slot to ${targetTable}:`, slotInsertError.message);
         } else {
-          console.log(`[SUCCESS] Dummy slot "${slotId}" (db: ${dbSlotId}) successfully inserted into 'slots' table.`);
+          console.log(`[SUCCESS] Dummy slot "${slotId}" (db: ${dbSlotId}) successfully inserted into '${targetTable}' table.`);
         }
       }
     } catch (err: any) {

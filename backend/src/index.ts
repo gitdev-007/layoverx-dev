@@ -17,6 +17,7 @@ import bookingRoutesRouter from './routes/bookingRoutes.js';
 dotenv.config();
 
 const app: Express = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
