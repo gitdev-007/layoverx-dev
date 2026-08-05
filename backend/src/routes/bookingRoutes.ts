@@ -1,91 +1,223 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 import { extractTextFromFile, parseTicketTelemetry } from '../services/ticketParser.js';
 
 const router = Router();
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB memory limit
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
-router.post('/upload-ticket', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
+let razorpay: Razorpay | null = null;
+const keyId = process.env.RAZORPAY_KEY_ID || '';
+const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+if (keyId && keySecret && !keyId.includes('sample')) {
   try {
-    const { phone, isConsented } = req.body || {};
-    const userId = req.body.userId;
-    const amount = req.body.amount ? parseFloat(req.body.amount) : 0.00;
+    razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+  } catch (err) {
+    console.error('⚠️ Failed to initialize Razorpay client:', err);
+  }
+}
+
+// ENDPOINT 1: UPLOAD TICKET, EXTRACT TELEMETRY & CREATE RAZORPAY ORDER
+router.post('/create-checkout-order', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { phone, isConsented, userId, amount = 1499, slotId, serviceId } = req.body || {};
     const file = req.file;
 
     if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
-      res.status(401).json({ 
-        error: 'Authentication required. Please log in to upload your ticket.' 
-      });
+      res.status(401).json({ error: 'Authentication required. Please log in.' });
       return;
     }
-
-    if (!file || !phone) {
+    if (!phone || !file) {
       res.status(400).json({ error: 'Missing e-ticket file or contact phone number.' });
       return;
     }
 
-    // Local Open-Source Extraction
-    const rawText = await extractTextFromFile(file.buffer, file.mimetype);
-    const telemetry = parseTicketTelemetry(rawText);
-
-    // Mock Mode fallback for dev/testing when Supabase is unconfigured
-    if (!SUPABASE_URL.startsWith('http') || SUPABASE_URL.includes('sample-project')) {
-      res.status(200).json({
-        success: true,
-        bookingId: `bk_${Date.now()}`,
-        extracted: telemetry,
-        message: 'Ticket uploaded and processed successfully (Mock Mode).'
-      });
-      return;
-    }
-
-    // 1. Upload to Supabase Private Bucket
+    // A. Upload E-Ticket to Supabase Private Bucket
     const fileExt = file.originalname.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
-    const { data: storageData, error: storageError } = await supabase.storage
-      .from('e-tickets')
-      .upload(fileName, file.buffer, { contentType: file.mimetype });
+    let ticketPath = `mock_bucket/${fileName}`;
+    let telemetry: any = { pnr: 'XXXXXX', flights: [] };
 
-    if (storageError) throw storageError;
+    // Extract Flight Telemetry via local parser
+    const rawText = await extractTextFromFile(file.buffer, file.mimetype);
+    telemetry = parseTicketTelemetry(rawText);
 
-    // 2. Set 48-Hour Retention Limit for DPDP Act
+    if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('e-tickets')
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      if (storageError) throw storageError;
+      ticketPath = storageData.path;
+    }
+
+    // B. Generate Official Razorpay Order
+    const numericAmount = Math.round(parseFloat(amount) * 100); // convert to paise
+    let razorpayOrderId = `ord_mock_${Date.now()}`;
+    let razorpayAmount = numericAmount;
+    let razorpayCurrency = 'INR';
+
+    if (razorpay) {
+      try {
+        const orderOptions = {
+          amount: numericAmount,
+          currency: 'INR',
+          receipt: `rcpt_${Date.now()}`,
+        };
+        const razorpayOrder = await razorpay.orders.create(orderOptions);
+        razorpayOrderId = razorpayOrder.id;
+        razorpayAmount = Number(razorpayOrder.amount);
+        razorpayCurrency = razorpayOrder.currency;
+      } catch (err: any) {
+        console.warn('⚠️ Razorpay order creation warning (using mock order):', err.message || err);
+      }
+    }
+
+    // C. Insert Booking Record into Supabase with PENDING Status
     const deletionTimestamp = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    let bookingId = `bk_mock_${Date.now()}`;
 
-    // 3. Insert Database Booking Record
-    const { data: booking, error: dbError } = await supabase
-      .from('bookings')
-      .insert([
-        {
-          user_id: userId,
-          user_phone: phone,
-          ticket_file_path: storageData.path,
-          extracted_pnr: telemetry.pnr,
-          extracted_inbound_flight: telemetry.flights[0] || null,
-          extracted_outbound_flight: telemetry.flights[1] || null,
-          dpdp_consented: isConsented === 'true' || isConsented === true,
-          scheduled_deletion_at: deletionTimestamp,
-          status: 'pending_verification',
-          amount: amount,
-          currency: 'INR'
-        }
-      ])
-      .select()
-      .single();
+    if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      const { data: booking, error: dbError } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            user_id: userId,
+            user_phone: phone,
+            ticket_file_path: ticketPath,
+            extracted_pnr: telemetry.pnr,
+            extracted_inbound_flight: telemetry.flights[0] || null,
+            extracted_outbound_flight: telemetry.flights[1] || null,
+            dpdp_consented: isConsented === 'true' || isConsented === true,
+            scheduled_deletion_at: deletionTimestamp,
+            payment_status: 'PENDING',
+            amount: parseFloat(amount),
+            currency: 'INR',
+            payment_order_id: razorpayOrderId,
+            slot_id: slotId || null,
+            service_id: serviceId || null,
+            status: 'pending_verification'
+          }
+        ])
+        .select()
+        .single();
 
-    if (dbError) throw dbError;
+      if (dbError) throw dbError;
+      bookingId = booking.id;
+    }
 
     res.status(200).json({
       success: true,
-      bookingId: booking.id,
+      bookingId: bookingId,
+      orderId: razorpayOrderId,
+      amount: razorpayAmount,
+      currency: razorpayCurrency,
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_samplekey',
       extracted: telemetry,
-      message: 'Ticket uploaded and processed successfully.'
     });
 
   } catch (error: any) {
-    console.error('❌ Booking Upload Error:', error);
-    res.status(500).json({ error: 'Failed to upload and process ticket.' });
+    console.error('❌ Create Checkout Order Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to initiate checkout.' });
+  }
+});
+
+// ENDPOINT 2: VERIFY RAZORPAY PAYMENT & MARK COMPLETED
+router.post('/verify-payment', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body || {};
+
+    if (!razorpay_order_id || !razorpay_payment_id || !bookingId) {
+      res.status(400).json({ error: 'Missing payment verification params.' });
+      return;
+    }
+
+    let isValid = true;
+    if (!razorpay_order_id.startsWith('ord_mock_') && process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('sample')) {
+      const body = razorpay_order_id + '|' + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
+        .update(body.toString())
+        .digest('hex');
+
+      isValid = expectedSignature === razorpay_signature;
+    }
+
+    if (!isValid) {
+      res.status(400).json({ error: 'Invalid payment signature verification.' });
+      return;
+    }
+
+    if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'COMPLETED',
+          payment_id: razorpay_payment_id,
+          status: 'confirmed'
+        })
+        .eq('id', bookingId);
+
+      if (updateError) throw updateError;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment verified successfully.',
+      bookingId: bookingId,
+    });
+
+  } catch (error: any) {
+    console.error('❌ Verify Payment Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to verify payment.' });
+  }
+});
+
+// ENDPOINT 3: GET BOOKING DETAILS BY ID
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!booking) {
+        res.status(404).json({ error: 'Booking not found.' });
+        return;
+      }
+      res.status(200).json({ success: true, booking });
+    } else {
+      res.status(200).json({
+        success: true,
+        booking: {
+          id,
+          user_phone: '+91 98765 43210',
+          ticket_file_path: 'mock_bucket/mock_ticket.pdf',
+          extracted_pnr: 'MH202A',
+          extracted_inbound_flight: 'AI302',
+          extracted_outbound_flight: 'EK501',
+          dpdp_consented: true,
+          payment_status: 'COMPLETED',
+          amount: 1499,
+          currency: 'INR',
+          status: 'confirmed',
+          created_at: new Date().toISOString(),
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ Get Booking Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch booking details.' });
   }
 });
 

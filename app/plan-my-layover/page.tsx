@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA, Hotel as HotelItem, Restaurant, Spa, GamingLounge, Tour } from '@/data/layover-data';
-import { holdSlot, fetchServices, uploadTicket } from '@/lib/api';
+import { holdSlot, fetchServices, uploadTicket, createCheckoutOrder, verifyPayment } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import LayoverCalculatorForm from '@/components/LayoverCalculatorForm';
 import { useItinerary, calculateDynamicCabDriveTime } from '@/context/itinerary-context';
@@ -674,8 +674,56 @@ export default function PlanMyLayoverPage() {
     showToast("File Attached successfully!", "success");
   };
 
-  const removeFile = () => {
-    setUploadedDocument(null);
+  const launchRazorpay = (checkoutRes: any, parsedAmount: number, contactPhone: string, selectedEsim: boolean, selectedVipBuggy: boolean) => {
+    const options = {
+      key: checkoutRes.keyId,
+      amount: checkoutRes.amount,
+      currency: checkoutRes.currency,
+      name: 'LayoverX',
+      description: 'Mumbai Airport Layover Package',
+      order_id: checkoutRes.orderId,
+      prefill: {
+        contact: contactPhone,
+      },
+      theme: {
+        color: '#0284c7',
+      },
+      handler: async function (razorpayRes: any) {
+        try {
+          // Call Backend Verification
+          const verifyRes = await verifyPayment({
+            razorpay_order_id: razorpayRes.razorpay_order_id,
+            razorpay_payment_id: razorpayRes.razorpay_payment_id,
+            razorpay_signature: razorpayRes.razorpay_signature,
+            bookingId: checkoutRes.bookingId,
+          });
+
+          if (verifyRes.success) {
+            if (selectedEsim) {
+              console.log(`[ACTION REQUIRED - eSIM]: Order #${checkoutRes.bookingId} purchased India eSIM for passenger. Phone: ${contactPhone}`);
+            }
+            if (selectedVipBuggy) {
+              console.log(`[ACTION REQUIRED - VIP BUGGY]: Passenger booking landing at T2. Call Adani Pranaam Desk to confirm buggy.`);
+            }
+            // Redirect to booking-confirmation
+            window.location.href = `/booking-confirmation?bookingId=${checkoutRes.bookingId}`;
+          } else {
+            showToast('Payment verification failed. Please contact support.', 'error');
+          }
+        } catch (err: any) {
+          console.error('Payment Verification error:', err);
+          showToast(err.message || 'Payment verification failed. Please contact support.', 'error');
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          setIsHolding(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
   };
 
   const performHoldSlot = async () => {
@@ -694,16 +742,22 @@ export default function PlanMyLayoverPage() {
         (typeof window !== 'undefined' && localStorage.getItem('username')) || 
         'testuser01';
 
-      // 1. Upload & Parse Ticket via the new backend endpoint
-      const uploadRes = await uploadTicket(uploadedDocument, emergencyContact, isDpdpConsented, activeUserId);
-
       // Capture selected service details or default to mock if none selected
-      const serviceId = selectedHotelId === 'h1' ? 'db01ad18-d911-4cdb-b73c-2518f2eee46a' : 'srv-pod-mumbai-t2';
+      const serviceId = selectedHotelId === 'h1' ? 'db01ad18-d911-4cdb-b73c-2518f2eee46a' : (selectedHotelId || 'srv-pod-mumbai-t2');
       const slotId = 'slot-1400';
-      const userId = 'test-dev-user-01';
+      const parsedAmount = totalPrice || 1499;
 
-      const holdRes = await holdSlot({ userId, serviceId, slotId });
-      
+      // 1. Upload ticket & create Razorpay order in a single request
+      const checkoutRes = await createCheckoutOrder(
+        uploadedDocument,
+        emergencyContact,
+        isDpdpConsented,
+        activeUserId,
+        parsedAmount,
+        slotId,
+        serviceId
+      );
+
       const draftData = {
         destinationArea,
         arrivalTime,
@@ -715,16 +769,16 @@ export default function PlanMyLayoverPage() {
         selectedTourId,
         selectedSpaId,
         selectedGamingId,
-        totalPrice,
-        bookingId: uploadRes.bookingId || holdRes.bookingId || `bk_${Date.now()}`,
-        paymentStatus: 'HELD',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-        leadPassengerName: uploadRes.extracted?.pnr ? `Passenger (${uploadRes.extracted.pnr})` : 'Passenger',
+        totalPrice: parsedAmount,
+        bookingId: checkoutRes.bookingId,
+        paymentStatus: 'PENDING',
+        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        leadPassengerName: checkoutRes.extracted?.pnr ? `Passenger (${checkoutRes.extracted.pnr})` : 'Passenger',
         passportNumber,
         passportCountry,
-        flightIn: uploadRes.extracted?.flights?.[0] || '',
-        flightOut: uploadRes.extracted?.flights?.[1] || '',
-        pnr: uploadRes.extracted?.pnr || '',
+        flightIn: checkoutRes.extracted?.flights?.[0] || '',
+        flightOut: checkoutRes.extracted?.flights?.[1] || '',
+        pnr: checkoutRes.extracted?.pnr || '',
         emergencyContact,
         serviceCategory: selectedServiceCategory,
         visaAffirmed,
@@ -736,25 +790,28 @@ export default function PlanMyLayoverPage() {
         isDpdpConsented,
       };
 
-      if (selectedEsim) {
-        console.log(`[ACTION REQUIRED - eSIM]: Order #${draftData.bookingId} purchased India eSIM for passenger. Phone: ${emergencyContact}`);
-      }
-      if (selectedVipBuggy) {
-        console.log(`[ACTION REQUIRED - VIP BUGGY]: Passenger booking landing at T2. Call Adani Pranaam Desk to confirm buggy.`);
-      }
-
       localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
-      
-      router.push('/my-itinerary');
+
+      // 2. Open Razorpay Checkout overlay
+      if (typeof (window as any).Razorpay === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => {
+          launchRazorpay(checkoutRes, parsedAmount, emergencyContact, !!selectedEsim, !!selectedVipBuggy);
+        };
+        document.body.appendChild(script);
+      } else {
+        launchRazorpay(checkoutRes, parsedAmount, emergencyContact, !!selectedEsim, !!selectedVipBuggy);
+      }
 
     } catch (err: any) {
       console.warn('[Checkout Hold Error]', err);
-      let errMsg = err.message || 'This slot is currently held or booked by another traveler. Please select another time slot.';
+      let errMsg = err.message || 'Failed to initiate checkout. Please try again.';
       if (errMsg.startsWith('⚠️ ')) {
         errMsg = errMsg.replace('⚠️ ', '');
       }
       setValidationError(errMsg);
-    } finally {
       setIsHolding(false);
     }
   };

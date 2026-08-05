@@ -78,6 +78,7 @@ app.get(['/health', '/api/v1/health'], async (req: Request, res: Response): Prom
 app.use('/api/v1/layover', layoverRouter);
 app.use('/api/v1/services', servicesRouter);
 app.use('/api/v1/booking', bookingRouter);
+app.use('/api/v1/booking', bookingRoutesRouter);
 app.use('/api/v1/itinerary', itineraryRouter);
 app.use('/api/v1/telemetry', telemetryRouter);
 app.use('/api/v1/payments', paymentsRouter);

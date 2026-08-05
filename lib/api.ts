@@ -284,5 +284,91 @@ export async function uploadTicket(ticketFile: File, phone: string, isConsented:
   return resultData;
 }
 
+export interface CreateCheckoutOrderResponse {
+  success: boolean;
+  bookingId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  extracted: {
+    pnr: string | null;
+    flights: string[];
+  };
+}
+
+export async function createCheckoutOrder(
+  ticketFile: File,
+  phone: string,
+  isConsented: boolean,
+  userId: string,
+  amount: number,
+  slotId: string,
+  serviceId: string
+): Promise<CreateCheckoutOrderResponse> {
+  const formData = new FormData();
+  formData.append('ticket', ticketFile);
+  formData.append('phone', phone);
+  formData.append('isConsented', isConsented.toString());
+  formData.append('userId', userId);
+  formData.append('amount', amount.toString());
+  if (slotId) formData.append('slotId', slotId);
+  if (serviceId) formData.append('serviceId', serviceId);
+
+  const baseUrl = getApiBaseUrl(); // Ends with /api/v1
+  const uploadUrl = `${baseUrl}/booking/create-checkout-order`;
+
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const contentType = res.headers.get('content-type');
+  let resultData: any;
+
+  if (contentType && contentType.includes('application/json')) {
+    resultData = await res.json();
+  } else {
+    const text = await res.text();
+    console.error('⚠️ Non-JSON response received from createCheckoutOrder:', text);
+    throw new Error(`Server returned status ${res.status}. Please check backend logs.`);
+  }
+
+  if (!res.ok || resultData?.status === 'error' || resultData?.error) {
+    throw new Error(resultData?.error || resultData?.message || 'Failed to initiate checkout.');
+  }
+  return resultData;
+}
+
+export async function verifyPayment(payload: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  bookingId: string;
+}): Promise<{ success: boolean; message: string; bookingId: string }> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/booking/verify-payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = res.headers.get('content-type');
+  let resultData: any;
+
+  if (contentType && contentType.includes('application/json')) {
+    resultData = await res.json();
+  } else {
+    const text = await res.text();
+    console.error('⚠️ Non-JSON response received from verifyPayment:', text);
+    throw new Error(`Server returned status ${res.status}. Please check backend logs.`);
+  }
+
+  if (!res.ok || resultData?.status === 'error' || resultData?.error) {
+    throw new Error(resultData?.error || resultData?.message || 'Failed to verify payment.');
+  }
+  return resultData;
+}
+
 
 
