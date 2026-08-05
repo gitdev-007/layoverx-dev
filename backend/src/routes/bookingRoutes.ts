@@ -22,10 +22,19 @@ if (keyId && keySecret && !keyId.includes('sample')) {
   }
 }
 
+// Helper to check for valid PostgreSQL UUID format
+const isValidUUID = (str: any) => {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 // ENDPOINT 1: UPLOAD TICKET, EXTRACT TELEMETRY & CREATE RAZORPAY ORDER
 router.post('/create-checkout-order', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { phone, isConsented, userId, amount = 1499, slotId, serviceId } = req.body || {};
+    const sanitizedSlotId = isValidUUID(slotId) ? slotId : null;
+    const sanitizedServiceId = isValidUUID(serviceId) ? serviceId : null;
     const file = req.file;
 
     if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
@@ -100,8 +109,8 @@ router.post('/create-checkout-order', upload.single('ticket'), async (req: Reque
             amount: parseFloat(amount),
             currency: 'INR',
             payment_order_id: razorpayOrderId,
-            slot_id: slotId || null,
-            service_id: serviceId || null,
+            slot_id: sanitizedSlotId,
+            service_id: sanitizedServiceId,
             status: 'pending_verification'
           }
         ])

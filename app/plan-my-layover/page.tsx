@@ -806,7 +806,7 @@ export default function PlanMyLayoverPage() {
       }
 
     } catch (err: any) {
-      console.warn('[Checkout Hold Error]', err);
+      console.warn('[Checkout Error]', err);
       let errMsg = err.message || 'Failed to initiate checkout. Please try again.';
       if (errMsg.startsWith('⚠️ ')) {
         errMsg = errMsg.replace('⚠️ ', '');
