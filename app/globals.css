@@ -125,3 +125,31 @@
     color: black !important;
   }
 }
+
+/* Force Razorpay iframe container to render at crisp native subpixel resolution */
+.razorpay-checkout-frame {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  perspective: none !important;
+  will-change: auto !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: crisp-edges !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Disable hardware acceleration rasterization on root containers when Razorpay opens */
+body.razorpay-open,
+body.razorpay-open #__next,
+body.razorpay-open main {
+  transform: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  perspective: none !important;
+  will-change: auto !important;
+  backface-visibility: visible !important;
+}

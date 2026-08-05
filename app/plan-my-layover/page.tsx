@@ -699,6 +699,9 @@ export default function PlanMyLayoverPage() {
           });
 
           if (verifyRes.success) {
+            if (typeof document !== 'undefined') {
+              document.body.classList.remove('razorpay-open');
+            }
             if (selectedEsim) {
               console.log(`[ACTION REQUIRED - eSIM]: Order #${checkoutRes.bookingId} purchased India eSIM for passenger. Phone: ${contactPhone}`);
             }
@@ -712,11 +715,17 @@ export default function PlanMyLayoverPage() {
           }
         } catch (err: any) {
           console.error('Payment Verification error:', err);
+          if (typeof document !== 'undefined') {
+            document.body.classList.remove('razorpay-open');
+          }
           showToast(err.message || 'Payment verification failed. Please contact support.', 'warning');
         }
       },
       modal: {
         ondismiss: function () {
+          if (typeof document !== 'undefined') {
+            document.body.classList.remove('razorpay-open');
+          }
           setIsHolding(false);
         },
       },
@@ -726,6 +735,7 @@ export default function PlanMyLayoverPage() {
     // contexts that could cause the Razorpay iframe to render blurry.
     try {
       if (typeof document !== 'undefined') {
+        document.body.classList.add('razorpay-open');
         // Reset body-level filters
         document.body.style.filter = 'none';
         document.body.style.transform = 'none';
