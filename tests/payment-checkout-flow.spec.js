@@ -168,11 +168,19 @@ test.describe('LayoverX Direct Checkout & Razorpay Flow', () => {
     const checkoutBtn = page.locator('button:has-text("Proceed to Secure Checkout")');
     await checkoutBtn.click();
 
-    // 9. Verify we are redirected to /booking-confirmation
+    // 9. Verify we are redirected to /checkout
+    await page.waitForURL(/.*checkout/);
+    await expect(page).toHaveURL(/.*checkout\?bookingId=bk_test_12345.*/);
+
+    // 10. Click the pay button on the dedicated checkout page
+    const payBtn = page.locator('button:has-text("Confirm Layover")');
+    await payBtn.click();
+
+    // 11. Verify we are redirected to /booking-confirmation
     await page.waitForURL(/.*booking-confirmation/);
     await expect(page).toHaveURL(/.*booking-confirmation\?bookingId=bk_test_12345/);
 
-    // 10. Confirm page layout and digital pass indicators
+    // 12. Confirm page layout and digital pass indicators
     await expect(page.locator('text=Layover Booking Confirmed!')).toBeVisible();
     await expect(page.locator('text=MH202A')).toBeVisible();
     await expect(page.locator('text=AI302')).toBeVisible();

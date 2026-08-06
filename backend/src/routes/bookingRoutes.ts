@@ -4,6 +4,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 import { extractTextFromFile, parseTicketTelemetry } from '../services/ticketParser.js';
+import { sendDiscordAlert } from '../utils/discord.js';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
@@ -187,16 +188,50 @@ router.post('/verify-payment', async (req: Request, res: Response): Promise<void
     }
 
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-      const { error: updateError } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from('bookings')
         .update({
           payment_status: 'COMPLETED',
           payment_id: razorpay_payment_id,
           status: 'confirmed'
         })
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .select()
+        .single();
 
       if (updateError) throw updateError;
+
+      // Send actual Discord alert
+      if (updatedData) {
+        try {
+          await sendDiscordAlert({
+            bookingId: updatedData.id,
+            slotId: updatedData.slot_id || 'slot-1400',
+            userId: updatedData.user_id || 'testuser01',
+            paymentId: razorpay_payment_id || 'pay_test_54321',
+            leadPassengerName: updatedData.extracted_pnr ? `Passenger (${updatedData.extracted_pnr})` : 'Passenger',
+            flightNumber: updatedData.extracted_inbound_flight || 'AI302',
+            redemptionToken: updatedData.vendor_ref_code || updatedData.id,
+          });
+        } catch (err: any) {
+          console.error('❌ Failed to send Discord alert in verify-payment:', err.message || err);
+        }
+      }
+    } else {
+      // Send mock Discord alert in dev mode
+      try {
+        await sendDiscordAlert({
+          bookingId: bookingId,
+          slotId: 'slot-1400',
+          userId: 'testuser01',
+          paymentId: razorpay_payment_id || 'pay_test_54321',
+          leadPassengerName: 'Passenger (MH202A)',
+          flightNumber: 'AI302',
+          redemptionToken: 'redem_token_mock',
+        });
+      } catch (err: any) {
+        console.error('❌ Failed to send mock Discord alert in verify-payment:', err.message || err);
+      }
     }
 
     res.status(200).json({

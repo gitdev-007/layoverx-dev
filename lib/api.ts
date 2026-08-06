@@ -372,5 +372,14 @@ export async function verifyPayment(payload: {
   return resultData;
 }
 
+export async function getBookingDetails(bookingId: string): Promise<{ success: boolean; booking: any }> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/booking/${bookingId}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch booking details: ${res.statusText}`);
+  }
+  return await res.json();
+}
+
 
 

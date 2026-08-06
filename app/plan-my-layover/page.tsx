@@ -841,18 +841,8 @@ export default function PlanMyLayoverPage() {
 
       localStorage.setItem('layoverx_draft', JSON.stringify(draftData));
 
-      // 2. Open Razorpay Checkout overlay
-      if (typeof (window as any).Razorpay === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        script.onload = () => {
-          launchRazorpay(checkoutRes, parsedAmount, emergencyContact, !!selectedEsim, !!selectedVipBuggy);
-        };
-        document.body.appendChild(script);
-      } else {
-        launchRazorpay(checkoutRes, parsedAmount, emergencyContact, !!selectedEsim, !!selectedVipBuggy);
-      }
+      // 2. Navigate to MakeMyTrip-style checkout page
+      router.push(`/checkout?bookingId=${checkoutRes.bookingId}&orderId=${checkoutRes.orderId}&amount=${parsedAmount}`);
 
     } catch (err: any) {
       console.warn('[Checkout Error]', err);
