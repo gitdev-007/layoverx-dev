@@ -113,12 +113,45 @@ router.post('/create-checkout-order', upload.single('ticket'), async (req: Reque
       };
 
       let insertResult: any = null;
-      if (req.body.itinerary) {
+
+      const rawItinerary = req.body.itinerary || req.body.itinerary_details;
+      let parsedItinerary: any[] = [];
+
+      if (rawItinerary) {
         try {
-          console.log('[API] Attempting booking insert with itinerary:', req.body.itinerary);
+          parsedItinerary = typeof rawItinerary === 'string'
+            ? JSON.parse(rawItinerary)
+            : rawItinerary;
+        } catch (err: any) {
+          console.error('❌ Itinerary JSON parse error:', err.message);
+        }
+      }
+
+      console.log('💾 Saving to Supabase itinerary_details:', parsedItinerary);
+
+      try {
+        console.log('[API] Attempting booking insert with itinerary_details:', parsedItinerary);
+        const resWithItineraryDetails = await supabase
+          .from('bookings')
+          .insert([{ ...insertObj, itinerary_details: parsedItinerary }])
+          .select()
+          .single();
+        
+        if (!resWithItineraryDetails.error) {
+          insertResult = resWithItineraryDetails;
+        } else {
+          console.warn('⚠️ Error inserting with itinerary_details (might be missing column), attempting fallback:', resWithItineraryDetails.error.message);
+        }
+      } catch (dbErr: any) {
+        console.warn('⚠️ Booking insert with itinerary_details column exception, falling back:', dbErr.message || dbErr);
+      }
+
+      if (!insertResult) {
+        try {
+          console.log('[API] Attempting booking insert with itinerary:', parsedItinerary);
           const resWithItinerary = await supabase
             .from('bookings')
-            .insert([{ ...insertObj, itinerary: req.body.itinerary }])
+            .insert([{ ...insertObj, itinerary: parsedItinerary }])
             .select()
             .single();
           

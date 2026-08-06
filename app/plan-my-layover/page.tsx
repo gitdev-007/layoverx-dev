@@ -795,6 +795,26 @@ export default function PlanMyLayoverPage() {
       const slotId = 'slot-1400';
       const parsedAmount = totalPrice || 1499;
 
+      // Fallback chain to ensure itinerary items are never lost on page refresh
+      let currentItinerary: any[] = [];
+      if (contextItems && contextItems.length > 0) {
+        currentItinerary = contextItems;
+      } else if (typeof window !== 'undefined') {
+        const savedData = 
+          localStorage.getItem('layoverx_itinerary') || 
+          localStorage.getItem('myItinerary') || 
+          localStorage.getItem('saved_itinerary');
+        if (savedData) {
+          try {
+            currentItinerary = JSON.parse(savedData);
+          } catch (e) {
+            console.error('Failed to parse cached itinerary:', e);
+          }
+        }
+      }
+
+      console.log('📤 Submitting Itinerary Payload:', currentItinerary);
+
       // 1. Upload ticket & create Razorpay order in a single request
       const checkoutRes = await createCheckoutOrder(
         uploadedDocument,
@@ -804,7 +824,7 @@ export default function PlanMyLayoverPage() {
         parsedAmount,
         slotId,
         serviceId,
-        contextItems
+        currentItinerary
       );
 
       const draftData = {
