@@ -52,11 +52,15 @@ router.post('/create-checkout-order', upload.single('ticket'), async (req: Reque
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
     let ticketPath = `mock_bucket/${fileName}`;
-    let telemetry: any = { pnr: 'XXXXXX', flights: [] };
 
     // Extract Flight Telemetry via local parser
     const rawText = await extractTextFromFile(file.buffer, file.mimetype);
-    telemetry = parseTicketTelemetry(rawText);
+    const telemetry = parseTicketTelemetry(rawText);
+
+    if (!telemetry.isValid) {
+      res.status(400).json({ error: telemetry.reason || 'Could not verify e-ticket content.' });
+      return;
+    }
 
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
       const { data: storageData, error: storageError } = await supabase.storage
