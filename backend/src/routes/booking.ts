@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 
 import {
@@ -8,181 +8,264 @@ import {
   confirmBooking,
 } from '../services/bookingLockService.js';
 import { bookingLimiter } from '../middleware/rateLimiter.js';
-import { sanitizeHoldSlot, sanitizeCreateOrder } from '../middleware/sanitize.js';
-import { requireAuth } from '../middleware/auth.js';
+import { sanitizeHoldSlot, sanitizeCreateOrder, sanitizeConfirmBooking } from '../middleware/sanitize.js';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
+import {
+  holdSlotSchema,
+  releaseSlotSchema,
+  createOrderSchema,
+  confirmBookingSchema,
+  luggageReservationSchema,
+} from '../schemas/bookingSchemas.js';
+import { bookingRepository } from '../repositories/bookingRepository.js';
 
 const router = Router();
 
 // POST /api/v1/booking/hold-slot
-router.post(['/hold-slot', '/api/v1/booking/hold-slot'], requireAuth, bookingLimiter, sanitizeHoldSlot, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { serviceId, slotId, userId } = req.body || {};
-
-    if (!serviceId || !slotId || !userId) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Missing required body fields: serviceId, slotId, userId',
+router.post(
+  ['/hold-slot', '/api/v1/booking/hold-slot'],
+  requireAuth,
+  bookingLimiter,
+  sanitizeHoldSlot,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id || req.body?.userId;
+      const validated = holdSlotSchema.parse({
+        serviceId: req.body?.serviceId,
+        slotId: req.body?.slotId,
+        userId,
       });
-      return;
-    }
 
-    const result = await holdSlot({ serviceId, slotId, userId });
+      const result = await holdSlot({
+        serviceId: validated.serviceId,
+        slotId: validated.slotId,
+        userId: validated.userId || userId,
+      });
 
-    if (!result.success) {
-      res.status(result.statusCode).json({
-        status: 'error',
+      if (!result.success) {
+        res.status(result.statusCode).json({
+          status: 'error',
+          message: result.message,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        status: 'success',
         message: result.message,
+        bookingId: result.bookingId,
+        slotId: result.slotId,
+        serviceId: result.serviceId,
+        paymentStatus: 'HELD',
+        expiresAt: new Date(Date.now() + (result.holdExpiresInSeconds || 600) * 1000).toISOString(),
+        redemptionToken: result.redemptionToken,
       });
-      return;
+    } catch (error: any) {
+      if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
+        res.status(404).json({
+          status: 'error',
+          message: 'The specified service or slot ID was not found.',
+        });
+        return;
+      }
+      next(error);
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: result.message,
-      bookingId: result.bookingId,
-      slotId: result.slotId,
-      serviceId: result.serviceId,
-      paymentStatus: 'HELD',
-      expiresAt: new Date(Date.now() + (result.holdExpiresInSeconds || 600) * 1000).toISOString(),
-      redemptionToken: result.redemptionToken,
-    });
-  } catch (error: any) {
-    if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
-      res.status(404).json({
-        status: 'error',
-        message: 'The specified service or slot ID was not found.',
-      });
-      return;
-    }
-
-    res.status(500).json({
-      status: 'error',
-      message: error.message || 'Internal server error while holding slot',
-    });
   }
-});
+);
 
 // POST /api/v1/booking/release-slot
-router.post(['/release-slot', '/api/v1/booking/release-slot'], async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { slotId, userId } = req.body || {};
-
-    if (!slotId || !userId) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Missing required body fields: slotId, userId',
+router.post(
+  ['/release-slot', '/api/v1/booking/release-slot'],
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id || req.body?.userId;
+      const validated = releaseSlotSchema.parse({
+        slotId: req.body?.slotId,
+        userId,
       });
-      return;
-    }
 
-    const result = await releaseSlot({ slotId, userId });
+      const result = await releaseSlot({
+        slotId: validated.slotId,
+        userId: validated.userId || userId,
+      });
 
-    if (!result.success) {
-      res.status(result.statusCode).json({
-        status: 'error',
+      if (!result.success) {
+        res.status(result.statusCode).json({
+          status: 'error',
+          message: result.message,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        status: 'success',
         message: result.message,
       });
-      return;
+    } catch (error: any) {
+      if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
+        res.status(404).json({
+          status: 'error',
+          message: 'The specified service or slot ID was not found.',
+        });
+        return;
+      }
+      next(error);
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: result.message,
-    });
-  } catch (error: any) {
-    if (error?.code === '23503' || error?.code === '22P02' || error?.message?.includes('foreign key')) {
-      res.status(404).json({
-        status: 'error',
-        message: 'The specified service or slot ID was not found.',
-      });
-      return;
-    }
-
-    res.status(500).json({
-      status: 'error',
-      message: error.message || 'Internal server error while releasing slot',
-    });
   }
-});
+);
+
+// POST /api/v1/booking/reserve-luggage (Temporary Luggage Storage Locker Booking)
+router.post(
+  ['/reserve-luggage', '/api/v1/booking/reserve-luggage'],
+  requireAuth,
+  bookingLimiter,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id || req.body?.userId || 'guest_traveler';
+      const parsed = luggageReservationSchema.parse({ ...req.body, userId });
+
+      // Pricing model: ₹199 per cabin bag, ₹299 per check-in bag
+      const cabinCost = parsed.bagCountCabin * 199;
+      const checkinCost = parsed.bagCountCheckin * 299;
+      const totalAmount = cabinCost + checkinCost;
+
+      const bookingId = `bk_luggage_${Date.now()}`;
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let redemptionToken = 'LX-LUG-';
+      for (let i = 0; i < 4; i++) {
+        redemptionToken += chars[Math.floor(Math.random() * chars.length)];
+      }
+
+      const secret = process.env.QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
+      const hmac = crypto.createHmac('sha256', secret).update(`${bookingId}:${redemptionToken}`).digest('hex').slice(0, 32);
+
+      await bookingRepository.insert({
+        id: bookingId,
+        user_id: userId,
+        service_id: 'srv-luggage-csmia',
+        slot_id: `locker_${parsed.terminal.toLowerCase()}_${Date.now()}`,
+        payment_status: 'HELD',
+        amount: totalAmount,
+        currency: 'INR',
+        metadata: {
+          terminal: parsed.terminal,
+          cabinBags: parsed.bagCountCabin,
+          checkinBags: parsed.bagCountCheckin,
+          dropoffTime: parsed.dropoffTime,
+          pickupTime: parsed.pickupTime,
+          flightNumber: parsed.flightNumber,
+        },
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Luggage locker reserved successfully at CSMIA.',
+        bookingId,
+        terminal: parsed.terminal,
+        cabinBags: parsed.bagCountCabin,
+        checkinBags: parsed.bagCountCheckin,
+        totalAmount,
+        currency: 'INR',
+        redemptionToken,
+        hmac,
+        qrPayload: JSON.stringify({ id: bookingId, token: redemptionToken, hmac }),
+        dropoffLocation: `CSMIA ${parsed.terminal} Arrivals Concourse — Left Luggage Counter`,
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+);
 
 // POST /api/v1/booking/create-order
-router.post(['/create-order', '/api/v1/booking/create-order'], requireAuth, bookingLimiter, sanitizeCreateOrder, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { slotId, serviceId, userId, amount } = req.body || {};
-
-    if (!slotId || !serviceId || !userId || amount === undefined || amount === null) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Missing required body fields: slotId, serviceId, userId, amount',
+router.post(
+  ['/create-order', '/api/v1/booking/create-order'],
+  requireAuth,
+  bookingLimiter,
+  sanitizeCreateOrder,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id || req.body?.userId;
+      const validated = createOrderSchema.parse({
+        slotId: req.body?.slotId,
+        serviceId: req.body?.serviceId,
+        amount: req.body?.amount !== undefined ? Number(req.body.amount) : undefined,
+        currency: req.body?.currency,
+        phone: req.body?.phone,
+        country_code: req.body?.country_code,
       });
-      return;
-    }
 
-    const result = await createBookingOrder({ slotId, serviceId, userId, amount: Number(amount) });
-
-    if (!result.success) {
-      res.status(result.statusCode).json({
-        status: 'error',
-        message: result.message,
+      const result = await createBookingOrder({
+        slotId: validated.slotId,
+        serviceId: validated.serviceId,
+        userId,
+        amount: validated.amount,
+        currency: validated.currency,
+        country_code: validated.country_code,
       });
-      return;
-    }
 
-    res.status(200).json({
-      status: 'success',
-      bookingId: result.bookingId,
-      razorpayOrderId: result.razorpayOrderId,
-      amount: result.amount,
-      currency: result.currency,
-      keyId: result.keyId,
-      order: result.order,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      status: 'error',
-      message: error.message || 'Internal server error while creating order',
-    });
+      if (!result.success) {
+        res.status(result.statusCode).json({
+          status: 'error',
+          message: result.message,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        status: 'success',
+        bookingId: result.bookingId,
+        razorpayOrderId: result.razorpayOrderId,
+        amount: result.amount,
+        currency: result.currency,
+        keyId: result.keyId,
+        order: result.order,
+      });
+    } catch (error: any) {
+      next(error);
+    }
   }
-});
+);
 
 // POST /api/v1/booking/confirm
-router.post(['/confirm', '/api/v1/booking/confirm'], async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { bookingId, slotId, userId, paymentId } = req.body || {};
+router.post(
+  ['/confirm', '/api/v1/booking/confirm'],
+  requireAuth,
+  sanitizeConfirmBooking,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id || req.body?.userId;
+      const validated = confirmBookingSchema.parse(req.body);
 
-    if (!bookingId || !slotId || !userId || !paymentId) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Missing required body fields: bookingId, slotId, userId, paymentId',
+      const result = await confirmBooking({
+        bookingId: validated.bookingId,
+        slotId: req.body?.slotId || validated.bookingId,
+        userId,
+        paymentId: validated.paymentId,
       });
-      return;
-    }
 
-    const result = await confirmBooking({ bookingId, slotId, userId, paymentId });
+      if (!result.success) {
+        res.status(result.statusCode).json({
+          status: 'error',
+          message: result.message,
+        });
+        return;
+      }
 
-    if (!result.success) {
-      res.status(result.statusCode).json({
-        status: 'error',
+      res.status(200).json({
+        status: 'success',
         message: result.message,
+        data: result.data,
       });
-      return;
+    } catch (error: any) {
+      next(error);
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: result.message,
-      data: result.data,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      status: 'error',
-      message: error.message || 'Internal server error while confirming booking',
-    });
   }
-});
+);
 
 // POST /api/v1/booking/verify - Cryptographic HMAC QR & Token Verification Endpoint
-router.post(['/verify', '/api/v1/booking/verify'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/verify', '/api/v1/booking/verify'], requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { qrData, token: rawToken, bookingId: rawBookingId, hmac: rawHmac } = req.body || {};
 
@@ -221,10 +304,15 @@ router.post(['/verify', '/api/v1/booking/verify'], async (req: Request, res: Res
     token = token ? String(token).trim().toUpperCase() : undefined;
 
     // 1. HMAC Signature Verification Check
-    const secret = process.env.QR_HMAC_SECRET || process.env.NEXT_PUBLIC_QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
+    const secret = process.env.QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
     if (hmac) {
       const expectedHmac = crypto.createHmac('sha256', secret).update(`${bookingId || ''}:${token || ''}`).digest('hex').slice(0, 32);
-      if (hmac !== expectedHmac && token !== 'LX-7842' && token !== 'LX-TEST') {
+      const hmacBuf = Buffer.from(String(hmac), 'utf-8');
+      const expBuf = Buffer.from(expectedHmac, 'utf-8');
+      const isSignatureMatch = hmacBuf.length === expBuf.length && crypto.timingSafeEqual(hmacBuf, expBuf);
+      const isTestTokenBypass = process.env.NODE_ENV !== 'production' && (token === 'LX-7842' || token === 'LX-TEST');
+
+      if (!isSignatureMatch && !isTestTokenBypass) {
         res.status(400).json({
           status: 'error',
           code: 'TAMPERED_VOUCHER',

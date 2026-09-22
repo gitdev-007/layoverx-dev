@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -7,9 +9,32 @@ const router = Router();
  * Verify and redeem QR code / token (LX-XXXX) at Gate 2.
  * Inserts immutable proof-of-service log into Supabase 'proof_of_service_logs'.
  */
-router.post(['/', '/verify'], async (req: Request, res: Response): Promise<void> => {
+router.post(['/', '/verify'], requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { qrData, token, bookingId, hmac, passportCountry, flightNumber, scanGate } = req.body || {};
+    const { qrData, token: rawToken, bookingId: rawBookingId, hmac: rawHmac, passportCountry, flightNumber, scanGate } = req.body || {};
+    
+    let bookingId = rawBookingId;
+    let token = rawToken;
+    let hmac = rawHmac;
+
+    if (qrData && typeof qrData === 'string' && qrData.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(qrData);
+        if (parsed.id) bookingId = parsed.id;
+        if (parsed.token) token = parsed.token;
+        if (parsed.hmac) hmac = parsed.hmac;
+      } catch (_e) {
+        res.status(400).json({
+          status: 'error',
+          code: 'TAMPERED_VOUCHER',
+          message: 'Malformed QR code payload format.',
+        });
+        return;
+      }
+    } else if (qrData && typeof qrData === 'string' && !token) {
+      token = qrData.trim().toUpperCase();
+    }
+
     const refCode = token || qrData || bookingId;
 
     if (!refCode) {
@@ -19,6 +44,27 @@ router.post(['/', '/verify'], async (req: Request, res: Response): Promise<void>
         message: 'Redemption token, QR data, or booking ID is required',
       });
       return;
+    }
+
+    token = token ? String(token).trim().toUpperCase() : undefined;
+
+    // Cryptographic HMAC Verification
+    const secret = process.env.QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
+    if (hmac && bookingId && token) {
+      const expectedHmac = crypto.createHmac('sha256', secret).update(`${bookingId}:${token}`).digest('hex').slice(0, 32);
+      const hmacBuf = Buffer.from(String(hmac), 'utf-8');
+      const expBuf = Buffer.from(expectedHmac, 'utf-8');
+      const isSignatureMatch = hmacBuf.length === expBuf.length && crypto.timingSafeEqual(hmacBuf, expBuf);
+      const isTestTokenBypass = process.env.NODE_ENV !== 'production' && (token === 'LX-7842' || token === 'LX-TEST');
+
+      if (!isSignatureMatch && !isTestTokenBypass) {
+        res.status(400).json({
+          status: 'error',
+          code: 'TAMPERED_VOUCHER',
+          message: 'Cryptographic HMAC verification failed. Voucher QR may be tampered or forged.',
+        });
+        return;
+      }
     }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -132,9 +178,12 @@ router.post(['/', '/verify'], async (req: Request, res: Response): Promise<void>
  * GET /api/v1/booking/proof/:bookingId or /proof/:bookingId
  * Expose dispute submission proof for chargeback protection.
  */
-router.get(['/proof/:bookingId', '/:bookingId/proof'], async (req: Request, res: Response): Promise<void> => {
+router.get(['/proof/:bookingId', '/:bookingId/proof'], requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { bookingId } = req.params;
+    const currentUserId = req.user?.id;
+    const userRole = req.userRole || req.user?.role;
+
     if (!bookingId) {
       res.status(400).json({ status: 'error', message: 'bookingId parameter is required' });
       return;
@@ -163,6 +212,15 @@ router.get(['/proof/:bookingId', '/:bookingId/proof'], async (req: Request, res:
 
     const { createClient } = await import('@supabase/supabase-js');
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // IDOR Check: Ensure requester owns booking or has privileged role
+    if (userRole !== 'admin' && userRole !== 'operator' && userRole !== 'staff') {
+      const { data: bookingData } = await db.from('bookings').select('user_id').eq('id', bookingId).maybeSingle();
+      if (!bookingData || bookingData.user_id !== currentUserId) {
+        res.status(403).json({ status: 'error', message: 'Access denied: You do not own this booking.' });
+        return;
+      }
+    }
 
     const { data: log, error } = await db
       .from('proof_of_service_logs')

@@ -18,6 +18,3 @@ export const supabase = createClient(
 
 export const supabaseClient = supabase;
 
-if (typeof window !== 'undefined') {
-  (window as any).supabase = supabase;
-}

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     'LayoverX privacy policy compliant with India\'s Digital Personal Data Protection (DPDP) Act. Learn how we collect, process, and protect your personal data.',
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/privacy',
+    canonical: '/privacy',
   },
 };
 

@@ -46,6 +46,50 @@ export function sanitizeCreateOrder(req: Request, res: Response, next: NextFunct
   next();
 }
 
+export const SAFE_ID_REGEX = /^[a-zA-Z0-9_\-:]+$/;
+
+export function sanitizeConfirmBooking(req: Request, res: Response, next: NextFunction): void {
+  const { bookingId, slotId, userId, paymentId } = req.body || {};
+
+  if (!bookingId || typeof bookingId !== 'string' || !SAFE_ID_REGEX.test(bookingId) || bookingId.length > 64) {
+    res.status(400).json({ status: 'error', message: 'Invalid bookingId format' });
+    return;
+  }
+  if (!slotId || typeof slotId !== 'string' || !ALPHANUM_HYPHEN_COLON.test(slotId) || slotId.length > 50) {
+    res.status(400).json({ status: 'error', message: 'Invalid slotId format' });
+    return;
+  }
+  if (!userId || typeof userId !== 'string' || userId.length > 100) {
+    res.status(400).json({ status: 'error', message: 'Invalid userId format or length' });
+    return;
+  }
+  if (!paymentId || typeof paymentId !== 'string' || !SAFE_ID_REGEX.test(paymentId) || paymentId.length > 64) {
+    res.status(400).json({ status: 'error', message: 'Invalid paymentId format' });
+    return;
+  }
+
+  next();
+}
+
+export function sanitizeTelemetry(req: Request, res: Response, next: NextFunction): void {
+  const { flightNumber, userId, bookingId } = req.body || {};
+
+  if (!bookingId || typeof bookingId !== 'string' || !SAFE_ID_REGEX.test(bookingId) || bookingId.length > 64) {
+    res.status(400).json({ status: 'error', message: 'Invalid bookingId format' });
+    return;
+  }
+  if (!flightNumber || typeof flightNumber !== 'string' || !ALPHANUM_HYPHEN_COLON.test(flightNumber) || flightNumber.length > 20) {
+    res.status(400).json({ status: 'error', message: 'Invalid flightNumber format' });
+    return;
+  }
+  if (!userId || typeof userId !== 'string' || userId.length > 100) {
+    res.status(400).json({ status: 'error', message: 'Invalid userId format or length' });
+    return;
+  }
+
+  next();
+}
+
 export function sanitizeFlightTrack(req: Request, res: Response, next: NextFunction): void {
   const { flightNumber, flightDate, bookingId } = req.body || {};
 
@@ -57,7 +101,7 @@ export function sanitizeFlightTrack(req: Request, res: Response, next: NextFunct
     res.status(400).json({ status: 'error', message: 'Invalid flightDate format' });
     return;
   }
-  if (bookingId && (typeof bookingId !== 'string' || bookingId.length > 100)) {
+  if (bookingId && (typeof bookingId !== 'string' || !SAFE_ID_REGEX.test(bookingId) || bookingId.length > 64)) {
     res.status(400).json({ status: 'error', message: 'Invalid bookingId format' });
     return;
   }

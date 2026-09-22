@@ -319,9 +319,11 @@ export async function createCheckoutOrder(
 
   const baseUrl = getApiBaseUrl(); // Ends with /api/v1
   const uploadUrl = `${baseUrl}/booking/create-checkout-order`;
+  const authHeaders = await getAuthHeaders();
 
   const res = await fetch(uploadUrl, {
     method: 'POST',
+    headers: authHeaders,
     body: formData,
   });
 
@@ -349,9 +351,13 @@ export async function verifyPayment(payload: {
   bookingId: string;
 }): Promise<{ success: boolean; message: string; bookingId: string }> {
   const baseUrl = getApiBaseUrl();
+  const authHeaders = await getAuthHeaders();
   const res = await fetch(`${baseUrl}/booking/verify-payment`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders,
+    },
     body: JSON.stringify(payload),
   });
 
@@ -374,7 +380,10 @@ export async function verifyPayment(payload: {
 
 export async function getBookingDetails(bookingId: string): Promise<{ success: boolean; booking: any }> {
   const baseUrl = getApiBaseUrl();
-  const res = await fetch(`${baseUrl}/booking/${bookingId}`);
+  const authHeaders = await getAuthHeaders();
+  const res = await fetch(`${baseUrl}/booking/${bookingId}`, {
+    headers: authHeaders,
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch booking details: ${res.statusText}`);
   }

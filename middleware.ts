@@ -57,7 +57,23 @@ export async function middleware(request: NextRequest) {
     });
 
     // Refresh the session cookie on every request
-    await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Enforce role-based access control on sensitive admin & ops routes
+    const pathname = request.nextUrl.pathname;
+    const adminRoutes = ['/revenue-admin', '/supplier-dashboard', '/ops', '/booking/verify'];
+    if (adminRoutes.some((route) => pathname.startsWith(route))) {
+      const userRole = user?.user_metadata?.role || user?.app_metadata?.role;
+      const isOpsAllowed = (pathname.startsWith('/ops') || pathname.startsWith('/booking/verify')) && (userRole === 'admin' || userRole === 'operator' || userRole === 'staff');
+      const isAdminAllowed = (pathname.startsWith('/revenue-admin') || pathname.startsWith('/supplier-dashboard')) && userRole === 'admin';
+
+      if (!user || (!isAdminAllowed && !isOpsAllowed)) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = '/';
+        redirectUrl.searchParams.set('error', 'unauthorized_access');
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
   } catch (_e) {
     // Never let middleware crash the entire site — always pass through
   }

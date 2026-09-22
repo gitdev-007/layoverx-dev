@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     'Read the complete terms of service for LayoverX transit micro-stay pods, dining, spa, chauffeur, and city tour bookings at Mumbai CSMIA Terminal 2.',
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/terms',
+    canonical: '/terms',
   },
 };
 
@@ -26,7 +26,7 @@ export default function TermsPage() {
             Terms &amp; Conditions
           </h1>
           <p className="text-slate-400 text-sm mt-3">
-            Last updated: 29 July 2026 &nbsp;·&nbsp; Effective for all bookings made via layoverx.com
+            Last updated: 29 July 2026 &nbsp;·&nbsp; Effective for all bookings made via layoverx.in
           </p>
         </div>
       </section>

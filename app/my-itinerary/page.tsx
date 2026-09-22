@@ -514,10 +514,11 @@ export default function MyItineraryPage() {
                           <button
                             type="button"
                             onClick={() => deleteSavedPlan(plan.id)}
-                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition"
+                            className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 rounded-lg transition flex items-center justify-center"
                             title="Delete draft"
+                            aria-label="Delete draft"
                           >
-                            🗑️
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

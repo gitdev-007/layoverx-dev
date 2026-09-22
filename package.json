@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:security": "node tests/strix_attack_suite.js"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.4",

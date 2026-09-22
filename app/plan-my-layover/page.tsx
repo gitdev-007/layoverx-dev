@@ -36,12 +36,24 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from 'lucide-react';
+
+function getInitialLayoverTimes() {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const toLocal = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const now = new Date();
+  const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  arr.setMinutes(0, 0, 0);
+  const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000);
+  return { arrival: toLocal(arr), departure: toLocal(dep) };
+}
 
 export default function PlanMyLayoverPage() {
   const [destinationArea, setDestinationArea] = useState('near-airport');
-  const [arrivalTime, setArrivalTime] = useState('2026-07-28T10:00');
-  const [departureTime, setDepartureTime] = useState('2026-07-28T18:00');
+  const [arrivalTime, setArrivalTime] = useState(() => getInitialLayoverTimes().arrival);
+  const [departureTime, setDepartureTime] = useState(() => getInitialLayoverTimes().departure);
   const [travelers, setTravelers] = useState('2');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [isHolding, setIsHolding] = useState(false);
@@ -127,7 +139,7 @@ export default function PlanMyLayoverPage() {
               reviews: item.reviews || 480,
               price: `₹${item.price || item.hourlyRate || 3999} per car`,
               badge: item.badge || 'Most Popular',
-              highlights: item.amenities || ['Gateway of India', 'Taj Mahal Palace'],
+              highlights: item.amenities || ['Gateway of India', 'Taj Mahal Palace Hotel'],
               description: item.description || 'Explore Mumbai with private air-conditioned cars.',
               image: item.image || item.imageUrl || 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
             })));
@@ -182,23 +194,23 @@ export default function PlanMyLayoverPage() {
       if (finalDest) setDestinationArea(finalDest);
       if (finalTrav) setTravelers(finalTrav);
 
-      if (finalArr) {
+      const now = new Date();
+      const isPastArr = finalArr && new Date(finalArr).getTime() < now.getTime() - 60 * 1000;
+      if (finalArr && !isPastArr) {
         setArrivalTime(finalArr);
       } else {
-        const now = new Date();
-        const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        arr.setMinutes(0);
-        setArrivalTime(arr.toISOString().slice(0, 16));
+        setArrivalTime(getInitialLayoverTimes().arrival);
       }
 
-      if (finalDep) {
+      const effectiveArrMs = finalArr && !isPastArr ? new Date(finalArr).getTime() : now.getTime();
+      const isPastDep =
+        finalDep &&
+        (new Date(finalDep).getTime() <= effectiveArrMs ||
+          new Date(finalDep).getTime() < now.getTime() - 60 * 1000);
+      if (finalDep && !isPastDep) {
         setDepartureTime(finalDep);
       } else {
-        const now = new Date();
-        const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        arr.setMinutes(0);
-        const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000);
-        setDepartureTime(dep.toISOString().slice(0, 16));
+        setDepartureTime(getInitialLayoverTimes().departure);
       }
 
       if (typeof window !== 'undefined' && window.location.hash.includes('step-5')) {
@@ -297,12 +309,24 @@ export default function PlanMyLayoverPage() {
   };
   const router = useRouter();
   const { requireAuth, user, openAuthModal } = useAuth();
-  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar, totalLayoverHours } = useItinerary();
+  const { items: contextItems, savedPlans, saveCurrentPlan, deleteSavedPlan, loadSavedPlan, showToast, addItem, removeItem, availableWindowHours, selectedCar, totalLayoverHours, setTotalLayoverHours } = useItinerary();
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showPostSaveModal, setShowPostSaveModal] = useState(false);
   const [lastCalculatedCabFare, setLastCalculatedCabFare] = useState<number | null>(null);
   const [lastTotalPayable, setLastTotalPayable] = useState<number | null>(null);
   const [highlightSaveDraft, setHighlightSaveDraft] = useState(false);
+
+  // Synchronize total layover hours dynamically from flight timings (departure - arrival)
+  useEffect(() => {
+    if (arrivalTime && departureTime) {
+      const arrMs = new Date(arrivalTime).getTime();
+      const depMs = new Date(departureTime).getTime();
+      if (!isNaN(arrMs) && !isNaN(depMs) && depMs > arrMs) {
+        const calculatedHours = Number(((depMs - arrMs) / (1000 * 60 * 60)).toFixed(1));
+        setTotalLayoverHours(calculatedHours);
+      }
+    }
+  }, [arrivalTime, departureTime, setTotalLayoverHours]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -779,6 +803,13 @@ export default function PlanMyLayoverPage() {
     setIsHolding(true);
 
     try {
+      if (!user) {
+        openAuthModal('login');
+        showToast('Please sign in or create an account to finalize your stopover booking.', 'info');
+        setIsHolding(false);
+        return;
+      }
+
       if (!uploadedDocument) {
         throw new Error('Please upload your e-ticket or boarding pass first.');
       }
@@ -1505,16 +1536,9 @@ export default function PlanMyLayoverPage() {
                   <button
                     type="button"
                     disabled={!isFormValid || isHolding || availableWindowHours < 0}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       if (!isDraftSaved) {
-                        showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
-                        setHighlightSaveDraft(true);
-                        setTimeout(() => setHighlightSaveDraft(false), 5000);
-                        const btn = document.getElementById('save-draft-button');
-                        if (btn) {
-                          btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                        return;
+                        await handleSaveDraft();
                       }
                       handleProceedCheckout(e);
                     }}
@@ -1648,16 +1672,9 @@ export default function PlanMyLayoverPage() {
                   type="button"
                   disabled={isHolding || availableWindowHours < 0}
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!isDraftSaved) {
-                      showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
-                      setHighlightSaveDraft(true);
-                      setTimeout(() => setHighlightSaveDraft(false), 5000);
-                      const btn = document.getElementById('save-draft-button');
-                      if (btn) {
-                        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                      return;
+                      await handleSaveDraft();
                     }
                     scrollToStep5();
                   }}
@@ -1822,10 +1839,11 @@ export default function PlanMyLayoverPage() {
                           <button
                             type="button"
                             onClick={() => deleteSavedPlan(plan.id)}
-                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition"
+                            className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 rounded-lg transition flex items-center justify-center"
                             title="Delete draft"
+                            aria-label="Delete draft"
                           >
-                            🗑️
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

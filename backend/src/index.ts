@@ -1,6 +1,5 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import layoverRouter from './routes/layover.js';
 import servicesRouter from './routes/services.js';
@@ -13,23 +12,44 @@ import verifyRouter from './routes/verify.js';
 import opsRouter from './routes/ops.js';
 import userRouter from './routes/user.js';
 import bookingRoutesRouter from './routes/bookingRoutes.js';
+import contactRouter from './routes/contact.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import {
+  globalApiLimiter,
+  bookingLimiter,
+  flightLimiter,
+  contactLimiter,
+  verifyLimiter,
+} from './middleware/rateLimiter.js';
 
 dotenv.config();
 
 const app: Express = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
+// Set standard API security headers
+app.use((_req: Request, res: Response, next: NextFunction): void => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// Strict CORS: Only allow production LayoverX domains and local development
 const allowedOrigins = [
   'https://layoverx.in',
   'https://www.layoverx.in',
-  'http://localhost:3000',
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://127.0.0.1:3000'] : []),
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -40,12 +60,39 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Payload size capping (Mitigates Memory Exhaustion / Large Payload DDoS)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Prototype pollution mitigation guard
+app.use((req: Request, res: Response, next: NextFunction): void => {
+  const sanitizeObject = (obj: any): boolean => {
+    if (!obj || typeof obj !== 'object') return true;
+    for (const key of Object.keys(obj)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        return false;
+      }
+      if (typeof obj[key] === 'object' && !sanitizeObject(obj[key])) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (req.body && !sanitizeObject(req.body)) {
+    res.status(400).json({
+      type: 'https://layoverx.in/errors/security-violation',
+      title: 'Malicious payload rejected (prototype pollution detected)',
+      status: 400,
+      code: 'PROTOTYPE_POLLUTION_BLOCKED',
+    });
+    return;
+  }
+  next();
+});
+
+// Health check endpoint (sanitized for production)
 app.get(['/health', '/api/v1/health'], async (req: Request, res: Response): Promise<void> => {
   let dbStatus = 'disconnected';
   try {
@@ -69,10 +116,18 @@ app.get(['/health', '/api/v1/health'], async (req: Request, res: Response): Prom
     uptime: process.uptime(),
     checks: {
       database: dbStatus,
-      memoryUsage: process.memoryUsage(),
     },
   });
 });
+
+// Mount Baseline Layer 7 DDoS Rate Limiter (120 req/min per IP)
+app.use(['/api', '/api/v1'], globalApiLimiter);
+
+// Mount Operation-Specific Rate Limiters
+app.use(['/api/v1/booking', '/api/v1/bookings', '/api/bookings'], bookingLimiter);
+app.use('/api/v1/flight', flightLimiter);
+app.use('/api/v1/contact', contactLimiter);
+app.use('/api/v1/verify', verifyLimiter);
 
 // API Routes
 app.use('/api/v1/layover', layoverRouter);
@@ -85,9 +140,13 @@ app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/flight', flightRouter);
 app.use('/api/v1/verify', verifyRouter);
 app.use('/api/v1/ops', opsRouter);
+app.use('/api/v1/contact', contactRouter);
 app.use('/api/user', userRouter);
 app.use('/api/bookings', bookingRoutesRouter);
 app.use('/api/v1/bookings', bookingRoutesRouter);
+
+// Centralized RFC 7807 Error Handler
+app.use(errorHandler);
 
 
 
@@ -166,6 +225,11 @@ if (process.env.NODE_ENV !== 'test') {
 
     startKeepAlive();
   });
+
+  // Slowloris & HTTP connection exhaustion protection
+  server.setTimeout(30000); // 30s connection timeout
+  server.keepAliveTimeout = 65000; // 65s keep-alive timeout
+  server.headersTimeout = 66000; // 66s headers timeout
 }
 
 function handleGracefulShutdown(signal: string) {

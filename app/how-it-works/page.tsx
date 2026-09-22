@@ -198,14 +198,14 @@ export default function HowItWorksPage() {
               </a>
             </div>
 
-            {/* Luggage Lockers Card */}
+            {/* Luggage Guidance Card */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-2xl text-[#0369a1]">💼</div>
-              <h3 className="font-bold text-slate-900 text-lg">Left Luggage Locker Facility</h3>
+              <h3 className="font-bold text-slate-900 text-lg">Airport Baggage & Locker Guidance</h3>
               <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                Don't drag heavy luggage around Mumbai. Clear security with your cabin bags and store larger check-in bags at the <strong>CSMIA Terminal 2 arrivals locker desk</strong> (operated by airport authorities). Rates range from ₹150 to ₹300 per bag.
+                Don't drag heavy luggage around Mumbai. LayoverX guides transit travelers to the official <strong>CSMIA Terminal 2 arrivals locker desk</strong> (operated independently by airport authorities). Rates typically range from ₹150 to ₹300 per bag. <em>Note: Baggage storage is operated directly by airport authorities; LayoverX provides transit navigational assistance.</em>
               </p>
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block pt-2">📍 Location: Arrivals Hall, Ground Level</span>
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block pt-2">📍 Facility Location: CSMIA Arrivals Hall, Ground Level</span>
             </div>
 
           </div>

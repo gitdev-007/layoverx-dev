@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ShieldCheck, Plane, Wallet, CreditCard, Landmark, Smartphone, ArrowRight, HelpCircle } from 'lucide-react';
 import { getBookingDetails, verifyPayment } from '@/lib/api';
+import PaymentFailureModal from '@/components/checkout/PaymentFailureModal';
 
 interface BookingData {
   id: string;
@@ -42,17 +43,38 @@ function CheckoutPageContent() {
   const [selectedBank, setSelectedBank] = useState('');
   const [selectedWallet, setSelectedWallet] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [failureModal, setFailureModal] = useState<{
+    isOpen: boolean;
+    errorCode?: string;
+    errorDescription?: string;
+    failureSource?: string;
+  }>({
+    isOpen: false,
+  });
 
   useEffect(() => {
-    if (!bookingId) {
-      setError('Missing bookingId in checkout parameters.');
+    let effectiveBookingId = bookingId;
+    if (!effectiveBookingId && typeof window !== 'undefined') {
+      try {
+        const savedDraft = localStorage.getItem('layoverx_draft');
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed?.bookingId) {
+            effectiveBookingId = parsed.bookingId;
+          }
+        }
+      } catch {}
+    }
+
+    if (!effectiveBookingId) {
+      setError('No active stopover plan selected. Please choose your services before checkout.');
       setLoading(false);
       return;
     }
 
     async function loadBooking() {
       try {
-        const data = await getBookingDetails(bookingId);
+        const data = await getBookingDetails(effectiveBookingId);
         if (data.success && data.booking) {
           setBooking(data.booking);
         } else {
@@ -98,7 +120,7 @@ function CheckoutPageContent() {
 
     try {
       const checkoutAmount = booking?.amount || urlAmount || 1499;
-      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TJBPSe0lStMjEU';
+      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
 
       const options = {
         key: keyId,
@@ -124,13 +146,23 @@ function CheckoutPageContent() {
             if (verifyRes.success) {
               window.location.href = `/booking-confirmation?bookingId=${bookingId}`;
             } else {
-              alert('Payment verification failed. Please contact support.');
               setIsProcessing(false);
+              setFailureModal({
+                isOpen: true,
+                errorCode: 'VERIFICATION_FAILED',
+                errorDescription: 'Payment authorization could not be validated by bank switch.',
+                failureSource: activeTab,
+              });
             }
           } catch (err: any) {
             console.error('Payment Verification error:', err);
-            alert(err.message || 'Payment verification failed.');
             setIsProcessing(false);
+            setFailureModal({
+              isOpen: true,
+              errorCode: 'VERIFICATION_EXCEPTION',
+              errorDescription: err?.message || 'Payment verification failed at bank checkout switch.',
+              failureSource: activeTab,
+            });
           }
         },
         modal: {
@@ -141,11 +173,29 @@ function CheckoutPageContent() {
       };
 
       const rzp = new (window as any).Razorpay(options);
+
+      // Handle Razorpay payment.failed event
+      rzp.on('payment.failed', function (response: any) {
+        setIsProcessing(false);
+        const err = response?.error || {};
+        setFailureModal({
+          isOpen: true,
+          errorCode: err.code || 'PAYMENT_FAILED',
+          errorDescription: err.description || err.reason || 'Transaction failed or was rejected.',
+          failureSource: err.source || activeTab,
+        });
+      });
+
       rzp.open();
     } catch (err: any) {
       console.error('Razorpay invocation error:', err);
-      alert('Failed to launch payment gateway. Please try again.');
       setIsProcessing(false);
+      setFailureModal({
+        isOpen: true,
+        errorCode: 'GATEWAY_LAUNCH_FAILED',
+        errorDescription: err?.message || 'Failed to initialize secure payment gateway.',
+        failureSource: 'gateway',
+      });
     }
   };
 
@@ -160,18 +210,22 @@ function CheckoutPageContent() {
 
   if (error || !booking) {
     return (
-      <div className="max-w-md mx-auto my-16 bg-white border border-rose-200 rounded-2xl p-8 text-center shadow-sm">
-        <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600">
-          ⚠️
+      <div className="max-w-md mx-auto my-16 bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-xl space-y-4">
+        <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto text-sky-600">
+          <Plane className="w-7 h-7" />
         </div>
-        <h1 className="text-lg font-bold text-slate-900 mb-2">Checkout Error</h1>
-        <p className="text-sm text-slate-500 mb-6">{error || 'Could not initiate checkout page.'}</p>
-        <button
-          onClick={() => router.push('/plan-my-layover')}
-          className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-sm transition-all"
-        >
-          Return to Layover Planner
-        </button>
+        <h1 className="text-xl font-extrabold text-slate-900">No Active Stopover Plan</h1>
+        <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+          {error || 'You have not selected any stopover services yet. Customize your transit hotel, city tour, or dining to proceed to checkout.'}
+        </p>
+        <div className="pt-2">
+          <button
+            onClick={() => router.push('/plan-my-layover')}
+            className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md transition-all active:scale-95"
+          >
+            Build Your Stopover Plan
+          </button>
+        </div>
       </div>
     );
   }
@@ -537,6 +591,19 @@ function CheckoutPageContent() {
 
         </div>
       </main>
+
+      {/* 15-Minute Cart Protection & Payment Failure Recovery Modal */}
+      <PaymentFailureModal
+        isOpen={failureModal.isOpen}
+        onClose={() => setFailureModal((prev) => ({ ...prev, isOpen: false }))}
+        onRetry={handlePayNow}
+        errorCode={failureModal.errorCode}
+        errorDescription={failureModal.errorDescription}
+        failureSource={failureModal.failureSource}
+        bookingId={bookingId}
+        amount={finalAmount}
+        preservedCart={booking}
+      />
     </div>
   );
 }

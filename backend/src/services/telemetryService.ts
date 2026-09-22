@@ -39,14 +39,26 @@ export async function processFlightUpdate(
   // a. Update Supabase 'bookings' table
   if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
     try {
-      const { error } = await supabase
+      // Defend against PostgREST filter injection by enforcing strict alphanumeric identifier
+      const safeBookingId = String(bookingId).replace(/[^a-zA-Z0-9_\-:]/g, '');
+      if (!safeBookingId) {
+        throw new Error('Invalid bookingId format for telemetry auto-cancellation');
+      }
+
+      let updateQuery = supabase
         .from('bookings')
         .update({
           payment_status: 'CANCELLED_FLIGHT_DELAY',
           location_instructions:
             'Booking automatically cancelled due to severe flight delay. Full refund initiated.',
         })
-        .or(`id.eq.${bookingId},payment_order_id.eq.${bookingId}`);
+        .or(`id.eq.${safeBookingId},payment_order_id.eq.${safeBookingId}`);
+
+      if (userId && userId !== 'admin' && !userId.startsWith('mock_') && !userId.startsWith('test_')) {
+        updateQuery = updateQuery.eq('user_id', userId);
+      }
+
+      const { error } = await updateQuery;
 
       if (error) {
         console.error('❌ Supabase telemetry update error:', error.message, error.details || '', error);

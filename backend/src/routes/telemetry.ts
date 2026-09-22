@@ -1,21 +1,26 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { processFlightUpdate } from '../services/telemetryService.js';
+import { sanitizeTelemetry } from '../middleware/sanitize.js';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 
 // POST /api/v1/telemetry/flight-update
 router.post(
   ['/flight-update', '/api/v1/telemetry/flight-update'],
-  async (req: Request, res: Response): Promise<void> => {
+  requireAuth,
+  sanitizeTelemetry,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const {
         flightNumber,
-        userId,
         bookingId,
         slotId,
         originalLayoverMinutes,
         delayMinutes,
       } = req.body || {};
+
+      const userId = req.user?.id || req.body?.userId;
 
       if (
         !flightNumber ||

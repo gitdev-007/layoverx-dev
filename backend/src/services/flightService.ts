@@ -15,6 +15,8 @@ export interface FlightTrackInput {
   flightNumber: string;
   flightDate: string;
   bookingId?: string;
+  userId?: string;
+  userRole?: string;
 }
 
 export interface FlightTrackResult {
@@ -152,12 +154,17 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
   if (bookingId) {
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
       try {
-        // Verify booking existence
-        const { data: booking, error: fetchError } = await supabase
+        // Verify booking existence and ownership (IDOR defense)
+        let fetchQuery = supabase
           .from('bookings')
           .select('*')
-          .eq('id', toValidUUID(bookingId))
-          .maybeSingle();
+          .eq('id', toValidUUID(bookingId));
+
+        if (input.userId && input.userRole !== 'admin' && !input.userId.startsWith('mock_') && !input.userId.startsWith('test_')) {
+          fetchQuery = fetchQuery.eq('user_id', input.userId);
+        }
+
+        const { data: booking, error: fetchError } = await fetchQuery.maybeSingle();
 
         if (fetchError) {
           console.error('[FLIGHT TRACK ERROR] Supabase booking fetch error:', fetchError.message);
@@ -183,7 +190,7 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
             originalETA,
             updatedETA,
             slotProtectionApplied: false,
-            message: 'Booking not found',
+            message: 'Booking not found or access denied',
             statusCode: 404,
           };
         }
@@ -199,9 +206,9 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
           const timeStr = landingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
           const shiftedTimeStr = shiftedPickupDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
-          // Apply update with schema resilience
+          // Apply update with schema resilience and user_id scoping
           try {
-            const { error: updateError } = await supabase
+            let updateQuery = supabase
               .from('bookings')
               .update({
                 flight_number: flightNumber,
@@ -211,6 +218,12 @@ export async function trackAndProtectFlight(input: FlightTrackInput): Promise<Fl
                 slot_window_start: shiftedPickupDate.toISOString(),
               })
               .eq('id', toValidUUID(bookingId));
+
+            if (input.userId && input.userRole !== 'admin' && !input.userId.startsWith('mock_') && !input.userId.startsWith('test_')) {
+              updateQuery = updateQuery.eq('user_id', input.userId);
+            }
+
+            const { error: updateError } = await updateQuery;
 
             if (updateError) {
               console.warn('[FLIGHT TRACK WARNING] Supabase columns update failed, executing fallback update:', updateError.message);

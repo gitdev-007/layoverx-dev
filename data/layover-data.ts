@@ -360,7 +360,7 @@ export const TOURS_DATA: Tour[] = [
     reviews: 480,
     price: '₹3,999 per car',
     badge: 'Most Popular',
-    highlights: ['Gateway of India', 'Taj Mahal Palace', "Marine Drive Queen's Necklace", 'Bandra Worli Sea Link'],
+    highlights: ['Gateway of India', 'Taj Mahal Palace Hotel (Colaba)', "Marine Drive Queen's Necklace", 'Bandra Worli Sea Link'],
     description: 'Explore Mumbai with private air-conditioned cars, licensed local guides, airport door-to-door pickups, and traffic-buffered return windows.',
     image: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
   },
@@ -374,9 +374,9 @@ export const TOURS_DATA: Tour[] = [
     reviews: 290,
     price: '₹2,499 per person',
     badge: 'Food & Heritage',
-    highlights: ['Mount Mary Church', 'Bollywood Stars Mansions', 'Portuguese Villages', 'Local Street Food Tasting'],
-    description: 'Walk through historic Portuguese hamlets, admire street art murals, spot Bollywood celebrity homes, and sample local delicacies.',
-    image: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=800&q=80',
+    highlights: ['Ranwar Portuguese Village', 'Mount Mary Basilica', 'Bandstand & Bollywood Homes', 'Bandra Street Food & Chaat'],
+    description: 'Walk through historic Portuguese hamlets of Ranwar village, admire vibrant street art murals, explore Bandstand, and sample iconic Bandra street food delicacies.',
+    image: '/images/bandra-heritage-food.jpg',
   },
   {
     id: 't3',
@@ -436,7 +436,7 @@ export const FAQS_DATA: FAQItem[] = [
   },
   {
     question: 'Can I store my heavy luggage at Mumbai Airport?',
-    answer: 'Yes! Both Terminal 1 and Terminal 2 operate 24/7 Left Luggage Facilities in the arrivals concourse. You can safely store your bags for ₹200–400 per bag while exploring the city.',
+    answer: 'Yes! Both Terminal 1 and Terminal 2 operate 24/7 Left Luggage Facilities in the arrivals concourse (operated independently by airport authorities). LayoverX provides airport guidance and recommendations so you can safely store your bags for ₹200–400 per bag while exploring the city.',
   },
 ];
 

@@ -32,20 +32,42 @@ export default function LayoverCalculatorForm({
 }: LayoverCalculatorFormProps) {
   const router = useRouter();
 
-  // Initialize default arrival (2 hours from now) & departure (8 hours layover)
+  // Helper to format local date to YYYY-MM-DDTHH:MM for datetime-local input
+  const toLocalISOString = (date: Date): string => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const h = pad(date.getHours());
+    const min = pad(date.getMinutes());
+    return `${y}-${m}-${d}T${h}:${min}`;
+  };
+
+  // Track live current time string to dynamically disable elapsed time as the day goes on
+  const [currentLocalStr, setCurrentLocalStr] = useState<string>(() => toLocalISOString(new Date()));
+
+  // Periodically refresh the dateline min threshold (every minute)
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentLocalStr(toLocalISOString(new Date()));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Initialize default arrival (next full hour + 2 hours from now) & departure (+ 8 hours layover)
   const defaultArr = useMemo(() => {
     const now = new Date();
     const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-    arr.setMinutes(0);
-    return arr.toISOString().slice(0, 16);
+    arr.setMinutes(0, 0, 0);
+    return toLocalISOString(arr);
   }, []);
 
   const defaultDep = useMemo(() => {
     const now = new Date();
     const arr = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-    arr.setMinutes(0);
+    arr.setMinutes(0, 0, 0);
     const dep = new Date(arr.getTime() + 8 * 60 * 60 * 1000);
-    return dep.toISOString().slice(0, 16);
+    return toLocalISOString(dep);
   }, []);
 
   const [destinationArea, setDestinationArea] = useState<string>('csmia-t2');
@@ -62,9 +84,19 @@ export default function LayoverCalculatorForm({
     } catch {}
 
     const dest = initialValues?.destinationArea || saved?.destinationArea || 'csmia-t2';
-    const arr = initialValues?.arrivalTime || saved?.arrivalTime || defaultArr;
-    const dep = initialValues?.departureTime || saved?.departureTime || defaultDep;
+    const rawArr = initialValues?.arrivalTime || saved?.arrivalTime;
+    const rawDep = initialValues?.departureTime || saved?.departureTime;
     const trav = initialValues?.travelers || saved?.travelers || '2 Passengers';
+
+    // Auto-invalidate past dates: if stored arrival is in the past, reset to future default
+    const isPastArr = rawArr && new Date(rawArr).getTime() < Date.now() - 60 * 1000;
+    const arr = rawArr && !isPastArr ? rawArr : defaultArr;
+
+    const isPastDep =
+      rawDep &&
+      (new Date(rawDep).getTime() <= new Date(arr).getTime() ||
+        new Date(rawDep).getTime() < Date.now() - 60 * 1000);
+    const dep = rawDep && !isPastDep ? rawDep : defaultDep;
 
     setDestinationArea(dest);
     setArrivalTime(arr);
@@ -94,6 +126,17 @@ export default function LayoverCalculatorForm({
     } else if (field === 'arrivalTime') {
       setArrivalTime(value);
       nextArr = value;
+      // If departure is now before or equal to arrival, automatically push departure forward by 8 hours
+      if (value && nextDep) {
+        const arrTimeMs = new Date(value).getTime();
+        const depTimeMs = new Date(nextDep).getTime();
+        if (!isNaN(arrTimeMs) && (!depTimeMs || depTimeMs <= arrTimeMs)) {
+          const autoDep = new Date(arrTimeMs + 8 * 60 * 60 * 1000);
+          const autoDepStr = toLocalISOString(autoDep);
+          setDepartureTime(autoDepStr);
+          nextDep = autoDepStr;
+        }
+      }
     } else if (field === 'departureTime') {
       setDepartureTime(value);
       nextDep = value;
@@ -111,6 +154,9 @@ export default function LayoverCalculatorForm({
 
     try {
       localStorage.setItem('layoverx_calculator_data', JSON.stringify(updatedData));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('layoverx_timings_updated'));
+      }
     } catch (err) {}
 
     if (onChange) {
@@ -118,15 +164,49 @@ export default function LayoverCalculatorForm({
     }
   };
 
-  // Real-time Layover Calculation Engine
+  // Real-time Layover Calculation Engine with Past Date & Dateline Validation
   const metrics = useMemo(() => {
     try {
       const arr = new Date(arrivalTime).getTime();
       const dep = new Date(departureTime).getTime();
+      const nowMs = Date.now() - 60 * 1000; // 1-minute buffer for active editing
 
-      if (isNaN(arr) || isNaN(dep) || dep <= arr) {
+      if (isNaN(arr) || isNaN(dep)) {
         return {
           valid: false,
+          isPast: false,
+          isInvalidOrder: false,
+          error: 'Please choose valid arrival and departure dates.',
+          totalHours: 0,
+          totalMinutes: 0,
+          hoursStr: '0h 0m',
+          usableHours: 0,
+          eligibleForCity: false,
+        };
+      }
+
+      // Past date check
+      if (arr < nowMs) {
+        return {
+          valid: false,
+          isPast: true,
+          isInvalidOrder: false,
+          error: 'Landing flight arrival cannot be in the past. Select current time or a future date.',
+          totalHours: 0,
+          totalMinutes: 0,
+          hoursStr: '0h 0m',
+          usableHours: 0,
+          eligibleForCity: false,
+        };
+      }
+
+      // Order check
+      if (dep <= arr) {
+        return {
+          valid: false,
+          isPast: false,
+          isInvalidOrder: true,
+          error: 'Boarding flight departure must be after landing arrival time.',
           totalHours: 0,
           totalMinutes: 0,
           hoursStr: '0h 0m',
@@ -147,6 +227,9 @@ export default function LayoverCalculatorForm({
 
       return {
         valid: true,
+        isPast: false,
+        isInvalidOrder: false,
+        error: null,
         totalHours: diffMs / (1000 * 60 * 60),
         totalMinutes,
         hoursStr: `${hours}h ${mins}m`,
@@ -156,6 +239,9 @@ export default function LayoverCalculatorForm({
     } catch {
       return {
         valid: false,
+        isPast: false,
+        isInvalidOrder: false,
+        error: 'Invalid flight timings.',
         totalHours: 0,
         totalMinutes: 0,
         hoursStr: '0h 0m',
@@ -167,6 +253,12 @@ export default function LayoverCalculatorForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!metrics.valid) {
+      alert(metrics.error || 'Please enter valid future flight timings.');
+      return;
+    }
+
     const formData: LayoverFormData = {
       destinationArea,
       arrivalTime,
@@ -177,6 +269,9 @@ export default function LayoverCalculatorForm({
     // Store in localStorage for seamless draft persistence across pages
     try {
       localStorage.setItem('layoverx_calculator_data', JSON.stringify(formData));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('layoverx_timings_updated'));
+      }
     } catch (err) {
       console.warn('[LayoverCalculator] localStorage save failed:', err);
     }
@@ -194,9 +289,11 @@ export default function LayoverCalculatorForm({
     }
   };
 
+  // Departure can never be earlier than arrival or current time
+  const minDeparture = arrivalTime && arrivalTime > currentLocalStr ? arrivalTime : currentLocalStr;
+
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 text-slate-900 space-y-6">
-      
       {/* Title Header (Conditional) */}
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
@@ -217,7 +314,6 @@ export default function LayoverCalculatorForm({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
           {/* Field 1: TERMINAL / DESTINATION AREA */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider h-5 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
@@ -231,7 +327,6 @@ export default function LayoverCalculatorForm({
             >
               <option value="csmia-t2">CSMIA Terminal 2 (International)</option>
               <option value="csmia-t1">CSMIA Terminal 1 (Domestic)</option>
-              <option value="near-airport">Near Mumbai Airport</option>
             </select>
           </div>
 
@@ -244,10 +339,20 @@ export default function LayoverCalculatorForm({
             <input
               type="datetime-local"
               required
+              min={currentLocalStr}
               value={arrivalTime}
               onChange={(e) => updateField('arrivalTime', e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
+              className={`w-full border rounded-2xl p-3 text-xs sm:text-sm font-semibold transition focus:outline-none focus:ring-2 ${
+                metrics.isPast
+                  ? 'bg-rose-50 border-rose-300 text-rose-900 focus:ring-rose-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 focus:ring-sky-500'
+              }`}
             />
+            {metrics.isPast && (
+              <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 pt-0.5">
+                <span>⚠️ Past time cannot be booked</span>
+              </p>
+            )}
           </div>
 
           {/* Field 3: BOARDING FLIGHT DEPARTURE */}
@@ -259,10 +364,20 @@ export default function LayoverCalculatorForm({
             <input
               type="datetime-local"
               required
+              min={minDeparture}
               value={departureTime}
               onChange={(e) => updateField('departureTime', e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
+              className={`w-full border rounded-2xl p-3 text-xs sm:text-sm font-semibold transition focus:outline-none focus:ring-2 ${
+                metrics.isInvalidOrder
+                  ? 'bg-rose-50 border-rose-300 text-rose-900 focus:ring-rose-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 focus:ring-sky-500'
+              }`}
             />
+            {metrics.isInvalidOrder && (
+              <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 pt-0.5">
+                <span>⚠️ Departure must be after arrival</span>
+              </p>
+            )}
           </div>
 
           {/* Field 4: PASSENGERS / GUESTS COUNT */}
@@ -292,21 +407,28 @@ export default function LayoverCalculatorForm({
                 Real-Time Usable Time Engine
               </div>
               <div className="text-base sm:text-lg font-black text-sky-400">
-                Calculated Layover: {metrics.hoursStr} ({metrics.usableHours.toFixed(1)}h usable time)
+                {metrics.valid ? (
+                  `Calculated Layover: ${metrics.hoursStr} (${metrics.usableHours.toFixed(1)}h usable time)`
+                ) : (
+                  <span className="text-rose-400 font-semibold text-sm sm:text-base flex items-center gap-1.5">
+                    ⚠️ {metrics.error || 'Please enter valid future flight timings'}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Dynamic Eligibility Badge */}
             <div>
-              {metrics.eligibleForCity ? (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-xs rounded-xl">
-                  🟢 City Sightseeing &amp; Micro-Stays Eligible
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-xs rounded-xl">
-                  🟡 Airside Transit &amp; Express Lounge Eligible
-                </span>
-              )}
+              {metrics.valid &&
+                (metrics.eligibleForCity ? (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-xs rounded-xl">
+                    🟢 City Sightseeing &amp; Micro-Stays Eligible
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-xs rounded-xl">
+                    🟡 Airside Transit &amp; Express Lounge Eligible
+                  </span>
+                ))}
             </div>
           </div>
 
@@ -325,7 +447,12 @@ export default function LayoverCalculatorForm({
         {!hideSubmit && (
           <button
             type="submit"
-            className="w-full py-4 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 group"
+            disabled={!metrics.valid}
+            className={`w-full py-4 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 group ${
+              metrics.valid
+                ? 'bg-[#0369a1] hover:bg-[#075985] cursor-pointer'
+                : 'bg-slate-700 opacity-60 cursor-not-allowed'
+            }`}
           >
             <span>{buttonText}</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

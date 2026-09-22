@@ -29,7 +29,9 @@ router.post(['/webhook', '/api/v1/payments/webhook'], async (req: Request, res: 
         .update(payload)
         .digest('hex');
 
-      const isValidSignature = (generatedSignature === signature);
+      const sigBuf = Buffer.from(signature, 'utf-8');
+      const genBuf = Buffer.from(generatedSignature, 'utf-8');
+      const isValidSignature = sigBuf.length === genBuf.length && crypto.timingSafeEqual(sigBuf, genBuf);
       if (!isValidSignature) {
         res.status(401).json({
           status: 'error',

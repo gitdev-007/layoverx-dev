@@ -1,0 +1,40 @@
+name: Strix AI Penetration Testing & Security Audit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  strix-security-audit:
+    name: Strix Autonomous Pentest Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: Build Backend & Schemas
+        run: npm --prefix backend run build
+
+      - name: Run Strix Autonomous Security Attack Suite
+        run: npm run test:security
+
+      - name: Run Comprehensive Dateline & Auth Security Checks
+        run: |
+          node tests/dateline_validation_check.js
+          node tests/auth_idor_security_check.js
+          node tests/sqli_ddos_security_check.js

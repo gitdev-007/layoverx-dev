@@ -5,7 +5,10 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const rawNext = searchParams.get('next') ?? '/';
+  // Enforce relative path to prevent Open Redirect attacks
+  const isSafeRelative = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\');
+  const next = isSafeRelative ? rawNext : '/';
 
   // Construct origin dynamically from x-forwarded headers to avoid Vercel internal host overrides
   const host = request.headers.get('x-forwarded-host') || new URL(request.url).host;

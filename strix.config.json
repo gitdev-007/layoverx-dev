@@ -1,0 +1,51 @@
+{
+  "project": "layoverx-dev",
+  "framework": "usestrix/strix",
+  "version": "1.6.2",
+  "repository": "https://github.com/usestrix/strix",
+  "targets": [
+    {
+      "name": "LayoverX API Gateway",
+      "baseUrl": "https://layoverx-dev.onrender.com/api/v1",
+      "localUrl": "http://localhost:5000/api/v1"
+    }
+  ],
+  "scanner": {
+    "autonomousMode": true,
+    "concurrency": 5,
+    "proofOfConceptValidation": true,
+    "maxDepth": 4
+  },
+  "attackProfiles": [
+    "OWASP_TOP_10",
+    "API_SECURITY_TOP_10",
+    "SQL_INJECTION",
+    "POSTGREST_FILTER_INJECTION",
+    "PROTOTYPE_POLLUTION",
+    "BOLA_IDOR",
+    "HMAC_SIGNATURE_TAMPERING",
+    "TIMING_SIDE_CHANNEL",
+    "PAST_DATE_TIMELINE_INJECTION",
+    "MOCK_PAYMENT_BYPASS",
+    "OPEN_REDIRECT"
+  ],
+  "monitoredEndpoints": [
+    "/booking/hold-slot",
+    "/booking/create-order",
+    "/booking/confirm",
+    "/booking/verify-payment",
+    "/booking/verify",
+    "/flight/telemetry",
+    "/flight/track",
+    "/ops/dispatch-request",
+    "/contact/submit",
+    "/health"
+  ],
+  "rules": {
+    "requireHmacTimingSafe": true,
+    "blockPastDateBookings": true,
+    "rejectPrototypePollution": true,
+    "enforceIdorOwnership": true,
+    "disallowMockOrdersInProduction": true
+  }
+}

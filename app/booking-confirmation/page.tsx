@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, MessageSquare, ShieldCheck, Plane, FileText } from 'lucide-react';
+import { getBookingDetails } from '@/lib/api';
 
 interface BookingData {
   id: string;
@@ -36,14 +37,7 @@ function BookingConfirmationContent() {
 
     async function fetchBookingDetails() {
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://layoverx-dev.onrender.com';
-        const targetUrl = apiBaseUrl.endsWith('/api/v1') 
-          ? `${apiBaseUrl}/booking/${bookingId}` 
-          : `${apiBaseUrl.replace(/\/$/, '')}/api/v1/booking/${bookingId}`;
-
-        const res = await fetch(targetUrl);
-        if (!res.ok) throw new Error('Failed to fetch booking details.');
-        const json = await res.json();
+        const json = await getBookingDetails(bookingId as string);
         if (json.success && json.booking) {
           setBooking(json.booking);
         } else {

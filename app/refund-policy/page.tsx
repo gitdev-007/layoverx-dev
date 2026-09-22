@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     'LayoverX cancellation windows and refund policy for transit micro-stay, dining, spa, and tour bookings at CSMIA Terminal 2, Mumbai.',
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/refund-policy',
+    canonical: '/refund-policy',
   },
 };
 
@@ -43,7 +43,7 @@ export default function RefundPolicyPage() {
               your booked slot start time:
             </p>
 
-            <div className="overflow-hidden rounded-xl border border-slate-700">
+            <div className="overflow-x-auto rounded-xl border border-slate-700">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-800 text-slate-200">

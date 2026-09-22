@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { Router, Response } from 'express';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const router = Router();
  * Passenger standing at CSMIA T2 Exit Gate 2 clicks "I AM HERE".
  * Updates booking status to PASSENGER_AT_GATE_2 and triggers immediate Founder Dispatch Alert.
  */
-router.post(['/dispatch-request', '/api/v1/ops/dispatch-request'], requireAuth, async (req: Request, res: Response): Promise<void> => {
+router.post(['/dispatch-request', '/api/v1/ops/dispatch-request'], requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { bookingId, token, passengerName, dropLocation } = req.body || {};
     const refCode = token || bookingId || 'LX-GATE2';
@@ -47,12 +47,32 @@ router.post(['/dispatch-request', '/api/v1/ops/dispatch-request'], requireAuth, 
     const { createClient } = await import('@supabase/supabase-js');
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Update booking status in Supabase to PASSENGER_AT_GATE_2
+    // Update booking status in Supabase to PASSENGER_AT_GATE_2 with IDOR ownership check
     if (bookingId) {
-      await db
+      const currentUserId = req.user?.id;
+      const userRole = req.userRole || req.user?.role || req.user?.app_metadata?.role;
+
+      let updateQuery = db
         .from('bookings')
         .update({ payment_status: 'PASSENGER_AT_GATE_2', updated_at: timestamp })
         .eq('id', bookingId);
+
+      if (userRole !== 'admin') {
+        updateQuery = updateQuery.eq('user_id', currentUserId);
+      }
+
+      const { data: updatedRows, error: updateErr } = await updateQuery.select();
+      if (updateErr) {
+        throw updateErr;
+      }
+      if (!updatedRows || updatedRows.length === 0) {
+        res.status(404).json({
+          status: 'error',
+          code: 'BOOKING_NOT_FOUND',
+          message: 'Booking not found or access denied.',
+        });
+        return;
+      }
     }
 
     // Insert alert into admin_notifications table if present

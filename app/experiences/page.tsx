@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { TOURS_DATA, FAQS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
+import ExperienceGrid from '@/components/catalog/ExperienceGrid';
 import { Compass, MapPin, Clock, Star, ShieldCheck, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export default function ExperiencesPage() {
@@ -160,87 +161,7 @@ export default function ExperiencesPage() {
 
             {/* Marketplace Grid */}
             <div className="w-full lg:w-3/4 space-y-6">
-              {filteredTours.map((t) => (
-                <article
-                  key={t.id}
-                  className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
-                >
-                  <div className="relative w-full md:w-80 h-52 md:h-auto flex-shrink-0">
-                    <Image src={t.image} alt={t.name} fill className="object-cover" />
-                    <span className="absolute top-4 left-4 bg-amber-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-                      📸 {(t.category || 'sightseeing').toUpperCase()}
-                    </span>
-                  </div>
-
-                  <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className="font-bold text-slate-900 text-lg">{t.name}</h3>
-                        <span className="flex items-center gap-1 bg-slate-50 text-slate-900 px-2 py-1 rounded-lg text-xs font-bold">
-                          ⭐ {t.rating}
-                        </span>
-                      </div>
-
-                      <div className="text-xs text-[#0284C7] font-semibold flex items-center gap-1 mb-2">
-                        <Clock size={13} /> Duration: {t.duration} ({t.safeWindow})
-                      </div>
-
-                      <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{t.description}</p>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Price Per Guest</span>
-                        <strong className="text-lg font-black text-slate-900">{t.price}</strong>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/service-details?id=${t.id}`}
-                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
-                        >
-                          View Details
-                        </Link>
-                        {(() => {
-                          const isAdded = items.some((item) => item.id === t.id);
-                          return (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (isAdded) {
-                                  removeFromItinerary(t.id);
-                                } else {
-                                  requireAuth(() => {
-                                    addToItinerary({
-                                      id: t.id,
-                                      title: t.name,
-                                      type: 'tour',
-                                      price: t.price,
-                                      cost: t.price,
-                                      durationHours: 4.0,
-                                      image: t.image,
-                                      location: t.location || 'Mumbai',
-                                      detail: `Duration: ${t.duration} (${t.safeWindow})`,
-                                      badge: 'Tour',
-                                    });
-                                  });
-                                }
-                              }}
-                              className={`px-4 py-2 font-bold text-xs rounded-xl shadow transition cursor-pointer ${
-                                isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0284C7] hover:bg-[#027ab1] text-white'
-                              }`}
-                            >
-                              {isAdded ? 'Added ✓' : 'Add to Itinerary'}
-                            </button>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
+              <ExperienceGrid initialCategory={activeCategory} />
             </div>
 
           </div>

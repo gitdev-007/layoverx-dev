@@ -146,7 +146,12 @@ function ServiceDetailsContent() {
         ];
 
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(0);
-  const [checkInTime, setCheckInTime] = useState('2026-07-28T12:00');
+  const [checkInTime, setCheckInTime] = useState(() => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
   const [travelersCount, setTravelersCount] = useState('1 Adult');
 
   const selectedSlot = slotOptions[selectedSlotIndex] || slotOptions[0];
@@ -154,6 +159,12 @@ function ServiceDetailsContent() {
   const handleAddToItinerary = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (new Date(checkInTime).getTime() < Date.now() - 60 * 1000) {
+      alert('⚠️ Preferred booking time cannot be in the past. Please select the current time or a future date/time.');
+      return;
+    }
+
     requireAuth(() => {
       const itemToAdd = {
         id: service.id,
@@ -307,6 +318,11 @@ function ServiceDetailsContent() {
                   </label>
                   <input
                     type="datetime-local"
+                    min={(() => {
+                      const pad = (n: number) => String(n).padStart(2, '0');
+                      const d = new Date();
+                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                    })()}
                     value={checkInTime}
                     onChange={(e) => setCheckInTime(e.target.value)}
                     className={`w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-900 px-3 py-3 outline-none transition focus:bg-white focus:ring-2 ${

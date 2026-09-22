@@ -8,19 +8,47 @@ export function ContactForm() {
   const [phone, setPhone] = useState('');
   const [date, setDate] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch('/api/v1/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          date,
+          message,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit inquiry. Please check your inputs.');
+      }
+
+      setSubmitted(true);
       setFullName('');
       setEmail('');
       setPhone('');
       setDate('');
       setMessage('');
-    }, 4000);
+    } catch (err: any) {
+      console.error('[ContactForm Error]:', err);
+      setErrorMessage(err.message || 'Unable to submit at this time. Please use our 24/7 WhatsApp dispatch hotline.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,11 +59,23 @@ export function ContactForm() {
       </div>
 
       {submitted ? (
-        <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-bold text-center">
-          ✓ Message sent successfully! Our dispatch team will contact you shortly.
+        <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-bold text-center space-y-3">
+          <p>✓ Message sent successfully! Our CSMIA airport dispatch team will contact you shortly.</p>
+          <button
+            type="button"
+            onClick={() => setSubmitted(false)}
+            className="text-xs font-extrabold text-[#0369a1] hover:underline"
+          >
+            Send another inquiry &rarr;
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {errorMessage && (
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl">
+              ⚠️ {errorMessage}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
@@ -43,7 +83,7 @@ export function ContactForm() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="e.g. Rahul Sharma"
                 required
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
               />
@@ -54,7 +94,7 @@ export function ContactForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="traveler@layoverx.in"
                 required
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
               />
@@ -101,9 +141,10 @@ export function ContactForm() {
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-sm rounded-xl shadow-md transition"
+            disabled={loading}
+            className="w-full py-3.5 bg-[#0284C7] hover:bg-[#027ab1] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
           >
-            Send Message
+            {loading ? 'Sending Inquiry...' : 'Send Message'}
           </button>
         </form>
       )}

@@ -53,3 +53,7 @@ Thumbs.db
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Test and scratch output
+test-results/
+scratch/

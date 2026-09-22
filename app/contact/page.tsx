@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { ContactForm } from '@/components/contact-form';
 
 export const metadata: Metadata = {
-  title: 'Contact Us & Grievance Office | LayoverX — CSMIA T2 Mumbai',
+  title: 'Contact Us & Airport Support | LayoverX CSMIA T2',
   description:
-    'Contact LayoverX 24/7 airport support hotline (+91 022 4900-1234), email support@layoverx.com, or get in touch with our Grievance Officer at CSMIA Terminal 2 Exit Gate 2.',
+    'Contact LayoverX 24/7 CSMIA airport transit support (+91 022 4900-1234), email support@layoverx.in, or reach our concierge desk at Terminal 2 Exit Gate 2.',
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app/contact',
+    canonical: '/contact',
   },
 };
 

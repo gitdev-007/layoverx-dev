@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   description:
     'Discover luxury transit hotels, authentic restaurants, spas, local city tours, and airport transfers near CSM International Airport Mumbai. Plan your perfect stopover.',
   alternates: {
-    canonical: 'https://layoverx-dev.vercel.app',
+    canonical: '/',
   },
 };
 
@@ -133,7 +133,7 @@ export default async function HomePage() {
             </p>
 
             {/* Layover Calculator Widget */}
-            <div className="pt-6 text-left">
+            <div id="calculator" className="pt-6 text-left scroll-mt-24">
               <LayoverCalculatorForm />
             </div>
 
@@ -238,7 +238,7 @@ export default async function HomePage() {
                   <div className="relative h-48 w-full">
                     <Image 
                       src={h.image} 
-                      alt={h.name} 
+                      alt={h.name || 'Transit Hotel Micro-Stay at Mumbai Airport Terminal 2'} 
                       fill 
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover" 

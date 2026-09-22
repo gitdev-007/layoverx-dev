@@ -6,11 +6,11 @@ import { Pencil, PlaneTakeoff, PlaneLanding } from 'lucide-react';
 
 export default function TimelineHeader() {
   const {
-    totalLayoverHours = 17.0,
+    totalLayoverHours = 8.0,
     driveTimeHours = 0.0,
     totalBufferHours = 2.5,
     usedActivitiesHours = 0.0,
-    availableWindowHours = 14.5,
+    availableWindowHours = 5.5,
   } = useItinerary();
 
   const usedPercentage = Math.min(
@@ -114,7 +114,7 @@ export default function TimelineHeader() {
           <span>LANDING</span>
         </div>
         <div className="text-center font-medium tracking-wide">
-          FORMULA: TOTAL LAYOVER - 2.5H TRANSIT - CAB DRIVE - 10M = {availableWindowHours.toFixed(1)}H AVAILABLE
+          FORMULA: TOTAL LAYOVER ({totalLayoverHours.toFixed(1)}H) - 2.5H TRANSIT{driveTimeHours > 0 ? ` - ${driveTimeHours.toFixed(1)}H DRIVE` : ''}{usedActivitiesHours > 0 ? ` - ${usedActivitiesHours.toFixed(1)}H USED` : ''} = {availableWindowHours.toFixed(1)}H AVAILABLE
         </div>
         <div className="flex items-center gap-1.5 text-slate-700">
           <PlaneTakeoff className="w-4 h-4 text-sky-600" />

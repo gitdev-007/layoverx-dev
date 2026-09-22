@@ -117,7 +117,17 @@ export default function AirportTransfersPage() {
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Pickup Date & Time</label>
               <input
                 type="datetime-local"
-                defaultValue="2026-07-28T10:00"
+                min={(() => {
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const d = new Date();
+                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                })()}
+                defaultValue={(() => {
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+                  d.setMinutes(0, 0, 0);
+                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                })()}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-sky-500"
               />
             </div>

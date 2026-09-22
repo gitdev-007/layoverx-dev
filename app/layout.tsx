@@ -7,7 +7,7 @@ import { ItineraryProvider } from '@/context/itinerary-context';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import AuthGuard from '@/components/auth/AuthGuard';
-import WhatsAppConcierge from '@/components/WhatsAppConcierge';
+import NetworkStatus from '@/components/common/NetworkStatus';
 
 
 const jakarta = Plus_Jakarta_Sans({
@@ -17,7 +17,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.layoverx.in'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.layoverx.in'),
   title: 'Mumbai Travel & Layover Experience Platform | LayoverX',
   description:
     'Discover luxury transit hotels, authentic restaurants, spas, local city tours, and airport transfers near CSM International Airport Mumbai. Plan your perfect stopover.',
@@ -30,7 +30,11 @@ export const metadata: Metadata = {
     'Bombay Layover Guide',
   ],
   alternates: {
-    canonical: 'https://www.layoverx.in',
+    canonical: '/',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: 'LayoverX — Mumbai Airport Transit Platform',
@@ -55,6 +59,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html lang="en" className={`${jakarta.variable} scroll-smooth`}>
       <body className="font-sans bg-[#F8FAFC] text-[#0F172A] antialiased selection:bg-[#0369a1] selection:text-white min-h-screen flex flex-col pt-16">
@@ -64,11 +70,27 @@ export default function RootLayout({
               <Navbar />
               <main className="flex-grow">{children}</main>
               <Footer />
-              <WhatsAppConcierge />
+              <NetworkStatus />
             </AuthGuard>
           </ItineraryProvider>
         </AuthProvider>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

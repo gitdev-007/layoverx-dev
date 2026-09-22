@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { supabase, SUPABASE_URL } from '../utils/supabase.js';
 import { extractTextFromFile, parseTicketTelemetry } from '../services/ticketParser.js';
 import { sendDiscordAlert } from '../utils/discord.js';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
@@ -30,20 +31,38 @@ const isValidUUID = (str: any) => {
   return uuidRegex.test(str);
 };
 
+// Strict magic-byte file signature validation to prevent malicious upload masquerading
+const validateFileSignature = (buffer: Buffer, mimetype: string): boolean => {
+  if (!buffer || buffer.length < 4) return false;
+  // PDF: %PDF (0x25 0x50 0x44 0x46)
+  if (mimetype === 'application/pdf' && buffer.slice(0, 4).toString() === '%PDF') return true;
+  // JPEG: FF D8 FF
+  if ((mimetype === 'image/jpeg' || mimetype === 'image/jpg') && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return true;
+  // PNG: 89 50 4E 47
+  if (mimetype === 'image/png' && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return true;
+  return false;
+};
+
 // ENDPOINT 1: UPLOAD TICKET, EXTRACT TELEMETRY & CREATE RAZORPAY ORDER
-router.post('/create-checkout-order', upload.single('ticket'), async (req: Request, res: Response): Promise<void> => {
+router.post('/create-checkout-order', requireAuth, upload.single('ticket'), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { phone, isConsented, userId, amount = 1499, slotId, serviceId } = req.body || {};
+    const { phone, isConsented, amount = 1499, slotId, serviceId } = req.body || {};
+    const userId = req.user?.id;
     const sanitizedSlotId = isValidUUID(slotId) ? slotId : null;
     const sanitizedServiceId = isValidUUID(serviceId) ? serviceId : null;
     const file = req.file;
 
-    if (!userId || userId === 'undefined' || userId === 'null' || userId.trim() === '') {
+    if (!userId || userId === 'undefined' || userId === 'null' || String(userId).trim() === '') {
       res.status(401).json({ error: 'Authentication required. Please log in.' });
       return;
     }
     if (!phone || !file) {
       res.status(400).json({ error: 'Missing e-ticket file or contact phone number.' });
+      return;
+    }
+
+    if (!validateFileSignature(file.buffer, file.mimetype)) {
+      res.status(400).json({ error: 'Invalid or corrupt ticket file. Only valid PDF, JPEG, or PNG files are permitted.' });
       return;
     }
 
@@ -198,25 +217,36 @@ router.post('/create-checkout-order', upload.single('ticket'), async (req: Reque
   }
 });
 
-// ENDPOINT 2: VERIFY RAZORPAY PAYMENT & MARK COMPLETED
-router.post('/verify-payment', async (req: Request, res: Response): Promise<void> => {
+// ENDPOINT 2: VERIFY RAZORPAY PAYMENT & MARK COMPLETED (Protected with requireAuth & IDOR checks)
+router.post('/verify-payment', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body || {};
+    const currentUserId = req.user?.id;
+    const userRole = req.userRole || req.user?.role || req.user?.app_metadata?.role;
 
     if (!razorpay_order_id || !razorpay_payment_id || !bookingId) {
       res.status(400).json({ error: 'Missing payment verification params.' });
       return;
     }
 
-    let isValid = true;
-    if (!razorpay_order_id.startsWith('ord_mock_') && process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('sample')) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    let isValid = false;
+
+    if (isProduction && razorpay_order_id.startsWith('ord_mock_')) {
+      isValid = false;
+    } else if (process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('sample')) {
       const body = razorpay_order_id + '|' + razorpay_payment_id;
       const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
         .update(body.toString())
         .digest('hex');
 
-      isValid = expectedSignature === razorpay_signature;
+      const sigBuf = Buffer.from(String(razorpay_signature || ''), 'utf-8');
+      const expBuf = Buffer.from(expectedSignature, 'utf-8');
+      isValid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+    } else if (!isProduction && razorpay_order_id.startsWith('ord_mock_')) {
+      // Allow mock payment verification only in non-production local development
+      isValid = true;
     }
 
     if (!isValid) {
@@ -225,6 +255,25 @@ router.post('/verify-payment', async (req: Request, res: Response): Promise<void
     }
 
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
+      // Step 1: IDOR check - verify that booking exists and belongs to current user
+      const { data: existingBooking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!existingBooking) {
+        res.status(404).json({ error: 'Booking not found.' });
+        return;
+      }
+
+      if (userRole !== 'admin' && existingBooking.user_id !== currentUserId) {
+        res.status(403).json({ error: 'Access denied: You do not own this booking.' });
+        return;
+      }
+
+      // Step 2: Update booking payment status
       const { data: updatedData, error: updateError } = await supabase
         .from('bookings')
         .update({
@@ -283,20 +332,26 @@ router.post('/verify-payment', async (req: Request, res: Response): Promise<void
   }
 });
 
-// ENDPOINT 3: GET BOOKING DETAILS BY ID
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+// ENDPOINT 3: GET BOOKING DETAILS BY ID (Protected with IDOR defense)
+router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const currentUserId = req.user?.id;
+    const userRole = req.user?.role || req.user?.user_metadata?.role || req.user?.app_metadata?.role;
+
     if (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('sample-project')) {
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      let query = supabase.from('bookings').select('*').eq('id', id);
+      
+      // Unless the user is an admin, enforce strict resource ownership
+      if (userRole !== 'admin') {
+        query = query.eq('user_id', currentUserId);
+      }
+      
+      const { data: booking, error } = await query.maybeSingle();
 
       if (error) throw error;
       if (!booking) {
-        res.status(404).json({ error: 'Booking not found.' });
+        res.status(404).json({ error: 'Booking not found or access denied.' });
         return;
       }
       res.status(200).json({ success: true, booking });
@@ -305,6 +360,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         success: true,
         booking: {
           id,
+          user_id: currentUserId,
           user_phone: '+91 98765 43210',
           ticket_file_path: 'mock_bucket/mock_ticket.pdf',
           extracted_pnr: 'MH202A',

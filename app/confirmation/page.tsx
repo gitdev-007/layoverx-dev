@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   CheckCircle2, 
@@ -13,7 +14,7 @@ import {
   RefreshCw,
   Home
 } from 'lucide-react';
-import { trackFlight, requestGateDispatch } from '@/lib/api';
+import { trackFlight, requestGateDispatch, getBookingDetails } from '@/lib/api';
 import { calculateBookingTotal } from '@/lib/pricing';
 import { createQrPayloadString } from '@/lib/voucher';
 
@@ -28,8 +29,13 @@ interface BookingData {
   redemptionToken: string;
 }
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const routeBookingId = (params?.id as string) || searchParams?.get('bookingId') || searchParams?.get('id') || '';
+
   const [booking, setBooking] = useState<BookingData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [flightNumber, setFlightNumber] = useState('');
   const [flightDate, setFlightDate] = useState('');
   const [trackingLoading, setTrackingLoading] = useState(false);
@@ -189,28 +195,60 @@ export default function ConfirmationPage() {
   };
 
   useEffect(() => {
-    // Retrieve dynamic draft details from localStorage
-    const saved = localStorage.getItem('layoverx_draft');
-    if (saved) {
-      try {
-        const draft = JSON.parse(saved);
-        setBooking({
-          bookingId: draft.bookingId || `bk_${Math.floor(100000 + Math.random() * 900000)}`,
-          leadPassengerName: draft.leadPassengerName || 'Guest Traveler',
-          passportNumber: draft.passportNumber || 'L892401',
-          flightIn: draft.flightIn || 'EK-504',
-          arrivalTime: draft.arrivalTime || new Date().toISOString(),
-          departureTime: draft.departureTime || new Date().toISOString(),
-          totalPrice: draft.totalPrice || 4798,
-          redemptionToken: draft.redemptionToken || draft.vendorRefCode || draft.vendor_ref_code || 'LX-7842',
-        });
-        setFlightNumber(draft.flightIn || 'EK-504');
-        setFlightDate(new Date(draft.arrivalTime || Date.now()).toISOString().split('T')[0]);
-      } catch (e) {
-        console.warn('Failed to load draft details on confirmation page:', e);
+    async function initBooking() {
+      if (routeBookingId) {
+        try {
+          const res = await getBookingDetails(routeBookingId);
+          if (res?.success && res?.booking) {
+            const b = res.booking;
+            setBooking({
+              bookingId: b.id || routeBookingId,
+              leadPassengerName: b.passenger_name || b.leadPassengerName || 'Valued Traveler',
+              passportNumber: b.extracted_pnr || b.passportNumber || 'CONFIRMED',
+              flightIn: b.extracted_inbound_flight || b.flightIn || 'AI-302',
+              arrivalTime: b.arrival_time || b.arrivalTime || new Date().toISOString(),
+              departureTime: b.departure_time || b.departureTime || new Date(Date.now() + 8 * 3600000).toISOString(),
+              totalPrice: b.amount || 4798,
+              redemptionToken: b.vendor_ref_code || b.redemptionToken || 'LX-7842',
+            });
+            setFlightNumber(b.extracted_inbound_flight || 'AI-302');
+            setFlightDate(new Date(b.arrival_time || Date.now()).toISOString().split('T')[0]);
+            return;
+          }
+        } catch (err) {
+          console.warn('[Confirmation] Failed to load remote booking details:', err);
+        }
       }
+
+      // Retrieve dynamic draft details from localStorage as secondary fallback
+      const saved = localStorage.getItem('layoverx_draft');
+      if (saved) {
+        try {
+          const draft = JSON.parse(saved);
+          setBooking({
+            bookingId: draft.bookingId || routeBookingId || `bk_${Math.floor(100000 + Math.random() * 900000)}`,
+            leadPassengerName: draft.leadPassengerName || 'Guest Traveler',
+            passportNumber: draft.passportNumber || 'L892401',
+            flightIn: draft.flightIn || 'EK-504',
+            arrivalTime: draft.arrivalTime || new Date().toISOString(),
+            departureTime: draft.departureTime || new Date().toISOString(),
+            totalPrice: draft.totalPrice || 4798,
+            redemptionToken: draft.redemptionToken || draft.vendorRefCode || draft.vendor_ref_code || 'LX-7842',
+          });
+          setFlightNumber(draft.flightIn || 'EK-504');
+          setFlightDate(new Date(draft.arrivalTime || Date.now()).toISOString().split('T')[0]);
+          return;
+        } catch (e) {
+          console.warn('Failed to load draft details on confirmation page:', e);
+        }
+      }
+
+      // If neither remote DB nor localStorage has the booking, trigger loadError
+      setLoadError('No active booking details found.');
     }
-  }, []);
+
+    initBooking();
+  }, [routeBookingId]);
 
   const handleTrackFlight = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +282,26 @@ export default function ConfirmationPage() {
   };
 
   if (!booking) {
+    if (loadError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6 space-y-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-bold text-white">No Booking Pass Found</h1>
+          <p className="text-sm text-slate-400 max-w-sm">
+            We couldn't retrieve an active layover pass for this session. Please check your confirmation email or return to plan your stopover.
+          </p>
+          <Link
+            href="/"
+            className="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl text-sm transition shadow-lg"
+          >
+            Back to CSMIA Airport Hub
+          </Link>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center space-y-4">
         <AlertCircle className="w-12 h-12 text-sky-400 animate-pulse" />
@@ -741,5 +799,20 @@ export default function ConfirmationPage() {
       </section>
       
     </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-sky-400 animate-pulse" />
+          <p className="text-sm font-semibold">Loading confirmation details...</p>
+        </div>
+      }
+    >
+      <ConfirmationContent />
+    </Suspense>
   );
 }

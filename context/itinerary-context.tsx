@@ -105,15 +105,66 @@ export function calculateDynamicCabDriveTime(itemsList: ItineraryItem[]): number
   return Math.min(maxDriveTime, 2.5);
 }
 
+function getSavedLayoverHours(): number {
+  if (typeof window === 'undefined') return 8.0;
+  try {
+    const calc = localStorage.getItem('layoverx_calculator_data');
+    if (calc) {
+      const data = JSON.parse(calc);
+      if (data.arrivalTime && data.departureTime) {
+        const arr = new Date(data.arrivalTime).getTime();
+        const dep = new Date(data.departureTime).getTime();
+        if (!isNaN(arr) && !isNaN(dep) && dep > arr) {
+          return Number(((dep - arr) / (1000 * 60 * 60)).toFixed(1));
+        }
+      }
+    }
+    const draft = localStorage.getItem('layoverx_draft');
+    if (draft) {
+      const data = JSON.parse(draft);
+      if (data.arrivalTime && data.departureTime) {
+        const arr = new Date(data.arrivalTime).getTime();
+        const dep = new Date(data.departureTime).getTime();
+        if (!isNaN(arr) && !isNaN(dep) && dep > arr) {
+          return Number(((dep - arr) / (1000 * 60 * 60)).toFixed(1));
+        }
+      }
+    }
+  } catch {}
+  return 8.0;
+}
+
 export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const { user, openAuthModal } = useAuth();
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [toast, setToast] = useState<ToastNotice | null>(null);
 
-  const [totalLayoverHours, setTotalLayoverHours] = useState<number>(17.0);
+  const [totalLayoverHours, setTotalLayoverHoursState] = useState<number>(8.0);
   const [selectedCar, setSelectedCar] = useState<any>(null);
   const [driveTimeHours, setDriveTimeHours] = useState<number>(0.0);
+
+  const setTotalLayoverHours = (hours: number) => {
+    if (typeof hours === 'number' && !isNaN(hours) && hours > 0) {
+      setTotalLayoverHoursState(Number(hours.toFixed(1)));
+    }
+  };
+
+  useEffect(() => {
+    const syncHours = () => {
+      const hours = getSavedLayoverHours();
+      if (hours > 0) {
+        setTotalLayoverHoursState(hours);
+      }
+    };
+    syncHours();
+    window.addEventListener('storage', syncHours);
+    window.addEventListener('layoverx_timings_updated', syncHours);
+    return () => {
+      window.removeEventListener('storage', syncHours);
+      window.removeEventListener('layoverx_timings_updated', syncHours);
+    };
+  }, []);
 
   const itineraryItems = items;
 
@@ -162,13 +213,21 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     const { itemsKey, plansKey } = getStorageKeys(user?.email);
     try {
       if (!user) {
-        // Clear active display on log out as requested
-        setItems([]);
+        // Load anonymous items if present
+        const anonItems = localStorage.getItem('layoverx_itinerary_items_anon');
+        setItems(anonItems ? JSON.parse(anonItems) : []);
         setSavedPlans([]);
       } else {
-        // Load user-specific itinerary
+        // Migrate anonymous items to authenticated user storage if user has no saved items
+        const anonItems = localStorage.getItem('layoverx_itinerary_items_anon');
         const storedItems = localStorage.getItem(itemsKey);
-        setItems(storedItems ? JSON.parse(storedItems) : []);
+        if (anonItems && (!storedItems || JSON.parse(storedItems).length === 0)) {
+          localStorage.setItem(itemsKey, anonItems);
+          setItems(JSON.parse(anonItems));
+          localStorage.removeItem('layoverx_itinerary_items_anon');
+        } else {
+          setItems(storedItems ? JSON.parse(storedItems) : []);
+        }
 
         const storedPlans = localStorage.getItem(plansKey);
         setSavedPlans(storedPlans ? JSON.parse(storedPlans) : []);
@@ -221,21 +280,25 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   };
 
 
-  const addItem = (itemData: Omit<ItineraryItem, 'id'> & { id?: string }, totalLayoverHours = 8.0) => {
+  const addItem = (itemData: Omit<ItineraryItem, 'id'> & { id?: string }, usableHoursLimit?: number) => {
     const isAddingCab = itemData.badge === 'Cab' || itemData.type === 'transfer';
 
-    if (!user && !isAddingCab) {
-      openAuthModal();
-      showToast('Please sign in or create an account to build your itinerary.', 'warning');
-      return;
-    }
+    let updatedList = [...items];
 
     if (!isAddingCab && !selectedCar) {
-      showToast('Please select an Airport Transfer Cab first', 'warning');
-      if (typeof window !== 'undefined') {
-        window.location.href = '/airport-transfers';
-      }
-      return;
+      // Auto-include standard airport transfer cab to guarantee on-time flight return & transit buffer
+      const defaultCab: ItineraryItem = {
+        id: 'cab_sedan',
+        badge: 'Cab',
+        type: 'transfer',
+        title: 'AC Sedan Transfer (Toyota Etios)',
+        detail: 'Fits 4 Passengers, 2 Standard Bags. Verified Driver.',
+        cost: '₹899',
+        durationHours: 0.75,
+      };
+      updatedList.push(defaultCab);
+      setSelectedCar(defaultCab);
+      showToast('Standard Airport Transfer Cab added to guarantee on-time return.', 'info');
     }
 
     if (!isAddingCab && (itemData.durationHours || 0) > availableWindowHours) {
@@ -251,8 +314,6 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
       showToast(`⚠️ "${itemData.title}" is already in your itinerary!`, 'warning');
       return;
     }
-
-    let updatedList = [...items];
 
     if (isAddingCab) {
       updatedList = updatedList.filter((item) => item.badge !== 'Cab' && item.type !== 'transfer');

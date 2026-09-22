@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export const DEFAULT_QR_HMAC_SECRET = process.env.NEXT_PUBLIC_QR_HMAC_SECRET || process.env.QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
+export const DEFAULT_QR_HMAC_SECRET = process.env.QR_HMAC_SECRET || 'layoverx_mumbai_t2_secret_key_2026';
 
 export interface QrPassPayload {
   id: string;
