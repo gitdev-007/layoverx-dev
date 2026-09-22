@@ -50,7 +50,7 @@ export default function ContactPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                  <span className="font-semibold text-slate-200">15-Min Response Guarantee</span>
+                  <span className="font-semibold text-slate-200">Prompt 15-Minute Response</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-400"></span>

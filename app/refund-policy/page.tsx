@@ -74,7 +74,7 @@ export default function RefundPolicyPage() {
                     <td className="px-5 py-3">
                       <span className="text-sky-400 font-bold">Airline cancellation</span> or severe delay (+3 hours)
                     </td>
-                    <td className="px-5 py-3 text-sky-400 font-bold">100% Full Refund Guarantee</td>
+                    <td className="px-5 py-3 text-sky-400 font-bold">100% Full Refund</td>
                   </tr>
                 </tbody>
               </table>
@@ -86,7 +86,7 @@ export default function RefundPolicyPage() {
             <h2 className="text-lg font-bold text-white">2. Airline Flight Cancellation &amp; Severe Delay Protection</h2>
             <p>
               If your inbound or outbound flight is <strong className="text-white">cancelled by the airline</strong> or delayed by
-              <strong className="text-white"> 3 hours or more</strong>, LayoverX guarantees a <strong className="text-white">100% full refund</strong> of
+              <strong className="text-white"> 3 hours or more</strong>, LayoverX provides a <strong className="text-white">100% full refund</strong> of
               your booking amount, regardless of how close to the slot start time the cancellation occurs.
             </p>
             <p>

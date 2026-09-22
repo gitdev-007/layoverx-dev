@@ -298,7 +298,7 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
       };
       updatedList.push(defaultCab);
       setSelectedCar(defaultCab);
-      showToast('Standard Airport Transfer Cab added to guarantee on-time return.', 'info');
+      showToast('Airport Transfer Cab auto-added for smooth terminal return.', 'info');
     }
 
     if (!isAddingCab && (itemData.durationHours || 0) > availableWindowHours) {

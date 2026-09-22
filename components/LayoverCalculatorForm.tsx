@@ -438,7 +438,7 @@ export default function LayoverCalculatorForm({
             </span>
             <span className="text-sky-300 font-semibold flex items-center gap-1">
               <ShieldCheck size={13} />
-              Guaranteed On-Time Airport Return
+              Smart Traffic Buffer Included
             </span>
           </div>
         </div>

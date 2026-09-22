@@ -63,7 +63,7 @@ export default function HowItWorksPage() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-200">Missed Flight Protection Guarantee</span>
+                  <span className="text-xs sm:text-sm font-semibold text-slate-200">Flexible Flight Delay Protection</span>
                 </div>
               </div>
             </div>

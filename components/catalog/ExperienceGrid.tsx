@@ -251,7 +251,7 @@ export default function ExperienceGrid({
                               durationHours: parseDurationToMinutes(tour.duration) / 60 || 4.0,
                               image: tour.image,
                               location: tour.location || 'Mumbai',
-                              detail: `Duration: ${tour.duration} (${tour.safeWindow || 'Safe Return Guaranteed'})`,
+                              detail: `Duration: ${tour.duration} (${tour.safeWindow || 'Traffic-Buffered Departure'})`,
                               badge: 'Tour',
                             });
                           });

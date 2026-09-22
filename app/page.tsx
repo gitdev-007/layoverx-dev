@@ -9,7 +9,6 @@ import {
   RESTAURANTS_DATA,
   TOURS_DATA,
   FAQS_DATA,
-  REVIEWS_DATA,
 } from '@/data/layover-data';
 import {
   Hotel,
@@ -40,18 +39,21 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const dynamicServices = await fetchServices();
   const hotelPods = dynamicServices.filter(item => item.category === 'HOTEL_PODS');
-  const hotelsToRender = hotelPods && hotelPods.length > 0
-    ? hotelPods.slice(0, 3).map(item => ({
-        id: item.id,
-        name: item.name,
-        terminal: item.terminal || 'CSMIA Terminal 2',
-        rating: item.rating || 4.8,
-        reviews: item.reviews || 1200,
-        price3h: `₹${item.price || 3499}`,
-        image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-        amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
-      }))
-    : HOTELS_DATA;
+  const dynamicMapped = hotelPods.map(item => ({
+    id: item.id,
+    name: item.name,
+    terminal: item.terminal || 'CSMIA Terminal 2',
+    rating: item.rating || 4.8,
+    reviews: item.reviews || 1200,
+    price3h: `₹${item.price || 3499}`,
+    image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
+  }));
+  // Guarantee a full 3-card layout without empty white space
+  const hotelsToRender = [
+    ...dynamicMapped,
+    ...HOTELS_DATA.filter(h => !dynamicMapped.some(d => d.id === h.id)),
+  ].slice(0, 3);
   const categories = [
     {
       title: 'Transit Hotels & Pods',
@@ -76,7 +78,7 @@ export default async function HomePage() {
       desc: '4 to 8-hour private chauffeured tours covering Gateway of India, Sea Link & Marine Drive.',
       href: '/experiences',
       icon: Compass,
-      badge: 'Guaranteed Return',
+      badge: 'Curated Route',
       color: 'bg-rose-100 text-rose-900 border-rose-200',
       image: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80',
     },
@@ -173,11 +175,6 @@ export default async function HomePage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-                    <span
-                      className={`absolute top-3 right-3 text-[11px] font-extrabold px-3 py-1 rounded-full border backdrop-blur-md ${cat.color}`}
-                    >
-                      {cat.badge}
-                    </span>
                   </div>
 
                   <div className="p-6 space-y-3">
@@ -312,9 +309,9 @@ export default async function HomePage() {
               <div className="w-14 h-14 bg-sky-50 text-[#0369a1] rounded-2xl flex items-center justify-center mx-auto border border-sky-100">
                 <Clock size={28} />
               </div>
-              <h3 className="text-lg font-bold text-[#0F172A]">Guaranteed On-Time Return</h3>
+              <h3 className="text-lg font-bold text-[#0F172A]">Smart Traffic-Buffered Timing</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Our smart layover engine calculates traffic windows so you never miss your connecting flight.
+                Our route engine calculates generous road traffic and security buffers so you can relax without departure anxiety.
               </p>
             </div>
 
@@ -328,34 +325,6 @@ export default async function HomePage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Customer Testimonials */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-3xl font-extrabold text-[#0F172A]">Verified Traveler Reviews</h2>
-          <p className="text-xs text-slate-500 mt-1">Real experiences from international & domestic transit passengers.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {REVIEWS_DATA.map((rev) => (
-            <div key={rev.id} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} size={14} className="fill-amber-500" />
-                  ))}
-                </div>
-                <span className="text-[10px] text-slate-400 font-medium">{rev.date}</span>
-              </div>
-              <p className="text-xs text-slate-600 italic leading-relaxed">"{rev.comment}"</p>
-              <div className="border-t border-slate-100 pt-3">
-                <p className="text-xs font-bold text-[#0F172A]">{rev.author}</p>
-                <p className="text-[10px] text-[#0369a1] font-mono mt-0.5">{rev.flight}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 

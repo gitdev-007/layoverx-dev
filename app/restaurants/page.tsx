@@ -141,7 +141,7 @@ export default function RestaurantsPage() {
                 <div className="flex items-center gap-2.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
                   <span className="text-xs sm:text-sm font-semibold text-slate-200">
-                    Fixed-Time Dining Guarantees
+                    Flight-Paced Dining Windows
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -445,7 +445,7 @@ export default function RestaurantsPage() {
                 Exclusive Fast-Track
               </span>
               <h2 className="text-3xl font-extrabold text-slate-900">
-                Guaranteed Table & Flight-Time Sync
+                Priority Table &amp; Flight-Time Sync
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
                 Don't waste transit time waiting in lines. LayoverX pre-reserves your table and pre-orders signature dishes so your meal is ready the moment your driver drops you off.

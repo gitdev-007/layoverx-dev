@@ -156,7 +156,7 @@ export async function calculateLayover(
       'FINE_DINING',
     ];
     recommendation =
-      'City Sightseeing Tour & Micro-Stay Eligible with return guarantee.';
+      'City Sightseeing Tour & Micro-Stay Eligible with departure buffer.';
   }
 
   return {

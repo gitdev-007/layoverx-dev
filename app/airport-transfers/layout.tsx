@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Fixed-Rate Airport Transfers & Cabs | LayoverX CSMIA',
   description:
-    'Flight-tracked private chauffeurs with zero wait time at Mumbai CSMIA T1 & T2 arrivals gates. Pre-negotiated fixed rates and on-time flight return guarantee.',
+    'Flight-tracked private chauffeurs with zero wait time at Mumbai CSMIA T1 & T2 arrivals gates. Pre-negotiated fixed rates and airport-paced departure buffers.',
   alternates: {
     canonical: '/airport-transfers',
   },

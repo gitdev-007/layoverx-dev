@@ -423,20 +423,24 @@ export const TRANSFERS_DATA: Transfer[] = [
 
 export const FAQS_DATA: FAQItem[] = [
   {
-    question: 'Do I need an Indian Visa to stay at these hotels or take a tour?',
-    answer: 'If you stay inside the Terminal 2 transit zone (e.g. Niranta Transit Hotel or Adani Lounge), no visa is required. If you step outside the airport gates for hotels, dining, or tours, you will need a valid Indian Transit Visa or e-Tourist Visa.',
+    question: 'Do I need an Indian visa to leave the airport or stay at a transit hotel?',
+    answer: 'If you stay inside the Terminal 2 international transit area (such as Niranta Transit Hotel airside), you do not clear immigration and no visa is required. If you choose an off-terminal hotel in Andheri/Sahar, visit restaurants, or take a city tour, you must clear immigration with a valid Indian Transit Visa or e-Visa matching your passport.',
   },
   {
-    question: 'How does LayoverX guarantee I will not miss my connecting flight?',
-    answer: 'Our algorithm automatically deducts 2.5 hours for security checks and terminal clearance, and factors in real-time Mumbai traffic patterns to calculate your exact safe return window.',
+    question: 'How are the return timing buffers calculated?',
+    answer: 'To protect your connection, our planner automatically reserves a 2.5-hour clearance buffer for security and terminal procedures, plus calculated driving time with local traffic buffers. We only recommend activities that comfortably fit within your available dwell time.',
   },
   {
     question: 'What happens if my incoming flight is delayed?',
-    answer: 'LayoverX includes automated flight delay protection. We track your flight via live radar feeds and automatically shift your hotel room, spa session, or chauffeur booking window with zero penalty.',
+    answer: 'If your incoming flight gets delayed, you can easily adjust your plan timings in the planner. For partner reservations, our concierge team helps coordinate rescheduled slots or flexible cancellation so you are never penalized for flight schedule changes.',
   },
   {
-    question: 'Can I store my heavy luggage at Mumbai Airport?',
-    answer: 'Yes! Both Terminal 1 and Terminal 2 operate 24/7 Left Luggage Facilities in the arrivals concourse (operated independently by airport authorities). LayoverX provides airport guidance and recommendations so you can safely store your bags for ₹200–400 per bag while exploring the city.',
+    question: 'Where can I store my heavy luggage during a layover?',
+    answer: 'Both Terminal 1 and Terminal 2 provide 24/7 Left Luggage cloakroom counters in the arrivals public concourse (operated by airport management, typically ₹200–₹400 per bag). If you book an in-terminal or adjacent day-room, your luggage stays safely with you in your private room.',
+  },
+  {
+    question: 'Can I transfer between Terminal 1 and Terminal 2?',
+    answer: 'Yes, but note that CSMIA T1 (domestic) and T2 (international & select domestic) are situated on separate sides of the airfield connected via city roads. We recommend allowing at least 45 minutes for inter-terminal transit by airport taxi.',
   },
 ];
 
