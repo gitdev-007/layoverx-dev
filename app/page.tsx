@@ -91,7 +91,7 @@ export default async function HomePage() {
       icon: Car,
       badge: '0-Min Wait',
       color: 'bg-sky-100 text-sky-900 border-sky-200',
-      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
+      image: '/images/uber-style-sedan.jpg',
     },
   ];
 
@@ -104,7 +104,7 @@ export default async function HomePage() {
           <div className="max-w-4xl mx-auto text-center space-y-6">
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-bold shadow-sm">
-              <Plane size={14} /> CSMIA Mumbai Airport Layover Hub
+              CSMIA Mumbai Airport Layover Hub
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">

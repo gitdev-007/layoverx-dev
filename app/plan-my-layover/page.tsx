@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -320,6 +320,42 @@ export default function PlanMyLayoverPage() {
   const [lastTotalPayable, setLastTotalPayable] = useState<number | null>(null);
   const [highlightSaveDraft, setHighlightSaveDraft] = useState(false);
 
+  // Check if current itinerary items are already saved in savedPlans or in draft storage
+  const isCurrentPlanSaved = useMemo(() => {
+    if (isDraftSaved) return true;
+    if (!contextItems || contextItems.length === 0) return true;
+
+    // Check savedPlans from context
+    if (savedPlans && savedPlans.length > 0) {
+      const match = savedPlans.some((plan) => {
+        if (!plan.items || plan.items.length !== contextItems.length) return false;
+        return contextItems.every((c) =>
+          plan.items.some(
+            (p) =>
+              (p.id === c.id || p.title.trim().toLowerCase() === c.title.trim().toLowerCase()) &&
+              (p.durationHours || 0) === (c.durationHours || 0)
+          )
+        );
+      });
+      if (match) return true;
+    }
+
+    // Check localStorage saved draft
+    if (typeof window !== 'undefined') {
+      try {
+        const draftStr = localStorage.getItem('layoverx_draft');
+        if (draftStr) {
+          const draft = JSON.parse(draftStr);
+          if (draft && (draft.totalPrice || draft.itemsCount)) {
+            return true;
+          }
+        }
+      } catch {}
+    }
+
+    return false;
+  }, [isDraftSaved, contextItems, savedPlans]);
+
   // Synchronize total layover hours dynamically from flight timings (departure - arrival)
   useEffect(() => {
     if (arrivalTime && departureTime) {
@@ -337,7 +373,7 @@ export default function PlanMyLayoverPage() {
       const params = new URLSearchParams(window.location.search);
       const trigger = params.get('triggerCheckout');
       if (trigger === 'true') {
-        if (!isDraftSaved) {
+        if (!isCurrentPlanSaved) {
           showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
           setHighlightSaveDraft(true);
           setTimeout(() => setHighlightSaveDraft(false), 5000);
@@ -346,6 +382,7 @@ export default function PlanMyLayoverPage() {
             saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
           }
         } else {
+          setIsDraftSaved(true);
           scrollToStep5();
         }
         
@@ -355,11 +392,15 @@ export default function PlanMyLayoverPage() {
         window.history.replaceState({}, '', url.pathname + url.search);
       }
     }
-  }, [isDraftSaved]);
+  }, [isCurrentPlanSaved]);
 
   useEffect(() => {
-    setIsDraftSaved(false);
-  }, [contextItems]);
+    if (isCurrentPlanSaved) {
+      setIsDraftSaved(true);
+    } else {
+      setIsDraftSaved(false);
+    }
+  }, [contextItems, savedPlans, isCurrentPlanSaved]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -604,7 +645,7 @@ export default function PlanMyLayoverPage() {
 
   const baseSubtotalINR =
     contextItems
-      .filter((item) => isDraftSaved || (item.badge !== 'Cab' && item.type !== 'transfer'))
+      .filter((item) => isCurrentPlanSaved || (item.badge !== 'Cab' && item.type !== 'transfer'))
       .reduce((sum, item) => {
         const numCost = parseInt((item.cost || '0').replace(/[^0-9]/g, '')) || 0;
         return sum + numCost;
@@ -1541,7 +1582,7 @@ export default function PlanMyLayoverPage() {
                     type="button"
                     disabled={!isFormValid || isHolding || availableWindowHours < 0}
                     onClick={async (e) => {
-                      if (!isDraftSaved) {
+                      if (!isCurrentPlanSaved) {
                         await handleSaveDraft();
                       }
                       handleProceedCheckout(e);
@@ -1623,7 +1664,7 @@ export default function PlanMyLayoverPage() {
                             {badgeIcon} {item.title}
                           </span>
                           <strong className="text-slate-900">
-                            {(item.badge === 'Cab' || item.type === 'transfer') && !isDraftSaved ? 'Calculated at Final Booking' : formatPrice(numCost)}
+                            {(item.badge === 'Cab' || item.type === 'transfer') && !isCurrentPlanSaved ? 'Calculated at Final Booking' : formatPrice(numCost)}
                           </strong>
                         </div>
                       );
@@ -1677,8 +1718,15 @@ export default function PlanMyLayoverPage() {
                   disabled={isHolding || availableWindowHours < 0}
                   title={availableWindowHours < 0 ? "Please adjust your itinerary so available time is positive before proceeding." : ""}
                   onClick={async () => {
-                    if (!isDraftSaved) {
-                      await handleSaveDraft();
+                    if (!isCurrentPlanSaved) {
+                      showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
+                      setHighlightSaveDraft(true);
+                      setTimeout(() => setHighlightSaveDraft(false), 5000);
+                      const saveBtn = document.getElementById("save-draft-button");
+                      if (saveBtn) {
+                        saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
+                      return;
                     }
                     scrollToStep5();
                   }}
@@ -1820,7 +1868,10 @@ export default function PlanMyLayoverPage() {
                         <div className="flex items-center gap-2 pt-1">
                           <button
                             type="button"
-                            onClick={() => loadSavedPlan(plan)}
+                            onClick={() => {
+                              loadSavedPlan(plan);
+                              setIsDraftSaved(true);
+                            }}
                             className="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-[10px] font-bold transition text-center"
                           >
                             Load Draft
@@ -1829,6 +1880,7 @@ export default function PlanMyLayoverPage() {
                             type="button"
                             onClick={() => {
                               loadSavedPlan(plan);
+                              setIsDraftSaved(true);
                               if (typeof window !== 'undefined') {
                                 const step5El = document.getElementById('step-5-registration');
                                 if (step5El) {

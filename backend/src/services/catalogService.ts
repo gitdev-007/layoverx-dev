@@ -43,13 +43,13 @@ const SAMPLE_CATALOG: ServiceCatalogItem[] = [
   {
     id: 'srv-hotel-02',
     title: '6-Hour Executive Day Room Access',
-    description: '5-Star resort day room with outdoor pool, steam room, and 24/7 airport terminal shuttle.',
+    description: '5-Star resort day room with outdoor pool, steam room, and 24/7 chauffeured airport transfers.',
     category: 'HOTEL_PODS',
     hourlyRate: 5499,
     currency: 'INR',
     minUsableMinutes: 240,
     rating: 4.6,
-    imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80',
     vendor: {
       name: 'JW Marriott Mumbai Sahar',
       proximity: '1.2 km from Terminal 2',
@@ -145,7 +145,7 @@ const SAMPLE_CATALOG: ServiceCatalogItem[] = [
     currency: 'INR',
     minUsableMinutes: 60,
     rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/uber-style-sedan.jpg',
     vendor: {
       name: 'LayoverX Airport Fleet',
       proximity: 'CSMIA Terminal 2 & 1',

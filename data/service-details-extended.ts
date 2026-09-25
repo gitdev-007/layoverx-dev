@@ -59,11 +59,11 @@ export const EXTENDED_SERVICE_DETAILS: Record<string, ExtendedServiceDetail> = {
     id: 'h2',
     tagline: '5-Star Resort Sanctuary 5 Minutes from Terminal 2',
     fullOverview:
-      'JW Marriott Mumbai Sahar represents the pinnacle of luxury stopovers. Located less than 1.5 km from Terminal 2, this urban resort offers dedicated day-use rooms, an expansive outdoor lagoon pool set amidst tropical palms, the award-winning Quan Spa, and 24-hour global dining at JW Cafe. Complimentary luxury airport shuttles run every 15 minutes around the clock.',
+      'JW Marriott Mumbai Sahar represents the pinnacle of luxury stopovers. Located less than 1.5 km from Terminal 2, this urban resort offers dedicated day-use rooms, an expansive outdoor lagoon pool set amidst tropical palms, the award-winning Quan Spa, and 24-hour global dining at JW Cafe. Dedicated 24/7 chauffeured airport transfers are available on request.',
     terminalAccessGuide:
-      'Exit Terminal 2 Arrivals on Level P4 (Commercial Pick-up Zone, Pillar 4). Look for the uniformed JW Marriott airport representative holding an iPad sign. Free shuttle coach takes 5–8 minutes.',
+      'Exit Terminal 2 Arrivals on Level P4 (Commercial Pick-up Zone, Pillar 4). Look for the uniformed JW Marriott airport representative holding an iPad sign. Private transfer takes 5–8 minutes.',
     transitTimingBreakdown: {
-      normalMinutes: '5–8 mins by shuttle coach',
+      normalMinutes: '5–8 mins by private transfer',
       peakMinutes: '10–12 mins via Sahar Elevated Road',
       recommendedDepartureBuffer: 'Leave hotel 2.5 hours before international flights',
     },
@@ -71,16 +71,16 @@ export const EXTENDED_SERVICE_DETAILS: Record<string, ExtendedServiceDetail> = {
       { label: 'Property Class', value: '5-Star Luxury Urban Resort (Marriott International)' },
       { label: 'Pool & Wellness', value: 'Resort lagoon pool, whirlpool jacuzzi, & poolside cabanas' },
       { label: 'Dining Options', value: 'JW Cafe (24/7 Buffet), Romano’s (Italian), & JW Lounge' },
-      { label: 'Airport Shuttle', value: 'Complimentary luxury AC coach departing every 15 minutes 24/7' },
+      { label: 'Airport Shuttle', value: '24/7 private chauffeured transfers on request' },
       { label: 'Luggage Handling', value: 'Full bell-desk concierge service and secure luggage hold' },
     ],
     signatureHighlights: [
       { title: 'Resort Day Pass Included', desc: 'Full access to the palm-fringed outdoor pool, fitness center, and luxury spa steam rooms during your stay.' },
-      { title: 'Seamless Terminal Transfer', desc: 'Dedicated hotel shuttle ensures smooth, hassle-free airport transit without booking outside cabs.' },
+      { title: 'Seamless Terminal Transfer', desc: 'Dedicated hotel transfer ensures smooth, hassle-free airport transit without booking outside cabs.' },
       { title: 'Executive Day Suites', desc: 'Marble bathrooms with deep soaking tubs, separate rain showers, and ergonomic workstations.' },
       { title: 'Award-Winning Dining', desc: 'Indulge in extensive multi-cuisine buffets featuring Indian, Asian, Japanese, and Western specialties.' },
     ],
-    whatsIncluded: ['24/7 complimentary airport shuttle', 'Outdoor lagoon pool & gym access', 'High-speed Wi-Fi', 'Luxury Aromatherapy Associates bath amenities', 'Complimentary bottled water'],
+    whatsIncluded: ['24/7 airport transfer on request', 'Outdoor lagoon pool & gym access', 'High-speed Wi-Fi', 'Luxury Aromatherapy Associates bath amenities', 'Complimentary bottled water'],
     whatsExcluded: ['Spa treatments (available for booking)', 'Buffet meals (unless included in slot package)', 'Minibar items'],
     layoverTips: [
       'Have your Indian Tourist or Transit e-Visa ready to clear immigration at T2 before meeting the shuttle.',
@@ -93,7 +93,7 @@ export const EXTENDED_SERVICE_DETAILS: Record<string, ExtendedServiceDetail> = {
     fullOverview:
       'The Orchid Hotel Mumbai is renowned as Asia’s first certified 5-star Ecotel, situated along the domestic airport corridor. It features a spectacular 70-foot indoor atrium waterfall that purifies indoor air, a rooftop swimming pool with breathtaking views of aircraft taking off and landing at CSMIA, and double-glazed soundproof rooms designed for quiet transit rest.',
     terminalAccessGuide:
-      'Located on Nehru Road, Vile Parle East. 800 meters from Domestic Terminal 1 (3 min drive) and 1.8 km from International Terminal 2 (10–15 min drive via Western Express Highway). Hotel shuttle available on request.',
+      'Located on Nehru Road, Vile Parle East. 800 meters from Domestic Terminal 1 (3 min drive) and 4.5 km from International Terminal 2 (10–15 min drive via Western Express Highway). Hotel shuttle available for Domestic T1.',
     transitTimingBreakdown: {
       normalMinutes: '10–15 mins taxi to T2 / 3 mins to T1',
       peakMinutes: '15–22 mins taxi to T2',

@@ -107,7 +107,7 @@ export default function HowItWorksPage() {
                 <div className="flex items-start gap-3">
                   <span className="w-7 h-7 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-xs font-bold text-rose-600 flex-shrink-0">1</span>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Landing & Immigration (1.5 Hours)</h3>
+                    <h3 className="font-bold text-slate-900 text-sm">Landing & Immigration (1.25 – 1.5 Hours)</h3>
                     <p className="text-slate-500 text-xs mt-0.5">De-boarding, walking through CSMIA T2, and clearing passport control queues.</p>
                   </div>
                 </div>
@@ -132,37 +132,40 @@ export default function HowItWorksPage() {
 
             {/* 8-Hour Layover Example Timeline Card */}
             <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 space-y-6 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-lg text-center">8-Hour Layover Example Timeline</h3>
+              <div className="text-center space-y-1">
+                <h3 className="font-bold text-slate-900 text-lg">8-Hour Layover Example Timeline</h3>
+                <p className="text-xs text-slate-500">Based on CSMIA Mumbai T2 Transit (08:00 AM – 04:00 PM)</p>
+              </div>
               
               <div className="relative pl-6 border-l-2 border-[#0369a1] space-y-6 text-xs sm:text-sm">
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
-                  <strong className="text-slate-900 block">08:00 AM • Flight Lands</strong>
-                  <p className="text-slate-500 text-xs">Clear passport checks, proceed to Exit Gate 2.</p>
+                  <strong className="text-slate-900 block">08:00 AM • Flight Lands (CSMIA T2)</strong>
+                  <p className="text-slate-500 text-xs">Clear passport control & customs, proceed to Arrivals.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
-                  <strong className="text-slate-900 block">09:15 AM • Driver Meet-up</strong>
-                  <p className="text-slate-500 text-xs">Meet your private chauffeur at the arrival zone.</p>
+                  <strong className="text-slate-900 block">09:15 AM • Driver Meet-up & Luggage Drop</strong>
+                  <p className="text-slate-500 text-xs">Meet private chauffeur at T2 P4 Arrivals; drop heavy bags at airport locker.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-emerald-600 border-2 border-white"></span>
-                  <strong className="text-emerald-700 font-bold block">10:00 AM - 02:00 PM • Explore City</strong>
-                  <p className="text-slate-500 text-xs">Tour Bandra, Juhu beach, or enjoy coastal seafood lunch.</p>
+                  <strong className="text-emerald-700 font-bold block">10:00 AM – 01:15 PM • Curated City Experience</strong>
+                  <p className="text-slate-500 text-xs">Scenic drive via Sea Link, coastal seafood lunch in Bandra, and beach walk.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
-                  <strong className="text-slate-900 block">02:45 PM • Arrive Back at CSMIA</strong>
-                  <p className="text-slate-500 text-xs">Dropoff directly at Terminal 2 departure ramp.</p>
+                  <strong className="text-slate-900 block">02:00 PM • Arrive Back at CSMIA T2 (2h Buffer)</strong>
+                  <p className="text-slate-500 text-xs">Chauffeur dropoff at T2 Departures ramp with 2 full hours for security & CISF gates.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-rose-600 border-2 border-white"></span>
-                  <strong className="text-rose-600 font-bold block">04:00 PM • Flight Boarding</strong>
-                  <p className="text-slate-500 text-xs">Gate boarding for your connecting flight.</p>
+                  <strong className="text-rose-600 font-bold block">03:20 PM • Boarding & 04:00 PM Takeoff</strong>
+                  <p className="text-slate-500 text-xs">Gate boarding for your connecting flight with zero missed-flight anxiety.</p>
                 </div>
               </div>
             </div>

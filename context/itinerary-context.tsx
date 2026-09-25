@@ -393,6 +393,17 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const loadSavedPlan = (plan: SavedPlan) => {
     // REPLACES all existing active itinerary items with the saved itinerary
     saveItemsToStorage([...plan.items]);
+    try {
+      localStorage.setItem(
+        'layoverx_draft',
+        JSON.stringify({
+          items: plan.items,
+          totalPrice: plan.totalPayable || plan.totalCost,
+          cabFare: plan.cabFare,
+          itemsCount: plan.itemsCount || plan.items.length,
+        })
+      );
+    } catch {}
     showToast(`🔄 Replaced active itinerary with saved plan "${plan.name}"!`, 'success');
   };
 

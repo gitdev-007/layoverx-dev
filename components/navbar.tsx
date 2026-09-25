@@ -16,7 +16,6 @@ import {
   LogOut,
   Calendar,
   Shield,
-  Plane,
   ChevronDown,
   Sun,
   Moon,
@@ -114,9 +113,6 @@ export const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
-              <div className="w-9 h-9 bg-[#0369a1] rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 duration-300 shadow-sm">
-                <Plane className="w-5 h-5 text-white" />
-              </div>
               <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F172A]">LayoverX</span>
             </Link>
           </div>
