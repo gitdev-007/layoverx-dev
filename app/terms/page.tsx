@@ -1,6 +1,20 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import {
+  FileText,
+  ShieldCheck,
+  Scale,
+  CreditCard,
+  Plane,
+  AlertTriangle,
+  HelpCircle,
+  ExternalLink,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Mail,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions | LayoverX — CSMIA T2 Transit Services',
@@ -12,137 +26,135 @@ export const metadata: Metadata = {
 const sections = [
   {
     id: '1',
-    title: '1. About LayoverX',
+    title: '1. About LayoverX & The Aggregator Model',
     content: (
       <>
         <p>
           LayoverX (&ldquo;LayoverX,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;) is an online transit
           concierge platform operated as a sole proprietorship by an individual entrepreneur, trading under the brand
-          name <strong className="text-white">LayoverX</strong>, with operational correspondence at{' '}
-          <a href="mailto:support@layoverx.in" className="text-sky-400 hover:underline">
+          name <strong className="text-slate-900">LayoverX</strong>, with operational correspondence at{' '}
+          <a href="mailto:support@layoverx.in" className="text-[#0369a1] font-semibold hover:underline">
             support@layoverx.in
           </a>
           .
         </p>
         <p>
-          LayoverX connects international transit passengers at Chhatrapati Shivaji Maharaj International Airport,
-          Terminal&nbsp;2 (CSMIA&nbsp;T2), Mumbai, India, with verified third-party service providers including:
+          LayoverX connects international and domestic transit passengers at Chhatrapati Shivaji Maharaj International
+          Airport, Terminal 2 (CSMIA T2), Mumbai, India, with verified third-party service partners including:
         </p>
-        <ul className="list-disc pl-6 space-y-1 text-slate-400">
-          <li>Micro-stay hotel pods and transit lounges (airside &amp; landside)</li>
-          <li>Airport and city restaurants, culinary trail experiences</li>
-          <li>Spa, wellness, and rejuvenation facilities</li>
-          <li>Private chauffeur and fixed-rate airport transfers</li>
-          <li>Guided city sightseeing, heritage, and cultural tours</li>
-          <li>Gaming, entertainment, and co-working lounges</li>
+        <ul className="list-disc pl-6 space-y-1.5 text-slate-600">
+          <li>Micro-stay transit hotel rooms and sleeping pods (airside &amp; landside)</li>
+          <li>Airport and city restaurants, executive buffet reservations, and culinary trails</li>
+          <li>Express spa, foot reflexology, and jetlag recovery wellness suites</li>
+          <li>Private chauffeur services and fixed-rate airport transfers</li>
+          <li>Guided layover city sightseeing, heritage, and South Mumbai cultural tours</li>
+          <li>Gaming, esports pods, and quiet executive work lounges</li>
         </ul>
-        <p>
-          LayoverX acts as a <strong className="text-white">technology facilitator and booking aggregator</strong> only.
-          All services are rendered by independent third-party vendors. LayoverX does not own, operate, employ staff for,
-          or directly provide any hospitality, transport, or tourism service listed on the platform.
-        </p>
+        <div className="bg-sky-50 border border-sky-200/80 rounded-2xl p-4 text-sky-950 text-xs sm:text-sm">
+          <p className="font-bold text-[#0369a1] mb-1">Facilitator Status:</p>
+          LayoverX acts as a <strong className="font-semibold">technology facilitator and booking aggregator</strong> only.
+          All services are rendered by independent, licensed third-party vendors. LayoverX does not own, operate, or employ
+          staff directly for any hospitality, chauffeur, or tourism venue listed on the platform.
+        </div>
       </>
     ),
   },
   {
     id: '2',
-    title: '2. Acceptance of Terms',
+    title: '2. Acceptance of Terms & Statutory Framework',
     content: (
       <>
         <p>
-          By accessing the LayoverX website (layoverx.in), mobile application, or any related digital interface, and by
-          completing a booking or creating an account, you unconditionally agree to be bound by these Terms &amp;
-          Conditions (&ldquo;Terms&rdquo;), our{' '}
-          <Link href="/privacy" className="text-sky-400 hover:underline">
-            Privacy Policy
+          By accessing the LayoverX website (layoverx.in), mobile interface, or by completing a booking, you unconditionally
+          agree to be bound by these Terms &amp; Conditions (&ldquo;Terms&rdquo;), our{' '}
+          <Link href="/privacy" className="text-[#0369a1] font-semibold hover:underline">
+            Privacy Policy (DPDP)
           </Link>
           , our{' '}
-          <Link href="/cookie-policy" className="text-sky-400 hover:underline">
+          <Link href="/cookie-policy" className="text-[#0369a1] font-semibold hover:underline">
             Cookie Policy
           </Link>
           , and our{' '}
-          <Link href="/refund-policy" className="text-sky-400 hover:underline">
+          <Link href="/refund-policy" className="text-[#0369a1] font-semibold hover:underline">
             Cancellation &amp; Refund Policy
           </Link>
           .
         </p>
         <p>
           If you do not agree with any part of these Terms, please discontinue use of the platform immediately. These
-          Terms constitute a legally binding agreement between you and LayoverX under the{' '}
-          <strong className="text-white">Information Technology Act, 2000</strong> and the{' '}
-          <strong className="text-white">Indian Contract Act, 1872</strong>.
+          Terms constitute a legally binding electronic agreement between you and LayoverX executed under the{' '}
+          <strong className="text-slate-900">Information Technology Act, 2000</strong>, the rules thereunder, and the{' '}
+          <strong className="text-slate-900">Indian Contract Act, 1872</strong>.
         </p>
       </>
     ),
   },
   {
     id: '3',
-    title: '3. Eligibility &amp; Account Registration',
+    title: '3. Eligibility & Account Registration',
     content: (
       <>
         <p>
-          You must be at least <strong className="text-white">18 years of age</strong> to create an account or make a
-          booking on LayoverX. By registering, you confirm that all information provided is accurate, current, and
-          complete.
+          You must be at least <strong className="text-slate-900">18 years of age</strong> and legally capable of entering
+          into binding contracts under Indian law to create an account or complete bookings on LayoverX. By booking, you
+          confirm that all passenger and flight information provided is accurate and truthful.
         </p>
         <p>
-          You are responsible for maintaining the confidentiality of your account credentials. LayoverX is not liable
-          for any unauthorized access resulting from your failure to secure your login details. Any activity conducted
-          through your account is deemed to be authorized by you.
+          You are responsible for maintaining the confidentiality of your account credentials and login sessions. LayoverX is
+          not liable for any unauthorized activity arising from compromised credentials on your device.
         </p>
       </>
     ),
   },
   {
     id: '4',
-    title: '4. Flight Tracking &amp; Passenger Responsibility',
+    title: '4. Flight Tracking & Passenger Responsibility',
     content: (
       <>
         <p>
-          LayoverX integrates real-time flight tracking via AeroAPI / AirLabs and automatically adjusts booked service
-          windows when your flight is delayed. This{' '}
-          <strong className="text-white">Slot Window Shift</strong> feature is provided as a value-added convenience and
-          does not transfer any responsibility for missed flights to LayoverX.
+          LayoverX integrates real-time flight tracking telemetry and automatically adjusts booked service windows when your
+          inbound connection experiences schedule shifts. This{' '}
+          <strong className="text-slate-900">Slot Window Shift</strong> engine is provided as an automated convenience and
+          does not transfer any responsibility for missed flights or boarding gate closures to LayoverX.
         </p>
-        <p>
-          <strong className="text-white">It is the sole and exclusive responsibility of the passenger</strong> to
-          monitor flight status, manage travel time, and ensure timely return to the airport terminal for immigration
-          clearance, security screening, and boarding. LayoverX is not liable for missed flights, connections, or costs
-          arising from delayed return to the terminal, regardless of the cause.
-        </p>
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-950 text-xs sm:text-sm">
+          <strong className="font-bold block text-amber-900 mb-1">Mandatory Passenger Dwell Time Management:</strong>
+          It is the sole and exclusive responsibility of the traveler to monitor airline flight status, manage off-terminal
+          dwell time, and ensure timely return to CSMIA Terminal 2 for immigration, CISF security checks, and gate boarding.
+          LayoverX is not liable for missed flights, rebooking fees, or hotel expenses caused by delayed passenger return.
+        </div>
       </>
     ),
   },
   {
     id: '5',
-    title: '5. Immigration, Visa &amp; Indian Entry Compliance',
+    title: '5. Immigration, Visa & Indian Entry Compliance',
     content: (
       <>
         <p>
-          Certain LayoverX services require passengers to exit the international transit zone and enter Indian territory
-          (landside). Passengers are{' '}
-          <strong className="text-white">solely responsible</strong> for holding a valid Indian Tourist Visa, e-Visa,
-          Transit Visa (TV), or Overseas Citizen of India (OCI) Card as mandated by the Bureau of Immigration,
-          Government of India.
+          Certain LayoverX stopover experiences require travelers to exit the international sterile transit area and enter
+          Indian sovereign territory (landside). Passengers are{' '}
+          <strong className="text-slate-900">solely responsible</strong> for possessing valid Indian immigration entry
+          permission — Tourist e-Visa, Regular Paper Visa, Transit Visa (TV), or an Overseas Citizen of India (OCI) Card.
         </p>
         <p>
-          <strong className="text-white">Airside-only services</strong> (transit lounges and hotel pods within the
-          sterile zone) do not require Indian visa clearance.{' '}
-          <strong className="text-white">Landside services</strong> (city tours, external restaurants, chauffeur
-          transfers to the city) require valid immigration entry permission.
+          <strong className="text-slate-900">Airside Services:</strong> In-terminal transit hotel pods and airside lounges do not
+          require clearing Indian immigration or holding an Indian visa.
         </p>
-        <div className="bg-rose-950/30 border border-rose-800/50 p-4 rounded-xl space-y-2 mt-2">
-          <h3 className="font-bold text-rose-300 text-sm">Immigration Disclaimer</h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            If a passenger is denied entry through CSMIA T2 Immigration or fails to present valid visa documentation
-            upon arrival, all Landside bookings become <strong className="text-white">strictly non-refundable</strong>{' '}
-            once the booked slot start time has passed. Passengers must verify entry eligibility prior to departure via
-            the official Government of India visa portal at{' '}
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-950 text-xs sm:text-sm space-y-2">
+          <h4 className="font-bold text-rose-900 flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            Immigration Disclaimer & Landside Restrictions
+          </h4>
+          <p className="text-xs text-rose-900 leading-relaxed">
+            If a passenger is denied entry through CSMIA T2 Immigration due to missing, expired, or rejected visa documents,
+            all Landside bookings become <strong className="font-bold">strictly non-refundable</strong> once the slot start
+            time has passed. Passengers must verify official entry eligibility at{' '}
             <a
               href="https://indianvisaonline.gov.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-400 underline"
+              className="text-[#0369a1] font-bold underline"
             >
               indianvisaonline.gov.in
             </a>
@@ -154,43 +166,39 @@ const sections = [
   },
   {
     id: '6',
-    title: '6. Bookings, Payments &amp; Pricing',
+    title: '6. Bookings, Payments, GST & Pricing',
     content: (
       <>
         <p>
-          All prices on the LayoverX platform are quoted in{' '}
-          <strong className="text-white">Indian Rupees (INR)</strong> and include applicable Goods &amp; Services Tax
-          (GST) at the prevailing rate, unless explicitly stated otherwise. LayoverX reserves the right to revise
-          prices at any time; the price confirmed at the time of payment is final and binding for that transaction.
+          All prices on the LayoverX platform are quoted in <strong className="text-slate-900">Indian Rupees (INR)</strong> and
+          transparently itemize applicable Goods &amp; Services Tax (GST) at 18% during checkout. Confirmed booking rates are
+          final and guaranteed against subsequent price changes.
         </p>
         <p>
-          Payments are processed securely through{' '}
-          <strong className="text-white">Razorpay Payment Gateway</strong>, a PCI-DSS Level 1 certified payment
-          processor. LayoverX does not store, view, or process your card or banking credentials. All transactions are
-          tokenized and encrypted end-to-end by Razorpay.
+          Payments are tokenized and processed securely through <strong className="text-slate-900">Razorpay</strong>, a PCI-DSS
+          Level 1 compliant payment aggregator. LayoverX does not store raw credit card numbers or net-banking credentials on its
+          servers.
         </p>
         <p>
-          A booking is confirmed only upon receipt of a booking confirmation email and/or WhatsApp message containing
-          your unique booking reference number and QR-coded access pass.
+          A booking is confirmed only upon generation of your LayoverX Booking ID, digital itinerary receipt, and QR-coded access
+          voucher delivered via email or WhatsApp.
         </p>
       </>
     ),
   },
   {
     id: '7',
-    title: '7. Service Delivery &amp; Vendor Obligations',
+    title: '7. Service Delivery & Vendor Obligations',
     content: (
       <>
         <p>
-          LayoverX shall use reasonable efforts to ensure vendor partners fulfil confirmed bookings. However, in
-          exceptional circumstances (acts of God, AERA/AAI airport authority directives, CISF security restrictions,
-          airline-mandated terminal closures, or force majeure events), services may be modified or rescheduled.
-          LayoverX will notify you promptly and offer alternatives or a full refund where applicable.
+          LayoverX uses commercial efforts to verify and monitor partner operational reliability. However, in events of force
+          majeure (extreme weather, Mumbai airport authority / AAI / AERA directives, CISF security emergencies, or airline
+          schedule cancellations), bookings may be rescheduled or refunded in full.
         </p>
         <p>
-          LayoverX is not responsible for the quality, safety, legality, or suitability of services delivered by
-          third-party vendors beyond making reasonable commercial efforts to vet and maintain partnerships with
-          verified, reputed service providers at CSMIA T2.
+          LayoverX is not responsible for the direct conduct or third-party venue maintenance beyond vetting and partnering with
+          reputable service providers at CSMIA T2.
         </p>
       </>
     ),
@@ -200,12 +208,11 @@ const sections = [
     title: '8. Intellectual Property',
     content: (
       <p>
-        All content on the LayoverX platform — including the brand name, logo, design, text, graphics, software, and
-        data compilations — is the intellectual property of the LayoverX proprietor and is protected under the{' '}
-        <strong className="text-white">Copyright Act, 1957</strong> and the{' '}
-        <strong className="text-white">Trade Marks Act, 1999</strong> of India. Unauthorized reproduction,
-        redistribution, scraping, or commercial use of any LayoverX content without prior written permission is
-        strictly prohibited and actionable under applicable law.
+        All digital assets, logos, design themes, itinerary calculations, and software algorithms on layoverx.in are the
+        intellectual property of LayoverX and are protected under the{' '}
+        <strong className="text-slate-900">Copyright Act, 1957</strong> and the{' '}
+        <strong className="text-slate-900">Trade Marks Act, 1999</strong> of India. Any unauthorized scraping, commercial
+        reproduction, or reverse engineering is strictly prohibited.
       </p>
     ),
   },
@@ -215,56 +222,46 @@ const sections = [
     content: (
       <>
         <p>
-          To the maximum extent permitted by applicable Indian law, LayoverX&apos;s total aggregate liability for any
-          claim arising out of or related to the platform or any booked service shall be{' '}
-          <strong className="text-white">limited to the total booking amount paid</strong> by the passenger for the
-          specific service giving rise to the claim.
+          To the maximum extent permitted under Indian law, LayoverX&apos;s aggregate liability for any claim arising out of a
+          service booking shall be strictly <strong className="text-slate-900">capped at the total booking amount paid</strong>{' '}
+          by the passenger for the specific service in dispute.
         </p>
         <p>
-          LayoverX shall not be liable for any indirect, incidental, punitive, or consequential damages including loss
-          of profits, missed flights, travel disruptions, or visa-related expenses arising from use of or inability to
-          use the platform. These exclusions apply regardless of the theory of liability (contract, tort, or otherwise).
-        </p>
-        <p>
-          Nothing in these Terms limits or excludes liability that cannot be excluded under the{' '}
-          <strong className="text-white">Consumer Protection Act, 2019</strong> of India, including liability for
-          deficiency in service or unfair trade practices as defined therein.
+          LayoverX shall not be liable for any indirect, incidental, or consequential damages including missed flight connections,
+          rebooking expenses, or third-party airline fees. Nothing herein excludes statutory liabilities under the{' '}
+          <strong className="text-slate-900">Consumer Protection Act, 2019</strong>.
         </p>
       </>
     ),
   },
   {
     id: '10',
-    title: '10. Governing Law, Dispute Resolution &amp; Contact',
+    title: '10. Governing Law, Jurisdiction & Grievance Redressal',
     content: (
       <>
         <p>
-          These Terms are governed by and construed in accordance with the laws of India. Any disputes arising out of
-          or in connection with these Terms, including disputes relating to their validity, breach, or interpretation,
-          shall be subject to the{' '}
-          <strong className="text-white">exclusive jurisdiction of the courts at Mumbai, Maharashtra</strong>.
+          These Terms are governed by the laws of India. Any legal proceedings arising out of these Terms shall be subject to
+          the <strong className="text-slate-900">exclusive jurisdiction of the competent courts in Mumbai, Maharashtra</strong>.
         </p>
-        <p>
-          LayoverX adheres to the dispute redressal mechanism prescribed under the{' '}
-          <strong className="text-white">Consumer Protection Act, 2019</strong>. If you have a grievance, contact our
-          Nodal Grievance Officer at{' '}
-          <a href="mailto:grievance@layoverx.in" className="text-sky-400 hover:underline font-semibold">
-            grievance@layoverx.in
-          </a>
-          . We aim to resolve all complaints within{' '}
-          <strong className="text-white">15 working days</strong> of receipt.
-        </p>
-        <p>
-          For general support, email us at{' '}
-          <a href="mailto:support@layoverx.in" className="text-sky-400 hover:underline">
-            support@layoverx.in
-          </a>{' '}
-          or visit our{' '}
-          <Link href="/contact" className="text-sky-400 hover:underline">
-            Contact Us
-          </Link>{' '}
-          page.
-        </p>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 mt-2">
+          <p className="font-bold text-slate-900 text-sm">Nodal Grievance Officer — LayoverX</p>
+          <p className="text-xs text-slate-600">
+            Designated pursuant to Rule 5(9) of the IT (Intermediary Guidelines) Rules:
+          </p>
+          <p className="text-xs">
+            Email:{' '}
+            <a href="mailto:grievance@layoverx.in" className="text-[#0369a1] font-bold hover:underline">
+              grievance@layoverx.in
+            </a>{' '}
+            | General Support:{' '}
+            <a href="mailto:support@layoverx.in" className="text-[#0369a1] font-bold hover:underline">
+              support@layoverx.in
+            </a>
+          </p>
+          <p className="text-xs text-slate-500">
+            All grievances are acknowledged within 48 hours and resolved within 15 working days.
+          </p>
+        </div>
       </>
     ),
   },
@@ -272,78 +269,160 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-300 pb-24">
-      {/* Header */}
-      <section className="pt-28 pb-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <nav className="flex items-center gap-2 text-xs text-sky-400 mb-6">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <span className="text-slate-600">/</span>
-            <span className="text-white font-medium">Terms &amp; Conditions</span>
-          </nav>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Terms &amp; Conditions
-          </h1>
-          <p className="text-slate-400 text-sm mt-3">
-            Last updated: 22 September 2026&nbsp;·&nbsp;Effective for all bookings made via layoverx.in
-          </p>
-          <p className="text-slate-500 text-xs mt-2">
-            Please read these terms carefully before using the LayoverX platform. By proceeding with a booking
-            you agree to be bound by these terms in their entirety.
-          </p>
-        </div>
-      </section>
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] pb-24">
+      {/* HERO SECTION */}
+      <section className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white pt-24 pb-16 overflow-hidden border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-3xl space-y-4">
+            <nav className="flex items-center gap-2 text-xs text-sky-300" aria-label="Breadcrumb">
+              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+              <span className="text-slate-500">/</span>
+              <span className="text-slate-400">Legal &amp; Policy</span>
+              <span className="text-slate-500">/</span>
+              <span className="text-white font-medium">Terms &amp; Conditions</span>
+            </nav>
 
-      {/* Quick-nav */}
-      <section className="px-4 mb-10">
-        <div className="max-w-3xl mx-auto bg-slate-800/50 border border-slate-700 rounded-2xl p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Quick Navigation</p>
-          <ol className="grid sm:grid-cols-2 gap-1 text-xs text-sky-400 list-decimal list-inside">
-            {sections.map((s) => (
-              <li key={s.id}>
-                <a href={`#section-${s.id}`} className="hover:text-white transition-colors">
-                  {s.title.replace(/^\d+\.\s/, '')}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+              ⚖️ OFFICIAL TERMS OF SERVICE
+            </span>
 
-      {/* Content */}
-      <section className="px-4">
-        <div className="max-w-3xl mx-auto space-y-10 text-sm leading-relaxed">
-          {sections.map((s) => (
-            <div key={s.id} id={`section-${s.id}`} className="space-y-3 scroll-mt-28">
-              <h2 className="text-lg font-bold text-white">{s.title}</h2>
-              {s.content}
-            </div>
-          ))}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+              Website Terms &amp; Conditions
+            </h1>
 
-          {/* Related policies */}
-          <div className="border-t border-slate-700 pt-8 pb-4 space-y-2">
-            <p className="text-slate-400 text-xs">Related legal documents:</p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/privacy"
-                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
-              >
-                Privacy Policy →
-              </Link>
-              <Link
-                href="/cookie-policy"
-                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
-              >
-                Cookie Policy →
-              </Link>
-              <Link
-                href="/refund-policy"
-                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
-              >
-                Cancellation &amp; Refund Policy →
-              </Link>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              Standard operating agreement, passenger responsibilities, pricing regulations, and vendor facilitator terms for LayoverX bookings at Mumbai CSMIA T2.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-sky-400" /> Last Updated: 25 September 2026
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> IT Act 2000 &amp; CPA 2019 Compliant
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-sky-400" /> Jurisdiction: Mumbai, India
+              </span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* POLICY NAVIGATION BAR */}
+      <section className="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar text-xs font-bold">
+            <Link
+              href="/terms"
+              className="px-4 py-2 rounded-xl bg-[#0369a1] text-white flex-shrink-0 shadow-xs"
+            >
+              1. Terms &amp; Conditions
+            </Link>
+            <Link
+              href="/privacy"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex-shrink-0 transition"
+            >
+              2. Privacy Policy (DPDP)
+            </Link>
+            <Link
+              href="/cookie-policy"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex-shrink-0 transition"
+            >
+              3. Cookie Policy
+            </Link>
+            <Link
+              href="/refund-policy"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex-shrink-0 transition"
+            >
+              4. Cancellation &amp; Refund Policy
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* MAIN CONTENT SECTION */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* STICKY SIDEBAR INDEX */}
+          <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-36">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-2 border-b border-slate-100">
+                Table of Contents
+              </h2>
+              <nav className="space-y-1.5 text-xs">
+                {sections.map((s) => (
+                  <a
+                    key={s.id}
+                    href={`#section-${s.id}`}
+                    className="block p-2 rounded-xl text-slate-600 hover:text-[#0369a1] hover:bg-sky-50 font-medium transition"
+                  >
+                    {s.title}
+                  </a>
+                ))}
+              </nav>
+            </div>
+
+            {/* Regulatory Seal Card */}
+            <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-sm space-y-3">
+              <div className="flex items-center gap-2">
+                <Scale className="w-5 h-5 text-sky-400" />
+                <h3 className="font-bold text-sm">Legal &amp; Consumer Protection</h3>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Operated under the laws of the Republic of India. Inquiries or service concerns are addressed promptly by our Mumbai airport concierge team.
+              </p>
+              <div className="pt-2 text-[11px] text-slate-400 space-y-1">
+                <div>• Jurisdiction: Mumbai High Court</div>
+                <div>• Support: support@layoverx.in</div>
+                <div>• Phone: +91 022 4900-1234</div>
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN DOCUMENT CARD */}
+          <main className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-10 text-sm leading-relaxed text-slate-700">
+            {sections.map((s) => (
+              <div key={s.id} id={`section-${s.id}`} className="space-y-4 scroll-mt-36 pt-2 first:pt-0">
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 border-b border-slate-100 pb-3">
+                  {s.title}
+                </h2>
+                {s.content}
+              </div>
+            ))}
+
+            {/* RELATED DOCUMENTS FOOTER */}
+            <div className="border-t border-slate-200 pt-8 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Related Legal &amp; Compliance Documents
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  href="/privacy"
+                  className="p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border border-slate-200/80 hover:border-sky-200 transition group"
+                >
+                  <p className="text-xs text-slate-500 font-bold">Policy 02</p>
+                  <p className="text-sm font-bold text-slate-900 group-hover:text-[#0369a1]">Privacy Policy (DPDP) →</p>
+                </Link>
+                <Link
+                  href="/cookie-policy"
+                  className="p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border border-slate-200/80 hover:border-sky-200 transition group"
+                >
+                  <p className="text-xs text-slate-500 font-bold">Policy 03</p>
+                  <p className="text-sm font-bold text-slate-900 group-hover:text-[#0369a1]">Cookie Policy →</p>
+                </Link>
+                <Link
+                  href="/refund-policy"
+                  className="p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border border-slate-200/80 hover:border-sky-200 transition group"
+                >
+                  <p className="text-xs text-slate-500 font-bold">Policy 04</p>
+                  <p className="text-sm font-bold text-slate-900 group-hover:text-[#0369a1]">Refund Policy →</p>
+                </Link>
+              </div>
+            </div>
+          </main>
+
         </div>
       </section>
     </div>

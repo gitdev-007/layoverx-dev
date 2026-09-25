@@ -136,7 +136,7 @@ export default function HowItWorksPage() {
                 <h3 className="font-bold text-slate-900 text-lg">8-Hour Layover Example Timeline</h3>
                 <p className="text-xs text-slate-500">Based on CSMIA Mumbai T2 Transit (08:00 AM – 04:00 PM)</p>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-black mt-1">
-                  <span>✨ 2.5h Airport Buffer • 1.0h Drive • 4.5h Pure Enjoyment</span>
+                  <span>2.5h Airport Buffer • 1.0h Drive • 4.5h Pure Enjoyment</span>
                 </div>
               </div>
               
