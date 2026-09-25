@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HOTELS_DATA, FAQS_DATA, REVIEWS_DATA, Hotel } from '@/data/layover-data';
+import { HOTELS_DATA, FAQS_DATA, Hotel } from '@/data/layover-data';
 import { fetchServices } from '@/lib/api';
 import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
@@ -43,17 +43,18 @@ export default function HotelsPage() {
             name: item.name,
             terminal: item.terminal || 'CSMIA Terminal 2',
             distance: item.distance || '0 km',
-            rating: item.rating || 4.8,
-            reviews: item.reviews || 1200,
+            transitTime: (item as any).transitTime || (item.distance?.includes('0 km') ? '0 min walk (Inside T2)' : '5–12 mins taxi'),
+            rating: item.rating || 4.1,
+            reviews: item.reviews || 0,
             stars: 5,
             price3h: `₹${item.price || 3499}`,
             price6h: `₹${Math.round((item.price || 3499) * 1.4)}`,
             priceFullNight: `₹${Math.round((item.price || 3499) * 1.8)}`,
             locationCategory: 'in-terminal',
             badge: item.badge || 'Verified Partner',
-            amenities: item.amenities || ['🚿 Shower Facility', '⚡ Fast WiFi', '🛌 24/7 Check-in'],
+            amenities: item.amenities || ['Inside T2 Transit Area', 'Hot Rain Shower Suites', 'Soundproof Sleeping Rooms'],
             description: item.description || 'Hourly micro-stay transit accommodations.',
-            image: item.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+            image: item.image || 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
           }));
           setHotelsList(mapped);
         }
@@ -457,14 +458,16 @@ export default function HotelsPage() {
                             title="Quick Filter: 4+ Star Hotels"
                           >
                             <Star size={14} className="text-amber-500 fill-amber-500" /> {hotel.rating}
-                            <span className="text-slate-500 font-medium">({hotel.reviews} reviews)</span>
                           </button>
                         </div>
 
-                        <div className="text-xs text-slate-500 flex items-center gap-2 mb-3">
+                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2 mb-3">
                           <MapPin size={14} className="text-[#0369a1] flex-shrink-0" />
                           <span>{hotel.terminal}</span>
                           <span className="text-slate-900 font-bold">• {hotel.distance}</span>
+                          <span className="text-[#0369a1] font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 flex items-center gap-1">
+                            <Clock size={12} /> {hotel.transitTime}
+                          </span>
                         </div>
 
                         <p className="text-slate-600 text-xs sm:text-sm mb-4 leading-relaxed line-clamp-2">
@@ -496,6 +499,10 @@ export default function HotelsPage() {
                           <div className="border-l border-slate-200 pl-3">
                             <span className="text-slate-500 text-xs block font-medium">Full Night Room</span>
                             <span className="text-slate-900 font-bold text-sm">{hotel.priceFullNight}</span>
+                          </div>
+                          <div className="border-l border-slate-200 pl-3">
+                            <span className="text-slate-500 text-xs block font-medium">Est. Taxi Time</span>
+                            <span className="text-[#0369a1] font-bold text-sm">{hotel.transitTime}</span>
                           </div>
                         </div>
 
@@ -538,7 +545,7 @@ export default function HotelsPage() {
                                   isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0369a1] hover:bg-[#075985] text-white'
                                 }`}
                               >
-                                {isAdded ? 'Added ✓' : 'Add to Itinerary'}
+                                {isAdded ? 'Added ✓' : 'Add to Plan'}
                               </button>
                             );
                           })()}
@@ -561,25 +568,25 @@ export default function HotelsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="space-y-4">
               <span className="inline-block text-[#0369a1] font-bold text-xs uppercase tracking-wider">
-                Exclusive Partner
+                Inside CSMIA Terminal 2
               </span>
               <h2 className="text-3xl font-extrabold text-slate-900">
                 Premium In-Terminal Transit
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Have a layover under 5 hours? Avoid clearing immigration altogether. Niranta Transit Hotel is located directly inside Terminal 2 Arrivals, offering luxury sleep pods, hot showers, and high-speed working desks. Book by the hour with zero boarding anxiety.
+                Have an international layover? Niranta Transit Hotel operates directly inside CSMIA Terminal 2 with an Airside wing (accessible without an Indian visa for international transit) and a Landside wing. Enjoy soundproof day-rooms, hot rainfall showers, and flight status displays with direct gate access.
               </p>
               <div className="flex items-center gap-6 pt-2">
                 <div>
                   <div className="text-3xl font-black text-[#0369a1]">0 min</div>
-                  <div className="text-xs text-slate-500 font-bold">Immigration Wait</div>
+                  <div className="text-xs text-slate-500 font-bold">Immigration (Airside)</div>
                 </div>
                 <div className="border-l border-slate-200 pl-6">
                   <div className="text-3xl font-black text-[#0369a1]">24/7</div>
-                  <div className="text-xs text-slate-500 font-bold">Check-in Availability</div>
+                  <div className="text-xs text-slate-500 font-bold">Hourly Check-in</div>
                 </div>
                 <div className="border-l border-slate-200 pl-6">
-                  <div className="text-3xl font-black text-[#0369a1]">4.8★</div>
+                  <div className="text-3xl font-black text-[#0369a1]">4.1★</div>
                   <div className="text-xs text-slate-500 font-bold">Guest Rating</div>
                 </div>
               </div>
@@ -587,8 +594,8 @@ export default function HotelsPage() {
 
             <div className="relative rounded-3xl overflow-hidden shadow-xl h-80">
               <Image
-                src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"
-                alt="Transit hotel lounge room"
+                src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80"
+                alt="Niranta transit hotel room interior"
                 fill
                 className="object-cover"
               />
@@ -597,36 +604,6 @@ export default function HotelsPage() {
         </div>
       </section>
 
-      {/* GUEST REVIEWS SECTION */}
-      <section className="py-16 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-[#0369a1] font-bold text-xs uppercase tracking-wider block mb-1">
-              Guest Feedback
-            </span>
-            <h2 className="text-3xl font-extrabold text-slate-900">What Transit Guests Say</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {REVIEWS_DATA.map((rev) => (
-              <div key={rev.id} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-3">
-                <div className="text-amber-500 text-sm flex gap-1">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} size={14} className="fill-amber-500" />
-                  ))}
-                </div>
-                <p className="text-slate-700 text-xs sm:text-sm italic leading-relaxed">
-                  "{rev.comment}"
-                </p>
-                <div className="pt-2 border-t border-slate-100">
-                  <div className="text-xs font-bold text-slate-900">{rev.author}</div>
-                  <div className="text-[11px] text-[#0369a1] font-medium">{rev.flight}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ SECTION */}
       <section className="py-16 bg-white border-t border-slate-100">

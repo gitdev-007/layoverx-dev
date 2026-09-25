@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plane, Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -12,10 +12,7 @@ export const Footer: React.FC = () => {
           
           {/* Brand & Overview */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center text-white shadow-md">
-                <Plane className="w-5 h-5" />
-              </div>
+            <Link href="/" className="inline-block group">
               <span className="text-2xl font-extrabold tracking-tight text-white">LayoverX</span>
             </Link>
             <p className="text-slate-300 text-sm leading-relaxed max-w-sm">

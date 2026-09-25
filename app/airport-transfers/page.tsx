@@ -3,13 +3,46 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { TRANSFERS_DATA, FAQS_DATA } from '@/data/layover-data';
+import { TRANSFERS_DATA } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
 import { Car, MapPin, ShieldCheck, ChevronDown, CheckCircle2, Star } from 'lucide-react';
 
+const TRANSFER_FAQS = [
+  {
+    question: 'Where will my chauffeur meet me at Terminal 1 or Terminal 2?',
+    answer:
+      'For Terminal 2 (International & select domestic flights), your chauffeur waits right outside the arrivals hall at the designated commercial pickup area (Pillar 4 lane) holding an official LayoverX digital name sign. For Terminal 1 (Domestic Santacruz), your chauffeur meets you directly at the Level 1 arrivals curb.',
+  },
+  {
+    question: 'Is the price completely fixed, or will there be surge pricing and tolls?',
+    answer:
+      'Every LayoverX transfer quote is 100% fixed and all-inclusive. All expressway tolls (including the Bandra-Worli Sea Link and Eastern Freeway), terminal parking entry fees, and state taxes are included in the price. You will never be asked for surge multiples or meter adjustments.',
+  },
+  {
+    question: 'What happens if my inbound flight is delayed or immigration queues are long?',
+    answer:
+      'Your transfer reservation includes automatic flight radar tracking. We monitor your actual touchdown time in real time and provide a complimentary 60-minute wait window starting from when your aircraft lands, giving you ample time to clear baggage claim and customs.',
+  },
+  {
+    question: 'Can I book a transfer between Terminal 1 (Domestic) and Terminal 2 (International)?',
+    answer:
+      'Yes! CSMIA Terminal 1 (Santacruz) and Terminal 2 (Sahar) are located on opposite sides of the runway connected via city roads (approx. 5 km). A dedicated LayoverX transfer is the fastest, safest, and most reliable way to make an inter-terminal connection without haggling for street cabs.',
+  },
+  {
+    question: 'How much luggage fits in the transfer vehicle?',
+    answer:
+      'Our Executive Sedans (Toyota Etios / Dzire) accommodate 2 large check-in suitcases plus 2 cabin bags. If you are traveling with 3 or more passengers or carry 4+ large suitcases, we recommend selecting our Luxury SUV / Innova Crysta option for maximum boot space and comfort.',
+  },
+  {
+    question: 'Can the driver make a quick stop at an ATM, currency exchange, or pharmacy on the way?',
+    answer:
+      'Yes. Chauffeurs can accommodate complimentary short stops (up to 10 minutes) along the route for essentials such as an ATM, foreign exchange counter, pharmacy, or sealed bottled water. Just inform your driver upon meeting.',
+  },
+];
+
 export default function AirportTransfersPage() {
-  const { addToItinerary } = useItinerary();
+  const { items = [], addToItinerary, removeFromItinerary } = useItinerary();
   const { requireAuth } = useAuth();
   const [pickup, setPickup] = useState('t2');
   const [drop, setDrop] = useState('bandra');
@@ -203,7 +236,24 @@ export default function AirportTransfersPage() {
                         </span>
                       </div>
 
-                      <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{c.description}</p>
+                      <div className="text-xs text-[#0284C7] font-semibold flex items-center gap-1.5 mb-2">
+                        <Car size={13} /> {c.vehicle}
+                      </div>
+
+                      <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-3">{c.description}</p>
+
+                      {c.features && c.features.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {c.features.map((feat, idx) => (
+                            <span
+                              key={idx}
+                              className="text-xs bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded-md"
+                            >
+                              {feat}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
@@ -213,28 +263,41 @@ export default function AirportTransfersPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            requireAuth(() => {
-                              addToItinerary({
-                                id: c.id,
-                                title: c.name,
-                                type: 'transfer',
-                                price: c.price,
-                                cost: c.price,
-                                durationHours: 1.0,
-                                image: c.image,
-                                location: 'CSMIA Mumbai',
-                                detail: `${c.vehicle} • Fixed rate transfer`,
-                                badge: 'Cab',
-                              });
-                            });
-                          }}
-                          className="px-4 py-2 bg-[#0284C7] hover:bg-[#027ab1] text-white font-bold text-xs rounded-xl shadow transition cursor-pointer"
-                        >
-                          Add to Itinerary
-                        </button>
+                        {(() => {
+                          const isAdded = items.some((item) => item.id === c.id);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isAdded) {
+                                  removeFromItinerary(c.id);
+                                } else {
+                                  requireAuth(() => {
+                                    addToItinerary({
+                                      id: c.id,
+                                      title: c.name,
+                                      type: 'transfer',
+                                      price: c.price,
+                                      cost: c.price,
+                                      durationHours: 1.0,
+                                      image: c.image,
+                                      location: 'CSMIA Mumbai',
+                                      detail: `${c.vehicle} • Fixed rate transfer`,
+                                      badge: 'Cab',
+                                    });
+                                  });
+                                }
+                              }}
+                              className={`px-4 py-2 font-bold text-xs rounded-xl shadow transition cursor-pointer ${
+                                isAdded
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'bg-[#0284C7] hover:bg-[#027ab1] text-white'
+                              }`}
+                            >
+                              {isAdded ? 'Booked ✓' : 'Book Ride'}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -242,6 +305,46 @@ export default function AirportTransfersPage() {
               ))}
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* FAQS SECTION */}
+      <section className="py-16 bg-white border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="text-center">
+            <span className="text-[#0284C7] font-bold text-xs uppercase tracking-wider block mb-1">
+              Airport Transfers FAQ
+            </span>
+            <h2 className="text-3xl font-extrabold text-slate-900">Airport Transfers & Chauffeur FAQs</h2>
+            <p className="text-slate-500 text-sm mt-2">
+              Everything transit travelers need to know about fixed-rate airport cabs, terminals, and pickups at CSMIA Mumbai.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {TRANSFER_FAQS.map((faq, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-50 rounded-2xl border border-slate-200 p-5 cursor-pointer transition hover:border-sky-300"
+                onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+              >
+                <div className="flex items-center justify-between text-sm sm:text-base font-bold text-slate-900">
+                  <span>{faq.question}</span>
+                  <ChevronDown
+                    size={18}
+                    className={`text-[#0284C7] transition-transform duration-200 flex-shrink-0 ml-2 ${
+                      faqOpen === idx ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
+                {faqOpen === idx && (
+                  <p className="text-slate-600 text-xs sm:text-sm mt-3 leading-relaxed border-t border-slate-200 pt-3">
+                    {faq.answer}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

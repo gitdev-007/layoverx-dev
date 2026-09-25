@@ -59,8 +59,8 @@ test.describe('LayoverX Production Readiness Comprehensive E2E Suite', () => {
     const restaurantCard = page.locator('text=Peshawri').or(page.locator('text=Gajalee')).or(page.locator('text=Dining')).first();
     await expect(restaurantCard).toBeVisible();
 
-    // Check View Details or Add to Itinerary button
-    const actionBtn = page.locator('button:has-text("Add to Itinerary"), button:has-text("View Details"), a:has-text("View Details")').first();
+    // Check View Details or Add to Plan button
+    const actionBtn = page.locator('button:has-text("Add to Plan"), button:has-text("Add to Itinerary"), button:has-text("View Details"), a:has-text("View Details")').first();
     await expect(actionBtn).toBeVisible();
   });
 

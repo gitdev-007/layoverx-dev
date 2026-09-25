@@ -173,98 +173,132 @@ export default function ExperienceGrid({
           </div>
         </div>
       ) : (
-        /* Experiences Cards Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        /* Experiences Cards Vertical Stack */
+        <div className="space-y-6">
           {filteredExperiences.map((tour) => {
             const isAdded = items.some((item) => item.id === tour.id);
 
             return (
               <article
                 key={tour.id}
-                className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col md:flex-row"
               >
-                <div>
-                  <div className="relative w-full h-48 sm:h-52">
-                    <Image
-                      src={tour.image}
-                      alt={tour.name}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    <span className="absolute top-3 left-3 bg-amber-600/90 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                      📸 {(tour.category || 'Sightseeing').toUpperCase()}
+                <div className="relative w-full md:w-80 h-56 md:h-auto flex-shrink-0">
+                  <Image
+                    src={tour.image}
+                    alt={tour.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 320px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <span className="absolute top-4 left-4 bg-[#0284C7] text-white text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-md">
+                    {(tour.badge || tour.category || 'Sightseeing').toUpperCase()}
+                  </span>
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs font-semibold">
+                    <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg">
+                      <Clock size={13} className="text-amber-400" /> {tour.duration}
                     </span>
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs font-semibold">
-                      <span className="flex items-center gap-1 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md">
-                        <Clock size={13} className="text-amber-400" /> {tour.duration}
-                      </span>
-                      <span className="bg-black/50 backdrop-blur-md px-2 py-1 rounded-md text-amber-300 font-bold flex items-center gap-1">
-                        <Star size={13} className="fill-amber-400 text-amber-400" /> {tour.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-5 space-y-2">
-                    <h4 className="font-bold text-slate-900 text-base leading-snug">{tour.name}</h4>
-                    <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">
-                      {tour.description}
-                    </p>
-                    {tour.location && (
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1">
-                        <MapPin size={12} className="text-sky-600" />
-                        <span>{tour.location}</span>
-                      </div>
-                    )}
+                    <span className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-amber-300 font-bold flex items-center gap-1">
+                      ★ {tour.rating}
+                    </span>
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 border-t border-slate-100 flex items-center justify-between gap-3 mt-3">
+                <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase font-bold block">
-                      Price Per Guest
-                    </span>
-                    <strong className="text-base font-black text-slate-900">{tour.price}</strong>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h4 className="font-bold text-slate-900 text-lg hover:text-[#0284C7] transition-colors">
+                        <Link href={`/service-details?id=${tour.id}`}>{tour.name}</Link>
+                      </h4>
+                      <span className="flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0">
+                        ★ {tour.rating}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2 mb-3">
+                      <MapPin size={13} className="text-[#0284C7] flex-shrink-0" />
+                      <span>{tour.location || 'Mumbai Transit Corridor'}</span>
+                      <span className="text-slate-900 font-bold">• {tour.safeWindow}</span>
+                      {tour.transitTime && (
+                        <span className="text-[#0284C7] font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">
+                          {tour.transitTime}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed line-clamp-2">
+                      {tour.description}
+                    </p>
+
+                    {tour.highlights && tour.highlights.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {tour.highlights.map((hl, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded-md"
+                          >
+                            {hl}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/service-details?id=${tour.id}`}
-                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
-                    >
-                      Details
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isAdded) {
-                          removeFromItinerary(tour.id);
-                        } else {
-                          requireAuth(() => {
-                            addToItinerary({
-                              id: tour.id,
-                              title: tour.name,
-                              type: 'tour',
-                              price: tour.price,
-                              cost: tour.price,
-                              durationHours: parseDurationToMinutes(tour.duration) / 60 || 4.0,
-                              image: tour.image,
-                              location: tour.location || 'Mumbai',
-                              detail: `Duration: ${tour.duration} (${tour.safeWindow || 'Traffic-Buffered Departure'})`,
-                              badge: 'Tour',
+                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                          Price Per Booking
+                        </span>
+                        <strong className="text-xl font-black text-slate-900">{tour.price}</strong>
+                      </div>
+                      {tour.transitTime && (
+                        <div className="border-l border-slate-200 pl-3">
+                          <span className="text-slate-500 text-xs block font-medium">Est. Taxi Time</span>
+                          <span className="text-[#0284C7] font-bold text-sm">{tour.transitTime}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/service-details?id=${tour.id}`}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+                      >
+                        View Details
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isAdded) {
+                            removeFromItinerary(tour.id);
+                          } else {
+                            requireAuth(() => {
+                              addToItinerary({
+                                id: tour.id,
+                                title: tour.name,
+                                type: 'tour',
+                                price: tour.price,
+                                cost: tour.price,
+                                durationHours: parseDurationToMinutes(tour.duration) / 60 || 4.0,
+                                image: tour.image,
+                                location: tour.location || 'Mumbai',
+                                detail: `Duration: ${tour.duration} (${tour.safeWindow || 'Traffic-Buffered Departure'})`,
+                                badge: 'Tour',
+                              });
                             });
-                          });
-                        }
-                      }}
-                      className={`px-3.5 py-2 font-bold text-xs rounded-xl shadow transition cursor-pointer ${
-                        isAdded
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-[#0284C7] hover:bg-[#0369a1] text-white'
-                      }`}
-                    >
-                      {isAdded ? 'Added ✓' : 'Add to Plan'}
-                    </button>
+                          }
+                        }}
+                        className={`px-4 py-2 font-bold text-xs rounded-xl shadow transition cursor-pointer ${
+                          isAdded
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-[#0284C7] hover:bg-[#0369a1] text-white'
+                        }`}
+                      >
+                        {isAdded ? 'Added ✓' : 'Add to Plan'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </article>

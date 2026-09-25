@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, MapPin, Users, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export interface LayoverFormData {
   destinationArea: string;
@@ -296,19 +296,13 @@ export default function LayoverCalculatorForm({
     <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 text-slate-900 space-y-6">
       {/* Title Header (Conditional) */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>✈️ Layover Safety &amp; Usable Time Calculator</span>
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              AI Itinerary Builder &amp; Real-Time Buffer Estimator
-            </p>
-          </div>
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-extrabold rounded-full self-start sm:self-auto">
-            <CheckCircle2 size={13} />
-            ✓ Flight Delay Auto-Protection Included
-          </span>
+        <div className="border-b border-slate-100 pb-4">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+            Layover Safety &amp; Usable Time Calculator
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            AI Itinerary Builder &amp; Real-Time Buffer Estimator
+          </p>
         </div>
       )}
 

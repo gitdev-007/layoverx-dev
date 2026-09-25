@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FAQS_DATA, REVIEWS_DATA } from '@/data/layover-data';
+import { FAQS_DATA } from '@/data/layover-data';
 import {
   ShieldCheck,
   Clock,

@@ -32,7 +32,7 @@ const SAMPLE_CATALOG: ServiceCatalogItem[] = [
     hourlyRate: 2500,
     currency: 'INR',
     minUsableMinutes: 180,
-    rating: 4.8,
+    rating: 4.1,
     imageUrl: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
     vendor: {
       name: 'Niranta Airport Transit Hotel',
@@ -48,7 +48,7 @@ const SAMPLE_CATALOG: ServiceCatalogItem[] = [
     hourlyRate: 5499,
     currency: 'INR',
     minUsableMinutes: 240,
-    rating: 4.7,
+    rating: 4.6,
     imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
     vendor: {
       name: 'JW Marriott Mumbai Sahar',

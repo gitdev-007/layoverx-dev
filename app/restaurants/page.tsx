@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { RESTAURANTS_DATA, FAQS_DATA, REVIEWS_DATA, Restaurant } from '@/data/layover-data';
+import { RESTAURANTS_DATA, FAQS_DATA, Restaurant } from '@/data/layover-data';
 import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
 
@@ -346,7 +346,6 @@ export default function RestaurantsPage() {
                           </h3>
                           <div className="flex items-center gap-1.5 bg-slate-50 text-slate-800 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-100">
                             <Star size={14} className="text-amber-500 fill-amber-500" /> {res.rating}
-                            <span className="text-slate-500 font-medium">({res.reviews} reviews)</span>
                           </div>
                         </div>
 
@@ -419,7 +418,7 @@ export default function RestaurantsPage() {
                                   isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0369a1] hover:bg-[#075985] text-white'
                                 }`}
                               >
-                                {isAdded ? 'Added ✓' : 'Add to Itinerary'}
+                                {isAdded ? 'Added ✓' : 'Add to Plan'}
                               </button>
                             );
                           })()}
@@ -463,31 +462,6 @@ export default function RestaurantsPage() {
         </div>
       </section>
 
-      {/* GUEST REVIEWS */}
-      <section className="py-16 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-[#0369a1] font-bold text-xs uppercase tracking-wider block mb-1">Guest Feedback</span>
-            <h2 className="text-3xl font-extrabold text-slate-900">What Foodies Say</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {REVIEWS_DATA.map((rev) => (
-              <div key={rev.id} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-3">
-                <div className="text-amber-500 text-sm flex gap-1">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} size={14} className="fill-amber-500" />
-                  ))}
-                </div>
-                <p className="text-slate-700 text-xs sm:text-sm italic leading-relaxed">"{rev.comment}"</p>
-                <div className="pt-2 border-t border-slate-100">
-                  <div className="text-xs font-bold text-slate-900">{rev.author}</div>
-                  <div className="text-[11px] text-[#0369a1] font-medium">{rev.flight}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ SECTION */}
       <section className="py-16 bg-white border-t border-slate-100">

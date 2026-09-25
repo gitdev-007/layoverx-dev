@@ -4,8 +4,33 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Star, MapPin, ShieldCheck, Clock, Check, Plus, AlertCircle, ArrowLeft } from 'lucide-react';
+import {
+  Star,
+  MapPin,
+  ShieldCheck,
+  Clock,
+  Check,
+  Plus,
+  AlertCircle,
+  ArrowLeft,
+  Luggage,
+  Wifi,
+  Coffee,
+  Sparkles,
+  Navigation,
+  Info,
+  Utensils,
+  Bed,
+  Compass,
+  Gamepad2,
+  Car,
+  FileCheck,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+} from 'lucide-react';
 import { HOTELS_DATA, RESTAURANTS_DATA, SPAS_DATA, GAMING_DATA, TOURS_DATA } from '@/data/layover-data';
+import { EXTENDED_SERVICE_DETAILS } from '@/data/service-details-extended';
 import { useItinerary } from '@/context/itinerary-context';
 import { useAuth } from '@/context/auth-context';
 
@@ -13,6 +38,7 @@ function ServiceDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('id') || 'h1';
+  const extended = EXTENDED_SERVICE_DETAILS[serviceId];
   const { addToItinerary = () => {} } = useItinerary() || {};
   const { user, requireAuth } = useAuth();
 
@@ -35,6 +61,22 @@ function ServiceDetailsContent() {
     ? 'Tour'
     : 'Hotel';
 
+  const isAirside =
+    (hotelMatch && (hotelMatch.terminal?.includes('T2') && hotelMatch.locationCategory === 'in-terminal')) ||
+    serviceId === 'h1' ||
+    serviceId === 's1' ||
+    serviceId === 's4' ||
+    serviceId === 'g1' ||
+    (hotelMatch?.terminal?.toLowerCase().includes('inside') ?? false);
+
+  const transitTime =
+    hotelMatch?.transitTime ||
+    restaurantMatch?.transitTime ||
+    spaMatch?.transitTime ||
+    gamingMatch?.transitTime ||
+    tourMatch?.transitTime ||
+    '10–20 mins taxi';
+
   const service = {
     id: serviceId,
     name:
@@ -56,6 +98,10 @@ function ServiceDetailsContent() {
       spaMatch?.distance ||
       gamingMatch?.distance ||
       '0 km',
+    transitTime,
+    isAirside,
+    minLayover:
+      isAirside ? '2.5+ Hours Layover' : '5+ Hours Layover Recommended',
     rating:
       hotelMatch?.rating ||
       restaurantMatch?.rating ||
@@ -76,7 +122,7 @@ function ServiceDetailsContent() {
       spaMatch?.badge ||
       gamingMatch?.badge ||
       tourMatch?.badge ||
-      'Inside Airport Security (T2)',
+      (isAirside ? 'Inside T2 Security' : 'Airport Enclave'),
     amenities:
       hotelMatch?.amenities ||
       restaurantMatch?.amenities ||
@@ -241,44 +287,226 @@ function ServiceDetailsContent() {
                     </span>
                   )}
                 </div>
+
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {service.name}
                 </h1>
+                {extended?.tagline && (
+                  <p className="text-xs sm:text-sm font-semibold text-[#0369a1]">
+                    {extended.tagline}
+                  </p>
+                )}
                 <p className="text-xs text-slate-500 flex items-center gap-2">
                   <MapPin className={`w-4 h-4 flex-shrink-0 ${isDining ? 'text-amber-600' : 'text-sky-600'}`} /> {service.location} ({service.distance})
                 </p>
               </div>
- 
-              <div className="flex items-center gap-4 text-xs border-y border-slate-200 py-3">
-                <span className="flex items-center gap-1 font-bold text-slate-800">
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {service.rating} / 5.0 ({service.reviews} reviews)
-                </span>
-                <span className="text-slate-300">|</span>
-                <span className="text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Delay Protection Included
-                </span>
+
+              {/* Transit Quick Stats Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs">
+                <div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px] block">Transit Commute</span>
+                  <strong className="text-slate-900 font-extrabold flex items-center gap-1 mt-0.5">
+                    <Clock size={13} className="text-[#0369a1]" /> {service.transitTime}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px] block">Clearance Zone</span>
+                  <strong className={`font-extrabold flex items-center gap-1 mt-0.5 ${
+                    service.isAirside ? 'text-emerald-700' : 'text-amber-800'
+                  }`}>
+                    <Navigation size={13} /> {service.isAirside ? 'Airside (Inside T2)' : 'Landside (City)'}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px] block">Suggested Window</span>
+                  <strong className="text-slate-900 font-extrabold flex items-center gap-1 mt-0.5">
+                    <ShieldCheck size={13} className="text-emerald-600" /> {service.minLayover}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px] block">Luggage Security</span>
+                  <strong className="text-slate-900 font-extrabold flex items-center gap-1 mt-0.5">
+                    <Luggage size={13} className="text-[#0369a1]" /> Included / Safe
+                  </strong>
+                </div>
               </div>
- 
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-slate-900">Service Overview</h2>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {service.description}
+
+              {/* Clearance & Immigration Advisory Notice */}
+              <div className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 ${
+                service.isAirside
+                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                  : 'bg-amber-50/80 border-amber-200 text-amber-950'
+              }`}>
+                <Info size={16} className={`flex-shrink-0 mt-0.5 ${service.isAirside ? 'text-emerald-700' : 'text-amber-700'}`} />
+                <div>
+                  <strong className="font-extrabold block mb-0.5">
+                    {service.isAirside
+                      ? '✈️ Airside Post-Security Facility (Inside Terminal 2)'
+                      : '🛬 Landside Airport Enclave (Outside Terminal Building)'}
+                  </strong>
+                  <p>
+                    {service.isAirside
+                      ? 'Directly accessible from domestic and international transit concourses inside Terminal 2 without passing through Indian Immigration or Customs. Requires an onward boarding pass for a connecting flight departing from Terminal 2.'
+                      : 'Located outside the terminal gates. International passengers must pass through Indian Immigration and Customs (valid Indian Tourist or Transit e-Visa required). LayoverX builds traffic-buffered return windows so you return to security on time.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Detailed Service Overview */}
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <FileCheck size={18} className="text-[#0369a1]" /> About This Venue & Layover Suitability
+                </h2>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {extended?.fullOverview || service.description}
                 </p>
               </div>
- 
-              <div className="space-y-3">
-                <h2 className="text-lg font-bold text-slate-900">Included Highlights & Amenities</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {service.amenities.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-center gap-2.5 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow transition-all ${
-                        isDining ? 'hover:bg-rose-50/50 hover:border-rose-300' : 'hover:bg-sky-50/50 hover:border-sky-300'
-                      }`}
-                    >
-                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" /> {item}
+
+              {/* Terminal Access & Transit Route Guide */}
+              {extended?.terminalAccessGuide && (
+                <div className="p-4 bg-sky-50/70 border border-sky-200/80 rounded-2xl space-y-2 text-xs">
+                  <div className="font-bold text-sky-950 flex items-center gap-2 text-sm">
+                    <Navigation size={16} className="text-[#0369a1]" /> Airport Terminal & Commute Route
+                  </div>
+                  <p className="text-slate-700 leading-relaxed">
+                    {extended.terminalAccessGuide}
+                  </p>
+                  {extended.transitTimingBreakdown && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-sky-200/60 text-[11px]">
+                      <div>
+                        <span className="text-slate-500 block">Normal Travel Time:</span>
+                        <strong className="text-slate-900">{extended.transitTimingBreakdown.normalMinutes}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Peak Traffic Travel:</span>
+                        <strong className="text-slate-900">{extended.transitTimingBreakdown.peakMinutes}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Recommended Departure Buffer:</span>
+                        <strong className="text-emerald-700">{extended.transitTimingBreakdown.recommendedDepartureBuffer}</strong>
+                      </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+              )}
+
+              {/* Venue Specifications */}
+              {extended?.venueSpecifications && extended.venueSpecifications.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles size={18} className="text-amber-600" /> Venue Specifications
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {extended.venueSpecifications.map((spec, idx) => (
+                      <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">{spec.label}</span>
+                        <strong className="text-slate-900 font-bold text-right ml-2">{spec.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Signature Highlights */}
+              {extended?.signatureHighlights && extended.signatureHighlights.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Star size={18} className="text-amber-500 fill-amber-500" /> Signature Highlights & What Sets It Apart
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {extended.signatureHighlights.map((hl, idx) => (
+                      <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                        <strong className="text-xs font-bold text-slate-900 block">{hl.title}</strong>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">{hl.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* What's Included & What's Excluded */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl space-y-2">
+                  <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 size={15} className="text-emerald-600" /> What's Included
+                  </h3>
+                  <ul className="space-y-1.5 text-xs text-slate-700">
+                    {(extended?.whatsIncluded || service.amenities).map((inc, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-emerald-600 font-bold">✓</span> {inc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <XCircle size={15} className="text-slate-400" /> What's Excluded
+                  </h3>
+                  <ul className="space-y-1.5 text-xs text-slate-600">
+                    {(extended?.whatsExcluded || ['Personal retail shopping', 'Alcoholic beverages (unless specified)']).map((exc, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-slate-400">✕</span> {exc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Insider Layover Tips */}
+              {extended?.layoverTips && extended.layoverTips.length > 0 && (
+                <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-2 text-xs">
+                  <div className="font-bold text-amber-950 flex items-center gap-1.5">
+                    <HelpCircle size={16} className="text-amber-700" /> Transit Insider Advice
+                  </div>
+                  <ul className="space-y-1 text-[11px] text-amber-900 leading-relaxed">
+                    {extended.layoverTips.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span> {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 3-Step Layover Guide */}
+              <div className="space-y-3 pt-2">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Navigation size={18} className="text-[#0369a1]" /> How It Works on Your Layover
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-1.5">
+                    <span className="w-6 h-6 rounded-full bg-[#0369a1] text-white text-xs font-extrabold flex items-center justify-center">1</span>
+                    <strong className="text-xs font-bold text-slate-900 block">Touchdown & Path</strong>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {service.isAirside ? 'Follow transit signs inside T2 concourse directly to the venue.' : 'Exit baggage claim and meet your pre-arranged shuttle/taxi at the pickup zone.'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-1.5">
+                    <span className="w-6 h-6 rounded-full bg-[#0369a1] text-white text-xs font-extrabold flex items-center justify-center">2</span>
+                    <strong className="text-xs font-bold text-slate-900 block">Instant Check-in</strong>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Show your LayoverX confirmation voucher and boarding pass on your phone for instant entry.
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-1.5">
+                    <span className="w-6 h-6 rounded-full bg-[#0369a1] text-white text-xs font-extrabold flex items-center justify-center">3</span>
+                    <strong className="text-xs font-bold text-slate-900 block">Timed Departure</strong>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Receive an automated alert when it is time to return to security gates (90–150m buffer).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Policies & Delay Safeguard */}
+              <div className="p-4 bg-slate-100/70 border border-slate-200 rounded-2xl space-y-2 text-xs text-slate-700">
+                <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <ShieldCheck size={16} className="text-emerald-600" /> LayoverX Transit Guarantee & Policies
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600">
+                  <div>• <strong>Flight Delay Reschedule:</strong> Inbound flight late? Slot auto-adjusts at zero cost.</div>
+                  <div>• <strong>Required Documents:</strong> Valid photo ID/passport + onward flight boarding pass.</div>
+                  <div>• <strong>Luggage Protocol:</strong> Hand luggage & trolley bags stored safely on-premises.</div>
                 </div>
               </div>
             </div>
@@ -372,7 +600,7 @@ function ServiceDetailsContent() {
                     : 'bg-sky-600 hover:bg-sky-700 active:bg-sky-800'
                 }`}
               >
-                <Plus size={16} /> Add to Itinerary
+                <Plus size={16} /> Add to Plan
               </button>
             </div>
           </div>

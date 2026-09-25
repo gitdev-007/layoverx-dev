@@ -12,17 +12,90 @@ export default function SpaWellnessPage() {
   const { items = [], addToItinerary = () => {}, removeFromItinerary = () => {} } = useItinerary() || {};
   const { requireAuth } = useAuth();
   const [activeCategory, setActiveCategory] = useState<'all' | 'massage' | 'express' | 'full-day'>('all');
-  const [ratingFilter, setRatingFilter] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
+  const [durationFilter, setDurationFilter] = useState<string[]>([]);
+  const [treatmentFilter, setTreatmentFilter] = useState<string[]>([]);
+  const [locationFilter, setLocationFilter] = useState<string[]>([]);
+  const [priceFilter, setPriceFilter] = useState<string[]>([]);
+  const [amenityFilter, setAmenityFilter] = useState<string[]>([]);
+  const [starFilter, setStarFilter] = useState<string[]>([]);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [sortBy, setSortBy] = useState('popularity');
 
+  const toggleFilter = (list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, val: string) => {
+    setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
+  };
+
+  const clearAllFilters = () => {
+    setActiveCategory('all');
+    setDurationFilter([]);
+    setTreatmentFilter([]);
+    setLocationFilter([]);
+    setPriceFilter([]);
+    setAmenityFilter([]);
+    setStarFilter([]);
+  };
+
+  const activeFiltersCount =
+    (activeCategory !== 'all' ? 1 : 0) +
+    durationFilter.length +
+    treatmentFilter.length +
+    locationFilter.length +
+    priceFilter.length +
+    amenityFilter.length +
+    starFilter.length;
+
   const filteredSpas = SPAS_DATA.filter((s) => {
+    // Top Tab Category
     if (activeCategory !== 'all' && s.category !== activeCategory) return false;
-    if (ratingFilter === '4.5' && s.rating < 4.5) return false;
-    const priceNum = parseInt(s.price.replace(/[^0-9]/g, '')) || 0;
-    if (priceFilter === 'under-2000' && priceNum >= 2000) return false;
-    if (priceFilter === 'above-2000' && priceNum < 2000) return false;
+
+    // Treatment Type Filter
+    if (treatmentFilter.length > 0 && !treatmentFilter.includes(s.category || '')) return false;
+
+    // Duration Filter
+    if (durationFilter.length > 0) {
+      const durMinutes = parseInt(s.duration.replace(/[^0-9]/g, '')) || 60;
+      const matchUnder1h = durationFilter.includes('under-1h') && durMinutes < 60;
+      const match1to2h = durationFilter.includes('1-2h') && durMinutes >= 60 && durMinutes <= 90;
+      const match2hPlus = durationFilter.includes('2h-plus') && durMinutes > 90;
+      if (!matchUnder1h && !match1to2h && !match2hPlus) return false;
+    }
+
+    // Location / Enclave Filter
+    if (locationFilter.length > 0) {
+      const locLower = (s.location + ' ' + s.distance).toLowerCase();
+      const matchInsideT2 = locationFilter.includes('in-terminal') && (locLower.includes('inside t2') || locLower.includes('0 km') || s.badge === 'In-Terminal');
+      const matchSaharT2 = locationFilter.includes('near-t2') && (locLower.includes('sahar') || locLower.includes('1.2 km'));
+      const matchT1 = locationFilter.includes('near-t1') && (locLower.includes('t1') || locLower.includes('santacruz') || locLower.includes('vile parle'));
+      const matchCity = locationFilter.includes('city') && (locLower.includes('powai') || locLower.includes('international airport'));
+      if (!matchInsideT2 && !matchSaharT2 && !matchT1 && !matchCity) return false;
+    }
+
+    // Price Filter
+    if (priceFilter.length > 0) {
+      const priceNum = parseInt(s.price.replace(/[^0-9]/g, '')) || 0;
+      const matchUnder2k = priceFilter.includes('under-2000') && priceNum < 2000;
+      const match2kTo4k = priceFilter.includes('2000-4000') && priceNum >= 2000 && priceNum <= 4000;
+      const matchAbove4k = priceFilter.includes('above-4000') && priceNum > 4000;
+      if (!matchUnder2k && !match2kTo4k && !matchAbove4k) return false;
+    }
+
+    // Amenities / Inclusions Filter
+    if (amenityFilter.length > 0) {
+      const amenitiesStr = (s.amenities.join(' ') + ' ' + s.description).toLowerCase();
+      const matchShower = amenityFilter.includes('shower') && amenitiesStr.includes('shower');
+      const matchSteam = amenityFilter.includes('steam') && (amenitiesStr.includes('steam') || amenitiesStr.includes('sauna'));
+      const matchHerbal = amenityFilter.includes('herbal') && (amenitiesStr.includes('herbal') || amenitiesStr.includes('ayurvedic') || amenitiesStr.includes('organic'));
+      const matchStone = amenityFilter.includes('stone') && (amenitiesStr.includes('stone') || amenitiesStr.includes('hydrotherapy'));
+      if (!matchShower && !matchSteam && !matchHerbal && !matchStone) return false;
+    }
+
+    // Star Rating Filter
+    if (starFilter.length > 0) {
+      const match48 = starFilter.includes('4.8') && s.rating >= 4.8;
+      const match45 = starFilter.includes('4.5') && s.rating >= 4.5;
+      if (!match48 && !match45) return false;
+    }
+
     return true;
   });
 
@@ -162,27 +235,169 @@ export default function SpaWellnessPage() {
             <aside className="w-full lg:w-1/4 flex-shrink-0">
               <div className="bg-white rounded-3xl border border-slate-200 p-6 sticky top-36 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Filters</h2>
-                  <button onClick={() => setActiveCategory('all')} className="text-xs text-[#0284C7] font-bold hover:underline">
-                    Clear All
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-slate-900">Filters</h2>
+                    {activeFiltersCount > 0 && (
+                      <span className="bg-[#0284C7] text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </div>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="text-xs text-[#0284C7] font-bold hover:underline cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Duration</h3>
-                  <label className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-[#0284C7]" />
-                    Under 1 Hour
-                  </label>
-                  <label className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-[#0284C7]" />
-                    1 - 2 Hours
-                  </label>
-                  <label className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-[#0284C7]" />
-                    Deep Wellness (2h+)
-                  </label>
+                {/* Duration Filter */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Duration
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Under 1 Hour (30–45m)', value: 'under-1h' },
+                      { label: '1 – 2 Hours (60–90m)', value: '1-2h' },
+                      { label: 'Deep Wellness (2h+)', value: '2h-plus' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={durationFilter.includes(item.value)}
+                          onChange={() => toggleFilter(durationFilter, setDurationFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Treatment Type */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Treatment Type
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: '⚡ Express Jetlag Relief', value: 'express' },
+                      { label: '💆 Massages & Aromatherapy', value: 'massage' },
+                      { label: '🛁 Full Day Wellness Circuit', value: 'full-day' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={treatmentFilter.includes(item.value)}
+                          onChange={() => toggleFilter(treatmentFilter, setTreatmentFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Terminal & Location */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Location & Enclave
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Inside T2 (Airside 0 km)', value: 'in-terminal' },
+                      { label: 'Sahar Airport Enclave (1–2 km)', value: 'near-t2' },
+                      { label: 'Terminal 1 Enclave (Santacruz)', value: 'near-t1' },
+                      { label: 'Airport District (Powai / Luxury)', value: 'city' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={locationFilter.includes(item.value)}
+                          onChange={() => toggleFilter(locationFilter, setLocationFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Price Range
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Under ₹2,000 (Express)', value: 'under-2000' },
+                      { label: '₹2,000 – ₹4,000 (Standard)', value: '2000-4000' },
+                      { label: 'Above ₹4,000 (5-Star Luxury)', value: 'above-4000' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={priceFilter.includes(item.value)}
+                          onChange={() => toggleFilter(priceFilter, setPriceFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Inclusions & Amenities */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Transit Amenities
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: '🚿 Hot Rain Shower', value: 'shower' },
+                      { label: '🧖 Steam / Sauna Suite', value: 'steam' },
+                      { label: '🌿 Organic / Ayurvedic Herbs', value: 'herbal' },
+                      { label: '🌊 Hydrotherapy / Hot Stone', value: 'stone' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={amenityFilter.includes(item.value)}
+                          onChange={() => toggleFilter(amenityFilter, setAmenityFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rating Filter */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Rating
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: '⭐ 4.8+ Top Rated', value: '4.8' },
+                      { label: '⭐ 4.5+ Verified', value: '4.5' },
+                    ].map((item) => (
+                      <label key={item.value} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={starFilter.includes(item.value)}
+                          onChange={() => toggleFilter(starFilter, setStarFilter, item.value)}
+                          className="rounded border-slate-300 text-[#0284C7] focus:ring-[#0284C7]"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </aside>
 
@@ -193,26 +408,7 @@ export default function SpaWellnessPage() {
                 <div className="text-sm font-medium text-slate-700">
                   Showing <strong className="text-slate-900">{filteredSpas.length}</strong> verified transit treatments
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <select 
-                    value={ratingFilter}
-                    onChange={(e) => setRatingFilter(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
-                  >
-                    <option value="all">All Ratings</option>
-                    <option value="4.5">⭐ 4.5+ Rating</option>
-                  </select>
-
-                  <select 
-                    value={priceFilter}
-                    onChange={(e) => setPriceFilter(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-800 cursor-pointer"
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="under-2000">Under ₹2,000</option>
-                    <option value="above-2000">Above ₹2,000</option>
-                  </select>
-
+                <div className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-slate-500 uppercase">Sort By:</span>
                   <select 
                     value={sortBy}
@@ -254,17 +450,28 @@ export default function SpaWellnessPage() {
                         </span>
                       </div>
 
-                      <div className="text-xs text-[#0284C7] font-semibold flex items-center gap-1 mb-2">
-                        <MapPin size={13} /> {s.location}
+                      <div className="text-xs text-[#0284C7] font-semibold flex items-center justify-between gap-1 mb-2">
+                        <span className="flex items-center gap-1">
+                          <MapPin size={13} /> {s.location}
+                        </span>
+                        <span className="text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+                          {s.transitTime}
+                        </span>
                       </div>
 
                       <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{s.description}</p>
                     </div>
 
                     <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Starting Price</span>
-                        <strong className="text-lg font-black text-slate-900">{s.price}</strong>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <span className="text-slate-400 text-[10px] uppercase font-bold block">Starting Price</span>
+                          <strong className="text-lg font-black text-slate-900">{s.price}</strong>
+                        </div>
+                        <div className="border-l border-slate-200 pl-3">
+                          <span className="text-slate-500 text-xs block font-medium">Est. Transit Time</span>
+                          <span className="text-[#0369a1] font-bold text-sm">{s.transitTime}</span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -305,7 +512,7 @@ export default function SpaWellnessPage() {
                                 isAdded ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-[#0284C7] hover:bg-[#027ab1] text-white'
                               }`}
                             >
-                              {isAdded ? 'Added ✓' : 'Add to Itinerary'}
+                              {isAdded ? 'Added ✓' : 'Add to Plan'}
                             </button>
                           );
                         })()}
