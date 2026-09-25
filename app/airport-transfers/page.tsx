@@ -99,8 +99,8 @@ export default function AirportTransfersPage() {
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 aspect-[4/3]">
                 <Image
-                  src="/images/uber-style-sedan.jpg"
-                  alt="Executive Taxi Transfer"
+                  src="/images/transfer-hero.jpg"
+                  alt="Executive Airport Transfer"
                   fill
                   className="object-cover"
                 />

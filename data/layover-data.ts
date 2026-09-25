@@ -572,7 +572,7 @@ export const TRANSFERS_DATA: Transfer[] = [
     badge: 'Gate Meet & Greet',
     features: ['Flight-Tracked Pickup', '60-Min Free Wait Time', 'Gate Chauffeur Greeting', 'Luggage Assistance'],
     description: 'Seamless terminal pickup at CSMIA T1 & T2 with live flight tracking, zero wait time, and professional drivers.',
-    image: '/images/uber-style-sedan.jpg',
+    image: '/images/transfer-sedan.jpg',
   },
   {
     id: 'c2',
@@ -584,7 +584,7 @@ export const TRANSFERS_DATA: Transfer[] = [
     badge: 'Luxury Chauffeur',
     features: ['Uniformed Chauffeur', 'Water & Wi-Fi Onboard', 'Terminal Arrival Meet & Greet', 'Zero Cancellation Fee'],
     description: 'Premium VIP arrival chauffeur experience with luxury sedans, chilled bottled water, onboard high-speed Wi-Fi, and priority airport access.',
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
+    image: '/images/transfer-suv.jpg',
   },
 ];
 

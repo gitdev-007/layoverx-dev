@@ -302,6 +302,12 @@ export default function RefundPolicyPage() {
               >
                 Privacy Policy →
               </Link>
+              <Link
+                href="/cookie-policy"
+                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
+              >
+                Cookie Policy →
+              </Link>
             </div>
           </div>
 

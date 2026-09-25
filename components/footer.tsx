@@ -76,8 +76,13 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/cookie-policy" className="hover:text-sky-400 transition">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
                 <Link href="/refund-policy" className="hover:text-sky-400 transition">
-                  Cancellation &amp; Refunds
+                  Cancellation &amp; Refund Policy
                 </Link>
               </li>
               <li>

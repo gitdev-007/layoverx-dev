@@ -258,8 +258,11 @@ export default function PrivacyPage() {
               IP-anonymisation mode) to understand aggregate usage patterns.
             </p>
             <p>
-              You may disable cookies via your browser settings. Disabling essential cookies may affect the
-              functionality of the platform, including the ability to complete bookings.
+              For comprehensive information on all cookies used, their lifespan, and instructions on how to manage
+              them, please read our dedicated{' '}
+              <Link href="/cookie-policy" className="text-sky-400 hover:underline font-bold">
+                Cookie Policy →
+              </Link>
             </p>
           </div>
 
@@ -305,6 +308,12 @@ export default function PrivacyPage() {
                 className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
               >
                 Terms &amp; Conditions →
+              </Link>
+              <Link
+                href="/cookie-policy"
+                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
+              >
+                Cookie Policy →
               </Link>
               <Link
                 href="/refund-policy"

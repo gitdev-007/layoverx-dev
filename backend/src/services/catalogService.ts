@@ -145,7 +145,7 @@ const SAMPLE_CATALOG: ServiceCatalogItem[] = [
     currency: 'INR',
     minUsableMinutes: 60,
     rating: 4.9,
-    imageUrl: '/images/uber-style-sedan.jpg',
+    imageUrl: '/images/transfer-sedan.jpg',
     vendor: {
       name: 'LayoverX Airport Fleet',
       proximity: 'CSMIA Terminal 2 & 1',

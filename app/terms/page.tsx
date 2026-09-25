@@ -56,6 +56,10 @@ const sections = [
           <Link href="/privacy" className="text-sky-400 hover:underline">
             Privacy Policy
           </Link>
+          , our{' '}
+          <Link href="/cookie-policy" className="text-sky-400 hover:underline">
+            Cookie Policy
+          </Link>
           , and our{' '}
           <Link href="/refund-policy" className="text-sky-400 hover:underline">
             Cancellation &amp; Refund Policy
@@ -325,6 +329,12 @@ export default function TermsPage() {
                 className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
               >
                 Privacy Policy →
+              </Link>
+              <Link
+                href="/cookie-policy"
+                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 px-4 py-2 rounded-lg transition-colors"
+              >
+                Cookie Policy →
               </Link>
               <Link
                 href="/refund-policy"

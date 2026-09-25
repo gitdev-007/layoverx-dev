@@ -39,6 +39,25 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  async redirects() {
+    return [
+      {
+        source: '/cancellation-refund-policy',
+        destination: '/refund-policy',
+        permanent: true,
+      },
+      {
+        source: '/refunds',
+        destination: '/refund-policy',
+        permanent: true,
+      },
+      {
+        source: '/cookies',
+        destination: '/cookie-policy',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL || 'https://layoverx-dev.onrender.com';
     return [

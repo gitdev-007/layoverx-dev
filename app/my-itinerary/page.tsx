@@ -15,6 +15,7 @@ import {
   Trash2,
   Sparkles,
   Save,
+  Bookmark,
   Copy,
   AlertCircle,
   RefreshCw,
@@ -54,6 +55,26 @@ export default function MyItineraryPage() {
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [showSaveDraftModal, setShowSaveDraftModal] = useState(false);
+
+  // Check if current active items match any saved plan
+  const matchedSavedPlan = React.useMemo(() => {
+    if (!items || items.length === 0 || !savedPlans || savedPlans.length === 0) return null;
+    return (
+      savedPlans.find((plan) => {
+        if (!plan.items || plan.items.length !== items.length) return false;
+        return items.every((c) =>
+          plan.items.some(
+            (p) =>
+              (p.id === c.id || p.title.trim().toLowerCase() === c.title.trim().toLowerCase()) &&
+              (p.durationHours || 0) === (c.durationHours || 0)
+          )
+        );
+      }) || null
+    );
+  }, [items, savedPlans]);
+
+  const isCurrentPlanSaved = Boolean(matchedSavedPlan);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -460,17 +481,17 @@ export default function MyItineraryPage() {
                     My Saved Itineraries ({savedPlans.length})
                   </h3>
                   <button
-                    onClick={() => requireAuth(() => saveCurrentPlan())}
+                    onClick={() => saveCurrentPlan()}
                     disabled={items.length === 0}
                     className="py-1.5 px-3 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Save size={14} /> Save Current
+                    <Save size={14} /> {isCurrentPlanSaved ? 'Draft Saved ✓' : 'Save Plan'}
                   </button>
                 </div>
 
                 {savedPlans.length === 0 ? (
                   <p className="text-xs text-slate-500 italic py-2 text-center">
-                    No saved itineraries. Build a plan and click "Save Current" above.
+                    No saved itineraries. Build a plan and click "Save Plan" above.
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -500,14 +521,9 @@ export default function MyItineraryPage() {
                             type="button"
                             onClick={() => {
                               loadSavedPlan(plan);
-                              if (typeof window !== 'undefined') {
-                                const checkoutEl = document.getElementById('checkout-card');
-                                if (checkoutEl) {
-                                  checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }
-                              }
+                              router.push(`/plan-my-layover?triggerCheckout=true&planId=${plan.id}`);
                             }}
-                            className="flex-1 py-1.5 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[10px] font-bold transition text-center"
+                            className="flex-1 py-1.5 bg-[#0369a1] hover:bg-[#075985] text-white rounded-lg text-[10px] font-bold transition text-center cursor-pointer"
                           >
                             Proceed to Checkout
                           </button>
@@ -592,6 +608,11 @@ export default function MyItineraryPage() {
                 <button 
                   type="button"
                   onClick={() => {
+                    if (items.length === 0) {
+                      showToast('Please add at least one service before proceeding to checkout.', 'warning');
+                      return;
+                    }
+
                     const parseTotalH = parseFloat(totalHours) || 8.0;
                     const cabDrivingTime = calculateDynamicCabDriveTime(items);
                     const transitBuffer = 2.5;
@@ -603,9 +624,20 @@ export default function MyItineraryPage() {
                       setCheckoutError(`Cannot proceed: Total activity duration (${usedActivitiesH.toFixed(1)}h) exceeds your safe stopover window (${availableStopoverWindow.toFixed(1)}h). Please reduce spend hours.`);
                       return;
                     }
-                    requireAuth(() => {
+
+                    // If draft is NOT saved, ask the user to save the draft
+                    if (!isCurrentPlanSaved) {
+                      setShowSaveDraftModal(true);
+                      return;
+                    }
+
+                    // If ALREADY saved, do NOT ask to save draft, and go directly to the same saved draft
+                    if (matchedSavedPlan) {
+                      loadSavedPlan(matchedSavedPlan);
+                      router.push(`/plan-my-layover?triggerCheckout=true&planId=${matchedSavedPlan.id}`);
+                    } else {
                       router.push('/plan-my-layover?triggerCheckout=true');
-                    });
+                    }
                   }}
                   disabled={checkoutLoading || (() => {
                     const parseTotalH = parseFloat(totalHours) || 8.0;
@@ -672,6 +704,53 @@ export default function MyItineraryPage() {
                   <div className="text-emerald-400 mt-1">Transit access gate: Security Corridor 2</div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Draft Prompt Modal */}
+      {showSaveDraftModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 text-slate-900 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 flex-shrink-0">
+                <Bookmark className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Save Itinerary Draft?</h3>
+                <p className="text-xs text-slate-500">Your current stopover plan is not saved yet.</p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+              Please save your draft so your chosen services, transit buffers, and pricing are safely stored. You can then return to this exact draft anytime.
+            </p>
+
+            <div className="flex flex-col gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const newPlan = saveCurrentPlan();
+                  setShowSaveDraftModal(false);
+                  if (newPlan) {
+                    loadSavedPlan(newPlan);
+                    router.push(`/plan-my-layover?triggerCheckout=true&planId=${newPlan.id}`);
+                  } else {
+                    router.push('/plan-my-layover?triggerCheckout=true');
+                  }
+                }}
+                className="w-full py-3.5 bg-[#0369a1] hover:bg-[#075985] text-white font-extrabold text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Save size={16} /> Save Draft &amp; Proceed to Checkout
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSaveDraftModal(false)}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Keep Editing
+              </button>
             </div>
           </div>
         </div>

@@ -91,7 +91,7 @@ export default async function HomePage() {
       icon: Car,
       badge: '0-Min Wait',
       color: 'bg-sky-100 text-sky-900 border-sky-200',
-      image: '/images/uber-style-sedan.jpg',
+      image: '/images/transfer-hero.jpg',
     },
   ];
 

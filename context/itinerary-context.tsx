@@ -54,7 +54,7 @@ interface ItineraryContextType {
   moveItemUp: (index: number) => void;
   moveItemDown: (index: number) => void;
   clearAllItems: () => void;
-  saveCurrentPlan: (planName?: string, extraFields?: any) => void;
+  saveCurrentPlan: (planName?: string, extraFields?: any) => SavedPlan | null;
   deleteSavedPlan: (id: string) => void;
   loadSavedPlan: (plan: SavedPlan) => void;
   showToast: (message: string, type?: 'success' | 'warning' | 'info') => void;
@@ -136,8 +136,24 @@ function getSavedLayoverHours(): number {
 
 export function ItineraryProvider({ children }: { children: React.ReactNode }) {
   const { user, openAuthModal } = useAuth();
-  const [items, setItems] = useState<ItineraryItem[]>([]);
-  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [items, setItems] = useState<ItineraryItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const anonItems = localStorage.getItem('layoverx_itinerary_items_anon');
+      return anonItems ? JSON.parse(anonItems) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const anonPlans = localStorage.getItem('layoverx_saved_plans_anon');
+      return anonPlans ? JSON.parse(anonPlans) : [];
+    } catch {
+      return [];
+    }
+  });
   const [toast, setToast] = useState<ToastNotice | null>(null);
 
   const [totalLayoverHours, setTotalLayoverHoursState] = useState<number>(8.0);
@@ -213,10 +229,11 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     const { itemsKey, plansKey } = getStorageKeys(user?.email);
     try {
       if (!user) {
-        // Load anonymous items if present
+        // Load anonymous items and saved plans if present
         const anonItems = localStorage.getItem('layoverx_itinerary_items_anon');
         setItems(anonItems ? JSON.parse(anonItems) : []);
-        setSavedPlans([]);
+        const anonPlans = localStorage.getItem('layoverx_saved_plans_anon');
+        setSavedPlans(anonPlans ? JSON.parse(anonPlans) : []);
       } else {
         // Migrate anonymous items to authenticated user storage if user has no saved items
         const anonItems = localStorage.getItem('layoverx_itinerary_items_anon');
@@ -229,8 +246,15 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
           setItems(storedItems ? JSON.parse(storedItems) : []);
         }
 
+        const anonPlans = localStorage.getItem('layoverx_saved_plans_anon');
         const storedPlans = localStorage.getItem(plansKey);
-        setSavedPlans(storedPlans ? JSON.parse(storedPlans) : []);
+        if (anonPlans && (!storedPlans || JSON.parse(storedPlans).length === 0)) {
+          localStorage.setItem(plansKey, anonPlans);
+          setSavedPlans(JSON.parse(anonPlans));
+          localStorage.removeItem('layoverx_saved_plans_anon');
+        } else {
+          setSavedPlans(storedPlans ? JSON.parse(storedPlans) : []);
+        }
       }
     } catch (e) {
       console.warn('[ItineraryContext] Failed to load local storage:', e);
@@ -363,25 +387,46 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
     saveItemsToStorage([]);
   };
 
-  const saveCurrentPlan = (name?: string, extraFields?: any) => {
+  const saveCurrentPlan = (name?: string, extraFields?: any): SavedPlan | null => {
+    if (items.length === 0) return null;
     const planName = name || `Mumbai Stopover Plan #${savedPlans.length + 1}`;
     const totalCost = items.reduce((acc, item) => {
       const num = parseInt((item.cost || '').toString().replace(/[^0-9]/g, '')) || 0;
       return acc + num;
     }, 0);
 
+    const cabItem = items.find((i) => i.badge === 'Cab' || i.type === 'transfer');
+    const cabFare = cabItem ? parseInt((cabItem.cost || '0').replace(/[^0-9]/g, '')) || 0 : 0;
+    const grandTotal = extraFields?.totalPayable || (totalCost + Math.round(totalCost * 0.18));
+
     const newPlan: SavedPlan = {
       id: `plan_${Date.now()}`,
       name: planName,
       createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       items: [...items],
-      totalCost: extraFields?.totalPayable || totalCost,
+      totalCost: grandTotal,
+      totalPayable: grandTotal,
+      cabFare: extraFields?.cabFare ?? cabFare,
       itemsCount: items.length,
       ...extraFields,
     };
 
     savePlansToStorage([newPlan, ...savedPlans]);
+    try {
+      localStorage.setItem(
+        'layoverx_draft',
+        JSON.stringify({
+          items: newPlan.items,
+          totalPrice: grandTotal,
+          cabFare: newPlan.cabFare,
+          itemsCount: newPlan.itemsCount,
+          planId: newPlan.id,
+          savedAt: newPlan.createdAt,
+        })
+      );
+    } catch {}
     showToast(`Saved plan "${planName}" to My Saved Itineraries!`, 'success');
+    return newPlan;
   };
 
   const deleteSavedPlan = (id: string) => {
@@ -401,6 +446,8 @@ export function ItineraryProvider({ children }: { children: React.ReactNode }) {
           totalPrice: plan.totalPayable || plan.totalCost,
           cabFare: plan.cabFare,
           itemsCount: plan.itemsCount || plan.items.length,
+          planId: plan.id,
+          savedAt: plan.createdAt,
         })
       );
     } catch {}

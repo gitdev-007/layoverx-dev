@@ -346,8 +346,15 @@ export default function PlanMyLayoverPage() {
         const draftStr = localStorage.getItem('layoverx_draft');
         if (draftStr) {
           const draft = JSON.parse(draftStr);
-          if (draft && (draft.totalPrice || draft.itemsCount)) {
-            return true;
+          if (draft && Array.isArray(draft.items) && draft.items.length === contextItems.length) {
+            const match = contextItems.every((c) =>
+              draft.items.some(
+                (p: any) =>
+                  (p.id === c.id || p.title?.trim().toLowerCase() === c.title?.trim().toLowerCase()) &&
+                  (p.durationHours || 0) === (c.durationHours || 0)
+              )
+            );
+            if (match) return true;
           }
         }
       } catch {}
@@ -372,8 +379,30 @@ export default function PlanMyLayoverPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const trigger = params.get('triggerCheckout');
+      const planId = params.get('planId');
+
       if (trigger === 'true') {
-        if (!isCurrentPlanSaved) {
+        let isSaved = isCurrentPlanSaved;
+
+        // If a specific saved planId was requested, find and load it
+        if (planId) {
+          const targetPlan = savedPlans.find((p) => p.id === planId);
+          if (targetPlan) {
+            loadSavedPlan(targetPlan);
+          } else {
+            try {
+              const anonPlansStr = localStorage.getItem('layoverx_saved_plans_anon');
+              const anonPlans = anonPlansStr ? JSON.parse(anonPlansStr) : [];
+              const foundInStorage = anonPlans.find((p: any) => p.id === planId);
+              if (foundInStorage) {
+                loadSavedPlan(foundInStorage);
+              }
+            } catch {}
+          }
+          isSaved = true;
+        }
+
+        if (!isSaved) {
           showToast("💾 Please save your draft first! Please click 'Save Draft' first to lock in transit estimates and calculate real-time cab pricing before booking.", "warning");
           setHighlightSaveDraft(true);
           setTimeout(() => setHighlightSaveDraft(false), 5000);
@@ -386,13 +415,14 @@ export default function PlanMyLayoverPage() {
           scrollToStep5();
         }
         
-        // Clean up parameter
+        // Clean up parameters
         const url = new URL(window.location.href);
         url.searchParams.delete('triggerCheckout');
+        url.searchParams.delete('planId');
         window.history.replaceState({}, '', url.pathname + url.search);
       }
     }
-  }, [isCurrentPlanSaved]);
+  }, [isCurrentPlanSaved, savedPlans]);
 
   useEffect(() => {
     if (isCurrentPlanSaved) {

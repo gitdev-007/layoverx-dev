@@ -107,15 +107,15 @@ export default function HowItWorksPage() {
                 <div className="flex items-start gap-3">
                   <span className="w-7 h-7 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-xs font-bold text-rose-600 flex-shrink-0">1</span>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Landing & Immigration (1.25 – 1.5 Hours)</h3>
-                    <p className="text-slate-500 text-xs mt-0.5">De-boarding, walking through CSMIA T2, and clearing passport control queues.</p>
+                    <h3 className="font-bold text-slate-900 text-sm">Landing &amp; Immigration (1 Hour)</h3>
+                    <p className="text-slate-500 text-xs mt-0.5">De-boarding, walking through CSMIA T2, bag drop at locker, and clearing passport control.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <span className="w-7 h-7 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-xs font-bold text-rose-600 flex-shrink-0">2</span>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Departures Security & Boarding (2 Hours)</h3>
+                    <h3 className="font-bold text-slate-900 text-sm">Departures Security &amp; Boarding (1.5 Hours)</h3>
                     <p className="text-slate-500 text-xs mt-0.5">Security screening check-in, customs control, and airport boarding gate checks prior to flight takeoff.</p>
                   </div>
                 </div>
@@ -123,8 +123,8 @@ export default function HowItWorksPage() {
                 <div className="flex items-start gap-3">
                   <span className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">3</span>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Active Exploration Window</h3>
-                    <p className="text-slate-500 text-xs mt-0.5">The remaining middle window is your safe zone to enjoy hotels, food crawls, or private sightseeing.</p>
+                    <h3 className="font-bold text-slate-900 text-sm">Active Exploration Window (5.5 Hours)</h3>
+                    <p className="text-slate-500 text-xs mt-0.5">With 2.5h total airport buffers subtracted, you get a full 5.5 hours: 4.5 hours of curated enjoyment + 1.0 hour chauffeur drive time.</p>
                   </div>
                 </div>
               </div>
@@ -135,36 +135,47 @@ export default function HowItWorksPage() {
               <div className="text-center space-y-1">
                 <h3 className="font-bold text-slate-900 text-lg">8-Hour Layover Example Timeline</h3>
                 <p className="text-xs text-slate-500">Based on CSMIA Mumbai T2 Transit (08:00 AM – 04:00 PM)</p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-black mt-1">
+                  <span>✨ 2.5h Airport Buffer • 1.0h Drive • 4.5h Pure Enjoyment</span>
+                </div>
               </div>
               
               <div className="relative pl-6 border-l-2 border-[#0369a1] space-y-6 text-xs sm:text-sm">
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
                   <strong className="text-slate-900 block">08:00 AM • Flight Lands (CSMIA T2)</strong>
-                  <p className="text-slate-500 text-xs">Clear passport control & customs, proceed to Arrivals.</p>
+                  <p className="text-slate-500 text-xs">Clear passport control &amp; customs, drop bags at T2 arrivals locker (1.0h buffer).</p>
+                </div>
+
+                <div className="relative">
+                  <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-sky-600 border-2 border-white"></span>
+                  <strong className="text-slate-900 block">09:00 AM – 09:30 AM • Private Chauffeur Pickup &amp; Transit (30 Mins Drive)</strong>
+                  <p className="text-slate-500 text-xs">Meet private chauffeur at T2 Gate 2; relax in AC comfort along the scenic coastal freeway.</p>
+                </div>
+
+                <div className="relative">
+                  <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-emerald-600 border-2 border-white ring-4 ring-emerald-100"></span>
+                  <strong className="text-emerald-700 font-bold block">09:30 AM – 02:00 PM • Curated City Experience (4.5 Hours of Enjoyment!)</strong>
+                  <p className="text-slate-600 text-xs mt-0.5 leading-relaxed">
+                    Scenic drive via Sea Link, coastal seafood lunch in Bandra, beach promenade walk, and luxury express spa relaxation.
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-sky-600 border-2 border-white"></span>
+                  <strong className="text-slate-900 block">02:00 PM – 02:30 PM • Chauffeur Return Transfer (30 Mins Drive)</strong>
+                  <p className="text-slate-500 text-xs">Smooth chauffeur drop-off directly at CSMIA T2 Departures ramp.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
-                  <strong className="text-slate-900 block">09:15 AM • Driver Meet-up & Luggage Drop</strong>
-                  <p className="text-slate-500 text-xs">Meet private chauffeur at T2 P4 Arrivals; drop heavy bags at airport locker.</p>
-                </div>
-
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-emerald-600 border-2 border-white"></span>
-                  <strong className="text-emerald-700 font-bold block">10:00 AM – 01:15 PM • Curated City Experience</strong>
-                  <p className="text-slate-500 text-xs">Scenic drive via Sea Link, coastal seafood lunch in Bandra, and beach walk.</p>
-                </div>
-
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-[#0369a1] border-2 border-white"></span>
-                  <strong className="text-slate-900 block">02:00 PM • Arrive Back at CSMIA T2 (2h Buffer)</strong>
-                  <p className="text-slate-500 text-xs">Chauffeur dropoff at T2 Departures ramp with 2 full hours for security & CISF gates.</p>
+                  <strong className="text-slate-900 block">02:30 PM • Arrive Back at CSMIA T2 (1.5h Buffer)</strong>
+                  <p className="text-slate-500 text-xs">Chauffeur dropoff at T2 Departures ramp with 1.5 full hours for security &amp; CISF gates.</p>
                 </div>
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-rose-600 border-2 border-white"></span>
-                  <strong className="text-rose-600 font-bold block">03:20 PM • Boarding & 04:00 PM Takeoff</strong>
+                  <strong className="text-rose-600 font-bold block">03:20 PM • Boarding &amp; 04:00 PM Takeoff</strong>
                   <p className="text-slate-500 text-xs">Gate boarding for your connecting flight with zero missed-flight anxiety.</p>
                 </div>
               </div>
