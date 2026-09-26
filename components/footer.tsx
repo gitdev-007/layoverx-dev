@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-sky-400 transition">
-                  Privacy Policy (DPDP)
+                  Privacy Policy
                 </Link>
               </li>
               <li>
